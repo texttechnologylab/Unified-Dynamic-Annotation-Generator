@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <title>${title}</title>
+<!--    <title>${title}</title>-->
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
       rel="stylesheet"
@@ -16,6 +16,10 @@
       <div id="pie-chart" class="m-5"></div>
     </div>
     <script src="/js/PieChart.js"></script>
+    <script>
+      const data = ${title};
+      console.log(data[0].label);
+    </script>
     <script>
       const chart = new PieChart("#pie-chart", 250);
       chart.create([
