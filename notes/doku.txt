@@ -1,0 +1,35 @@
+Universal attributes for every node
+- active: boolean (default: true) - Determines if the node is used. if set to false it is handled like the node doesn't exist.
+
+
+Diagram attributes
+- visible: boolean (default: true) - Determines if the diagram is visible. If set to false it is not shown on the screen but may still be used to generate combination diagrams.
+
+
+ ---------------------------
+ ---- Generator Settings ---
+ ---------------------------
+Diese Settings lassen sich überall in einer settings-Liste setzen
+
+1 NumberMappingInterface -> 1 NumberMappingInterface
+----------------------------------------------------
+- number_suffix: string (default: "") - The suffix after the number, could be "%" if we want to show a percentage.
+- multiply_num: float (not used by default) - The number with which we multiply every number in our new CategoryNumberMapping (100 together with divide_by_total will give us percentage)
+- multiply_nums: list(float) (not used by default) - The numbers with which we multiply every number in our new CategoryNumberMapping
+- add_num: ...
+- add_nums: ...
+- divide_...
+- ...
+- function: string (not used by default) - komplexerer mathematischer Ausdruck, z.B: "*100", "/100", "x/100", "(40-x/100)*2" der auf alle Nummern x angewandt wird.
+- round: int (not used by default) - how many digits after comma will be left after round, negative values will round left of comma like -2 will do: 15924 -> 15900 // TODO: Make sure that total percentage stays 100% if this is used together with divide_by_total? Or is this not useful for percentages and instead we should use:
+- round_visible: int (not used by default) - like round but only changes the number displayed in diagram, not the internal number used for the diagram proportions
+
+
+1 CategoryNumberMappingInterface -> 1 CategoryNumberMappingInterface
+--------------------------------------------------------------------
+- divide_by_total: boolean (default: false) - If set to true we will divide every number by the sum of all numbers (use for generating percentages)
+
+
+1 ColorMapping -> 1 ColorMapping
+------------------------------------------------------------
+- multiply_by_gradient: color string (not used by default) - Used if we want to change all colors by a certain gradient

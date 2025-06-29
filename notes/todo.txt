@@ -1,0 +1,4 @@
+Implementation Order
+- Generate Single Generators & generate Diagrams from them
+- Derived Generators
+- Combined diagrams
