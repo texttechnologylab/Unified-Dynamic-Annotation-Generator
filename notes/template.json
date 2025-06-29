@@ -1,0 +1,111 @@
+{
+    "pipelines": [
+        {
+            "name": "main",
+            "sources": [
+                {
+                    "name": "TextPOS_1",
+                    "type": "TextAnnotations",
+                    "creates_generators": [
+                        {
+                            "type": "combi",
+                            "creates_generators": [
+                                {
+                                    "type": "SubstringColorizationMapping",
+                                    "name": "SubstringColorizationMapping_1",
+                                    "settings": {
+                                        "categories_blacklist": [
+                                            "article"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "type": "CategoryColorNumberMapping",
+                                    "name": "CategoryColorNumberMapping_1",
+                                    "settings": {
+                                        "number_type": "percentage"
+                                    }
+                                }
+                            ],
+                            "settings": {
+                                "color_palette": "warm",
+                                "categories_require_whitelist": "true",
+                                "categories_whitelist": [
+                                    "noun",
+                                    "verb",
+                                    "adjective",
+                                    "article"
+                                ],
+                                "fixed_colors": [
+                                    ["noun", "FF0000"],
+                                    ["verb", "FFA500"]
+                                ]
+                            }
+                        },
+                        {
+                            "type": "SubstringCategorizationMapping",
+                            "name": "SubstringCategorizationMapping_1",
+                            "settings": {
+                                "categories_require_whitelist": "true",
+                                "categories_whitelist": [
+                                    "article"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ],
+            "derived_generators": [
+               {
+                
+               } 
+            ],
+            "visualizations": [
+                {
+                    "name": "My CakeDiagram",
+                    "type": "CategoricalChart.PieChart",
+                    "generator": {
+                        "name": "CategoryColorNumberMapping_1"
+                    },
+                    "settings": {
+                        "fontsize_labels": "12",
+                        "fontsize_values": "20",
+                        "diagram_width": "500",
+                        "diagram_height": "500"
+                    }
+                },
+                {
+                    "name": "My Colored and Formatted Text",
+                    "type": "combi",
+                    "active": true,
+                    "visible": true,
+                    "visualizations": [
+                        {
+                            "name": "My Colored Text",
+                            "type": "TextColorization",
+                            "active": true,
+                            "visible": false,
+                            "generator": {
+                                "name": "SubstringColorizationMapping_1"
+                            },
+                            "settings": {
+                                "mode": "highlight"
+                            }
+                        },
+                        {
+                            "name": "My Formatted Text",
+                            "type": "TextFormatting",
+                            "active": true,
+                            "visible": false,
+                            "generator": {
+                                "name": "SubstringCategorizationMapping_1",
+
+                                "mappings": [["article", "bold"]]
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
