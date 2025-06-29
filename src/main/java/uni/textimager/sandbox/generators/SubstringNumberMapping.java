@@ -1,13 +1,8 @@
 package uni.textimager.sandbox.generators;
 
-public class SubstringNumberMapping implements SubstringNumberMappingInterface {
+public class SubstringNumberMapping extends Generator implements SubstringNumberMappingInterface {
     @Override
-    public void setNumberSuffix() {
-
-    }
-
-    @Override
-    public void add(int num) {
+    public void setNumberSuffix(String numberSuffix) {
 
     }
 
@@ -17,27 +12,12 @@ public class SubstringNumberMapping implements SubstringNumberMappingInterface {
     }
 
     @Override
-    public void subtract(int num) {
-
-    }
-
-    @Override
     public void subtract(double num) {
 
     }
 
     @Override
-    public void multiply(int num) {
-
-    }
-
-    @Override
     public void multiply(double num) {
-
-    }
-
-    @Override
-    public void divideBy(int num) {
 
     }
 
@@ -49,5 +29,10 @@ public class SubstringNumberMapping implements SubstringNumberMappingInterface {
     @Override
     public void round(int digits) {
 
+    }
+
+    @Override
+    public SubstringNumberMapping copy() {
+        return null;
     }
 }

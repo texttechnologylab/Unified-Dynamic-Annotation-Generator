@@ -2,6 +2,8 @@ package uni.textimager.sandbox.generators;
 
 import lombok.NonNull;
 
-public interface ColorMappingInterface {
-    void multiplyByGradient(@NonNull String color);
+import java.awt.*;
+
+public interface ColorMappingInterface extends GeneratorInterface {
+    void multiplyByColor(@NonNull Color color);
 }

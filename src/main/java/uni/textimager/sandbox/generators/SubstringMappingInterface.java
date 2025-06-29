@@ -1,4 +1,4 @@
 package uni.textimager.sandbox.generators;
 
-public interface SubstringMappingInterface {
+public interface SubstringMappingInterface extends GeneratorInterface {
 }

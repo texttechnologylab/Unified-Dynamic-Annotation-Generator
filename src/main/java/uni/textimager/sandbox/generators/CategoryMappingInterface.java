@@ -1,4 +1,4 @@
 package uni.textimager.sandbox.generators;
 
-public interface CategoryMappingInterface {
+public interface CategoryMappingInterface extends GeneratorInterface {
 }

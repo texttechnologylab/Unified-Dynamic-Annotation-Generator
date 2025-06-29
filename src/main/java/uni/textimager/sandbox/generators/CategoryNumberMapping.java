@@ -6,78 +6,104 @@ import lombok.NonNull;
 import java.util.HashMap;
 import java.util.NoSuchElementException;
 
-public class CategoryNumberMapping implements CategoryNumberMappingInterface{
+public class CategoryNumberMapping extends Generator implements CategoryNumberMappingInterface{
     private HashMap<String, Double> categoryNumberMap;
-    private boolean divideByTotal;
 
+    private boolean fractionModeEnabled;
+    private double fractionMode;
+    private double total;
+    private String numberSuffix;
+
+
+    public CategoryNumberMapping(HashMap<String, Double> categoryNumberMap) {
+        this.categoryNumberMap = categoryNumberMap;
+        fractionModeEnabled = false;
+        numberSuffix = null;
+        calculateTotal();
+    }
+
+    public CategoryNumberMapping(CategoryNumberMapping copyOf) {
+        this.categoryNumberMap = new HashMap<>(copyOf.categoryNumberMap);
+        this.fractionModeEnabled = copyOf.fractionModeEnabled;
+        this.fractionMode = copyOf.fractionMode;
+        this.total = copyOf.total;
+        this.numberSuffix = copyOf.numberSuffix;
+    }
 
     @Override
-    public void setDivideByTotal(boolean divideByTotal) {
-        this.divideByTotal = divideByTotal;
+    public void setFractionMode(double fractionMode) {
+        fractionModeEnabled = true;
+        this.fractionMode = fractionMode;
+    }
+
+    @Override
+    public String getNumberString(@NonNull String category) {
+        if (numberSuffix == null) {
+            return Double.toString(getNumber(category));
+        }
+        return getNumber(category) + numberSuffix;
     }
 
     @Override
     public double getNumber(@NonNull String category) {
-        if (category == null) {
-            return 2;
-        }
         Double num = categoryNumberMap.get(category);
         if (num == null) {
             throw new NoSuchElementException("Category not found: " + category);
         }
-        if (divideByTotal) {
-
+        if (fractionModeEnabled) {
+            return num * (fractionMode / total);
         }
-        return 0;
+        return num;
     }
 
     @Override
-    public void setNumberSuffix() {
-
+    public double getTotal() {
+        if (fractionModeEnabled) {
+            return fractionMode;
+        }
+        return total;
     }
 
     @Override
-    public void add(int num) {
-
+    public void setNumberSuffix(String numberSuffix) {
+        this.numberSuffix = numberSuffix;
     }
 
     @Override
     public void add(double num) {
-
-    }
-
-    @Override
-    public void subtract(int num) {
-
+        categoryNumberMap.replaceAll((key, value) -> value + num);
+        calculateTotal();
     }
 
     @Override
     public void subtract(double num) {
-
-    }
-
-    @Override
-    public void multiply(int num) {
-
+        categoryNumberMap.replaceAll((key, value) -> value - num);
+        calculateTotal();
     }
 
     @Override
     public void multiply(double num) {
-
-    }
-
-    @Override
-    public void divideBy(int num) {
-
+        categoryNumberMap.replaceAll((key, value) -> value * num);
+        calculateTotal();
     }
 
     @Override
     public void divideBy(double num) {
-
+        categoryNumberMap.replaceAll((key, value) -> value / num);
+        calculateTotal();
     }
 
     @Override
     public void round(int digits) {
 
+    }
+
+    @Override
+    public CategoryNumberMapping copy() {
+        return new CategoryNumberMapping(this);
+    }
+
+    private void calculateTotal() {
+        total = categoryNumberMap.values().stream().mapToDouble(Double::doubleValue).sum();
     }
 }
