@@ -12,7 +12,7 @@
     <div class="d-flex justify-content-center">
       <div class="m-5">
         <h2 class="m-5">${title}</h2>
-        <a class="w-100 btn btn-outline-secondary" href="/chart">PieChart</a>
+        <a class="w-100 btn btn-outline-secondary" href="/charts">PieChart</a>
       </div>
     </div>
   </body>
