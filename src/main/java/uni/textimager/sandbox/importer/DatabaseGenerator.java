@@ -29,7 +29,7 @@ public class DatabaseGenerator implements ApplicationRunner {
     private final SchemaGeneratorService schemaGen;
     private final DataInserterService dataInserter;
 
-    @Value("${app.input-dir:src/main/resources/input}")
+    @Value("${app.input-dir}")
     private String inputDir;
 
     public DatabaseGenerator(JdbcTemplate jdbc,
