@@ -1,0 +1,166 @@
+package uni.textimager.sandbox.pipeline;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Getter;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.*;
+
+public class Pipeline {
+
+    private final Map<String, PipelineNode> visualizations;
+    private final Map<String, PipelineNode> generators;
+    @Getter
+    private final Map<String, PipelineNode> sources;
+
+    private final String name;
+
+
+    public static Pipeline fromJSON(String path) throws IOException {
+        ArrayList<?> pipelines = generateMapFromJSON(path);
+
+        if (pipelines.size() != 1) {
+            String append;
+            if (pipelines.size() > 1) {
+                append = "Multiple pipelines defined. If you want to read multiple pipelines, use function Pipeline.multipleFromJSON().";
+            } else {
+                append = "No pipelines defined.";
+            }
+            throw new IllegalArgumentException("Invalid pipeline JSON: " + append);
+        }
+
+        if (!(pipelines.get(0) instanceof Map<?, ?> pipeline)) {
+            throw new IllegalArgumentException("Invalid pipeline JSON.");
+        }
+
+        JSONView view = new JSONView(pipeline);
+        return generatePipelineFromJSONView(view);
+    }
+
+    public static ArrayList<Pipeline> multipleFromJSON(String path) {
+        // TODO: Implement, using generatePipelineFromJSONView
+        return null;
+    }
+
+    private Pipeline(String name, Map<String, PipelineNode> visualizations, Map<String, PipelineNode> generators, Map<String, PipelineNode> sources) {
+        this.name = name;
+        this.visualizations = visualizations;
+        this.generators = generators;
+        this.sources = sources;
+    }
+
+    private static ArrayList<?> generateMapFromJSON(String path) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        try (InputStream in = Pipeline.class.getClassLoader().getResourceAsStream(path)) {
+            if (in == null) {
+                throw new IllegalArgumentException("File not found: " + path);
+            }
+            Map<String, Object> data = mapper.readValue(in, new TypeReference<>() {});
+            if (!(data.get("pipelines") instanceof ArrayList<?> pipelines)) {
+                throw new IllegalArgumentException("Invalid pipeline JSON.");
+            }
+            return pipelines;
+        }
+    }
+
+    private static Pipeline generatePipelineFromJSONView(JSONView pipelineView) throws IllegalArgumentException {
+        try {
+            // Step 1: Generate all pipeline nodes from JSON
+            String name = pipelineView.get("name").toString();
+            JSONView sourcesView = pipelineView.get("sources");
+            HashMap<String, PipelineNode> sources = new HashMap<>();
+            HashMap<String, PipelineNode> generators = new HashMap<>();
+            for (JSONView sourcesEntry : sourcesView) {
+                PipelineNode current = new PipelineNode(PipelineNodeType.SOURCE, new HashMap<>(), sourcesEntry);
+                String sourceName = sourcesEntry.get("name").toString();
+                sources.put(sourceName, current);
+                JSONView createsGenerators = sourcesEntry.get("createsGenerators");
+                for (JSONView generatorEntry : createsGenerators) {
+                    if (generatorEntry.get("type").toString().equals("combi")) {
+                        JSONView createsSubGenerators = generatorEntry.get("createsGenerators");
+                        for (JSONView subGeneratorEntry : createsSubGenerators) {
+                            HashMap<String, PipelineNode> generatorDependencies = new HashMap<>();
+                            generatorDependencies.put(sourceName, current);
+                            PipelineNode generator = new PipelineNode(PipelineNodeType.GENERATOR, generatorDependencies, subGeneratorEntry);
+                            generators.put(subGeneratorEntry.get("name").toString(), generator);
+                        }
+                    } else {
+                        HashMap<String, PipelineNode> generatorDependencies = new HashMap<>();
+                        generatorDependencies.put(sourceName, current);
+                        PipelineNode generator = new PipelineNode(PipelineNodeType.GENERATOR, generatorDependencies, generatorEntry);
+                        generators.put(generatorEntry.get("name").toString(), generator);
+                    }
+                }
+            }
+            JSONView visualizationsView = pipelineView.get("visualizations");
+            HashMap<String, PipelineNode> visualizations = (HashMap<String, PipelineNode>) generatePipelineVisualizationsFromJSONView(visualizationsView, generators);
+
+            // Step 2: Only keep relevant PipelineNodes for Visualizations
+            System.out.println("Filtering irrelevant pipeline nodes...");
+            HashMap<String, PipelineNode> filteredSources = new HashMap<>();
+            HashMap<String, PipelineNode> filteredGenerators = new HashMap<>();
+            for (PipelineNode v : visualizations.values()) {
+                filterPipeline(v, filteredSources, filteredGenerators);
+            }
+            System.out.println("Removed Sources:");
+            System.out.println(Arrays.toString(keysOnlyInA(sources, filteredSources)));
+            System.out.println("Removed Generators:");
+            System.out.println(Arrays.toString(keysOnlyInA(generators, filteredGenerators)));
+
+            // Step 3: Create Pipelines Object
+            return new Pipeline(name, visualizations, filteredGenerators, filteredSources);
+
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid pipeline JSON.");
+        }
+    }
+
+    private static Map<String, PipelineNode> generatePipelineVisualizationsFromJSONView(JSONView visualizationsView, Map<String, PipelineNode> generators) {
+        if (!visualizationsView.isList()) {
+            throw new IllegalArgumentException("Invalid pipeline JSON: \"visualizations\" must be a list.");
+        }
+        HashMap<String, PipelineNode> visualizations = new HashMap<>();
+        try {
+            for (JSONView visualizationEntry : visualizationsView) {
+                HashMap<String, PipelineNode> dependencies;
+                if (visualizationEntry.get("type").toString().equals("combi")) {
+                    dependencies = (HashMap<String, PipelineNode>) generatePipelineVisualizationsFromJSONView(visualizationEntry.get("visualizations"), generators);
+                    visualizations.putAll(dependencies);
+                } else {
+                    dependencies = new HashMap<>();
+                    String generatorName = visualizationEntry.get("generator").get("name").toString();
+                    dependencies.put(generatorName, generators.get(generatorName));
+                }
+                PipelineNode current = new PipelineNode(PipelineNodeType.VISUALIZATION, dependencies, visualizationEntry);
+                visualizations.put(visualizationEntry.get("name").toString(), current);
+            }
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid pipeline JSON.");
+        }
+        return visualizations;
+    }
+
+    private static void filterPipeline(PipelineNode current, Map<String, PipelineNode> filteredSources, Map<String, PipelineNode> filteredGenerators) {
+        if (current.getType() == PipelineNodeType.SOURCE) {
+            filteredSources.put(current.getConfig().get("name").toString(), current);
+        } else if (current.getType() == PipelineNodeType.GENERATOR) {
+            filteredGenerators.put(current.getConfig().get("name").toString(), current);
+        }
+        for (PipelineNode dependency : current.getDependencies().values()) {
+            filterPipeline(dependency, filteredSources, filteredGenerators);
+        }
+    }
+
+    private static String[] keysOnlyInA(Map<String, ?> mapA, Map<String, ?> mapB) {
+        List<String> uniqueKeys = new ArrayList<>();
+        for (String key : mapA.keySet()) {
+            if (!mapB.containsKey(key)) {
+                uniqueKeys.add(key);
+            }
+        }
+        return uniqueKeys.toArray(new String[0]);
+    }
+}

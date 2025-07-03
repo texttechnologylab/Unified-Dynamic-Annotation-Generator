@@ -34,6 +34,19 @@ Diese Settings lassen sich überall in einer settings-Liste setzen
 --------------------------------
 - multiplyByGradient: color string (not used by default) - Used if we want to change all colors by a certain gradient
 
+1 CategoryMapping -> 1 CategoryMapping
+--------------------------------------
+- categoryWhitelist: (not used by default) list all categories that stay a part of this mapping. Remove all others
+- categoryBlacklist: (not used by default) remove the categories from this list from the mapping.
+
+
+1 Source -> X Generators (X including 1)
+------------------------
+- categoryWhitelist: (not used by default) list all categories that stay a part of this mapping. Remove all others
+- categoryBlacklist: (not used by default) remove the categories from this list from the mapping.
+
 
 1 Source -> 1 ColorMapping
 --------------------------
+- fixedColors: (not used by default) list of 2d lists mapping [category: color], the rest will be set randomly
+- colorPalette: string (not used by default), can be "warm" or "cold" to select the kinds of random colors that will be chosen.

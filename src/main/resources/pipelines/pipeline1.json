@@ -51,6 +51,54 @@
                             }
                         }
                     ]
+                },{
+                    "name": "TextPOS_2",
+                    "type": "TextAnnotations",
+                    "createsGenerators": [
+                        {
+                            "type": "combi",
+                            "createsGenerators": [
+                                {
+                                    "type": "Blub",
+                                    "name": "Blub",
+                                    "settings": {
+                                        "categoriesBlacklist": [
+                                            "article"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "type": "Test",
+                                    "name": "Test",
+                                    "settings": {
+                                        "numberType": "percentage"
+                                    }
+                                }
+                            ],
+                            "settings": {
+                                "colorPalette": "warm",
+                                "categoriesWhitelist": [
+                                    "noun",
+                                    "verb",
+                                    "adjective",
+                                    "article"
+                                ],
+                                "fixedColors": [
+                                    ["noun", "FF0000"],
+                                    ["verb", "FFA500"]
+                                ]
+                            }
+                        },
+                        {
+                            "type": "ABC",
+                            "name": "ABC",
+                            "settings": {
+                                "categoriesWhitelist": [
+                                    "article"
+                                ]
+                            }
+                        }
+                    ]
                 }
             ],
             "derived_generators": [

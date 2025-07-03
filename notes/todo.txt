@@ -2,3 +2,11 @@ Implementation Order
 - Generate Single Generators & generate Diagrams from them
 - Derived Generators
 - Combined diagrams
+
+
+TODO
+- Implement "active" option
+
+
+TODO Vielleicht
+- Mehrere Generatoren bei Visualization möglich (intern gleich behandeln wie Kombination von mehreren Generatoren)
