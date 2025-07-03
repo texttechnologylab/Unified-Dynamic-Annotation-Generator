@@ -18,6 +18,12 @@ public class TableLister implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) {
         List<String> tables = dynamicTableService.listTables();
-        tables.forEach(System.out::println);
+        int width = tables.stream().mapToInt(String::length).max().orElse(0);
+        String border = "+" + "-".repeat(width + 2) + "+";
+        System.out.println(border);
+        for (String name : tables) {
+            System.out.printf("| %-" + width + "s |%n", name);
+        }
+        System.out.println(border);
     }
 }
