@@ -32,12 +32,13 @@ public class DatabaseGenerator implements ApplicationRunner {
     @Value("${app.input-dir}")
     private String inputDir;
 
-    public DatabaseGenerator(JdbcTemplate jdbc,
-                             SqlDialect dialect,
-                             XmiParserService parser,
-                             NameSanitizer sanitizer,
-                             SchemaGeneratorService schemaGen,
-                             DataInserterService dataInserter) {
+    public DatabaseGenerator(
+            JdbcTemplate jdbc,
+            SqlDialect dialect,
+            XmiParserService parser,
+            NameSanitizer sanitizer,
+            SchemaGeneratorService schemaGen,
+            DataInserterService dataInserter) {
         this.jdbc = jdbc;
         this.dialect = dialect;
         this.parser = parser;
@@ -51,18 +52,18 @@ public class DatabaseGenerator implements ApplicationRunner {
         Map<String, Map<String, Integer>> maxLengths = new LinkedHashMap<>();
         List<EntityRecord> allRecords = new ArrayList<>();
 
-        try (DirectoryStream<Path> ds = Files.newDirectoryStream(Path.of(inputDir), "*.xmi")) {
-            for (Path file : ds) {
-                String fn = file.getFileName().toString();
-                for (EntityRecord rec : parser.parse(file)) {
-                    String table = sanitizer.toClassName(rec.tag());
+        try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(Path.of(inputDir), "*.xmi")) {
+            for (Path file : directoryStream) {
+                String fileName = file.getFileName().toString();
+                for (EntityRecord entityRecord : parser.parse(file)) {
+                    String table = sanitizer.toClassName(entityRecord.tag());
                     maxLengths.computeIfAbsent(table, k -> new HashMap<>())
-                            .merge("filename", fn.length(), Math::max);
-                    rec.attributes().forEach((raw, val) ->
+                            .merge("filename", fileName.length(), Math::max);
+                    entityRecord.attributes().forEach((raw, val) ->
                             maxLengths.get(table)
                                     .merge(sanitizer.sanitize(raw), val.length(), Math::max)
                     );
-                    allRecords.add(rec);
+                    allRecords.add(entityRecord);
                 }
             }
         }
