@@ -22,6 +22,10 @@ public class DynamicTableService {
             throw new IllegalArgumentException("Invalid identifier: " + id);
     }
 
+    public List<Map<String,Object>> executeQuery(String sql, Object... params) {
+        return jdbc.queryForList(sql, params);
+    }
+
     public List<String> listTables() {
         return jdbc.queryForList(
                 "SELECT table_name FROM TableNames",
