@@ -12,21 +12,21 @@
   <body>
     <div class="container text-center">
       <div class="row">
-        <div class="col border border-2 m-3 p-4 rounded shadow">
+        <div class="col border border-2 m-3 p-4 rounded">
           <h1>Pie</h1>
           <div id="pie-chart"></div>
         </div>
-        <div class="col border border-2 m-3 p-4 rounded shadow">
+        <div class="col border border-2 m-3 p-4 rounded">
           <h1>Bar</h1>
           <div id="bar-chart"></div>
         </div>
       </div>
       <div class="row">
-        <div class="col border border-2 m-3 p-4 rounded shadow">
+        <div class="col border border-2 m-3 p-4 rounded">
           <h1>Line</h1>
           <div id="line-chart"></div>
         </div>
-        <div class="col border border-2 m-3 p-4 rounded shadow">
+        <div class="col border border-2 m-3 p-4 rounded">
           <h1>Horizontal Bar</h1>
           <div id="horizontal-chart"></div>
         </div>
@@ -39,7 +39,7 @@
       import LineChart from "../js/charts/LineChart.js";
 
       const pie = new PieChart("#pie-chart", 150);
-      pie.create(${categories}, ${categories}.map((item) => item.color));
+      pie.create(${categories});
 
       const bar = new BarChart("#bar-chart", 500, 300);
       bar.create(${categories}, "#4269d0");

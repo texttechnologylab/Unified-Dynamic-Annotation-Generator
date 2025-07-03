@@ -1,7 +1,7 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
-import AbstractChart from "./AbstractChart.js";
+import D3Visualization from "../D3Visualization.js";
 
-export default class PieChart extends AbstractChart {
+export default class PieChart extends D3Visualization {
   constructor(anchor, radius, hole = 0) {
     super(
       anchor,
@@ -14,9 +14,9 @@ export default class PieChart extends AbstractChart {
     this.hole = hole;
   }
 
-  create(data, colors) {
+  create(data) {
     // Create a color scale
-    const color = d3.scaleOrdinal().range(colors);
+    const color = d3.scaleOrdinal().range(data.map((item) => item.color));
 
     // Create the pie generator
     const pie = d3.pie().value((item) => item.value);
@@ -33,7 +33,7 @@ export default class PieChart extends AbstractChart {
       .data(pie(data))
       .join("path")
       .attr("d", arc)
-      .attr("fill", (item) => color(item.data.label))
+      .attr("fill", color)
       .attr("stroke", "white")
       .style("stroke-width", "2px")
       .on("mouseover", this.mouseover)

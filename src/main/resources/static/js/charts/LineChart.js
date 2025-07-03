@@ -1,7 +1,7 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
-import AbstractChart from "./AbstractChart.js";
+import D3Visualization from "../D3Visualization.js";
 
-export default class LineChart extends AbstractChart {
+export default class LineChart extends D3Visualization {
   constructor(anchor, width, height, line = true, dots = true) {
     super(anchor, { top: 10, right: 30, bottom: 30, left: 60 }, width, height);
 

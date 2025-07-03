@@ -11,8 +11,13 @@
   <body>
     <div class="d-flex justify-content-center">
       <div class="m-5">
-        <h2 class="m-5">${title}</h2>
-        <a class="w-100 btn btn-outline-secondary" href="/charts">PieChart</a>
+        <h2 class="text-center m-5">${title}</h2>
+        <a class="w-100 mb-3 btn btn-outline-secondary" href="/charts"
+          >Chart Examples</a
+        >
+        <a class="w-100 mb-3 btn btn-outline-secondary" href="/networks"
+          >Network Examples</a
+        >
       </div>
     </div>
   </body>

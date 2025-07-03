@@ -11,17 +11,16 @@ import java.util.Map;
 
 @Controller
 public class AppController {
+    ObjectMapper mapper = new ObjectMapper();
 
     @GetMapping("/")
     public String index(Model model) {
-        model.addAttribute("title", "Welcome");
+        model.addAttribute("title", "Demo");
         return "index";
     }
 
     @GetMapping("/charts")
     public String charts(Model model) throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper();
-
         List<Map<String, Object>> categories = List.of(
                 Map.of("label", "Apples", "value", 30, "color", "#4269d0"),
                 Map.of("label", "Bananas", "value", 70, "color", "#efb118"),
@@ -38,8 +37,14 @@ public class AppController {
                 Map.of("x", 100, "y", 60));
 
         model.addAttribute("title", "Example Charts");
-        model.addAttribute("categories", mapper.writeValueAsString(categories));
-        model.addAttribute("coordinates", mapper.writeValueAsString(coordinates));
+        model.addAttribute("categories", this.mapper.writeValueAsString(categories));
+        model.addAttribute("coordinates", this.mapper.writeValueAsString(coordinates));
         return "charts";
+    }
+
+    @GetMapping("/networks")
+    public String networks(Model model) throws JsonProcessingException {
+        model.addAttribute("title", "Example Networks");
+        return "networks";
     }
 }
