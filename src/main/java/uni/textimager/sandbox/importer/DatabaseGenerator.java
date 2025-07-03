@@ -4,6 +4,8 @@ package uni.textimager.sandbox.importer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import uni.textimager.sandbox.importer.dialect.SqlDialect;
@@ -18,6 +20,7 @@ import java.nio.file.Path;
 import java.util.*;
 
 @Component
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class DatabaseGenerator implements ApplicationRunner {
     private final JdbcTemplate jdbc;
     private final SqlDialect dialect;
