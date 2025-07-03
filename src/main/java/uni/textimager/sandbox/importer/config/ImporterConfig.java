@@ -13,7 +13,7 @@ import uni.textimager.sandbox.importer.service.XmiParserService;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 @Configuration
-public class AppConfig {
+public class ImporterConfig {
     @Bean
     public DocumentBuilderFactory documentBuilderFactory() {
         return DocumentBuilderFactory.newInstance();
