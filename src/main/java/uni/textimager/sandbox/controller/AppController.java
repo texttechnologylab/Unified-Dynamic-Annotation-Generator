@@ -13,14 +13,8 @@ import java.util.Map;
 public class AppController {
     ObjectMapper mapper = new ObjectMapper();
 
-    @GetMapping("/")
-    public String index(Model model) {
-        model.addAttribute("title", "Demo");
-        return "index";
-    }
-
-    @GetMapping("/charts")
-    public String charts(Model model) throws JsonProcessingException {
+    @GetMapping("/demo")
+    public String demo(Model model) throws JsonProcessingException {
         List<Map<String, Object>> categories = List.of(
                 Map.of("label", "Apples", "value", 30, "color", "#4269d0"),
                 Map.of("label", "Bananas", "value", 70, "color", "#efb118"),
@@ -36,15 +30,13 @@ public class AppController {
                 Map.of("x", 80, "y", 5),
                 Map.of("x", 100, "y", 60));
 
-        model.addAttribute("title", "Example Charts");
+        model.addAttribute("title", "Demo");
         model.addAttribute("categories", this.mapper.writeValueAsString(categories));
         model.addAttribute("coordinates", this.mapper.writeValueAsString(coordinates));
-        return "charts";
-    }
-
-    @GetMapping("/networks")
-    public String networks(Model model) throws JsonProcessingException {
-        model.addAttribute("title", "Example Networks");
-        return "networks";
+        model.addAttribute("network",
+                "{\"nodes\":[{\"id\":1,\"name\":\"A\",\"color\":\"#69b3a2\"},{\"id\":2,\"name\":\"B\",\"color\":\"#69b3a2\"},{\"id\":3,\"name\":\"C\",\"color\":\"#69b3a2\"},{\"id\":4,\"name\":\"D\",\"color\":\"#69b3a2\"},{\"id\":5,\"name\":\"E\",\"color\":\"#69b3a2\"},{\"id\":6,\"name\":\"F\",\"color\":\"#69b3a2\"},{\"id\":7,\"name\":\"G\",\"color\":\"#69b3a2\"},{\"id\":8,\"name\":\"H\",\"color\":\"#69b3a2\"},{\"id\":9,\"name\":\"I\",\"color\":\"#69b3a2\"},{\"id\":10,\"name\":\"J\",\"color\":\"#69b3a2\"}],\"links\":[{\"source\":1,\"target\":2},{\"source\":1,\"target\":5},{\"source\":1,\"target\":6},{\"source\":2,\"target\":3},{\"source\":2,\"target\":7},{\"source\":3,\"target\":4},{\"source\":8,\"target\":3},{\"source\":4,\"target\":5},{\"source\":4,\"target\":9},{\"source\":5,\"target\":10}]}");
+        model.addAttribute("features",
+                "[{type: \"LineString\", label: \"Flug 1\", coordinates: [[100, 60], [-60, -30]]}, {type: \"LineString\", label: \"Flug 2\", coordinates: [[10, -20], [-60, -30]]}, {type: \"LineString\", label: \"Flug 3\", coordinates: [[10, -20], [130, -30]]}, {type: \"Point\", label: \"Timbuktu\", coordinates: [-3.0026, 16.7666]}]");
+        return "demo";
     }
 }

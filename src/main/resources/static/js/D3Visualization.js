@@ -10,7 +10,7 @@ export default class AbstractChart {
     this.tooltip = d3
       .select(this.anchor)
       .append("div")
-      .attr("class", "tooltip border");
+      .attr("class", "tooltip");
 
     this.svg = d3
       .select(this.anchor)

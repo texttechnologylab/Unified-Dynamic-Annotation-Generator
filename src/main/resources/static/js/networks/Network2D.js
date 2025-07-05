@@ -10,10 +10,6 @@ export default class Network2D extends D3Visualization {
 
   create(data, linkColor) {
     // Initialize zoom functionality
-    const onZoom = (event) => {
-      this.svg.attr("transform", event.transform);
-    };
-
     const zoom = d3
       .zoom()
       .scaleExtent([0.5, 3])
@@ -21,7 +17,7 @@ export default class Network2D extends D3Visualization {
         [0, 0],
         [this.width, this.height],
       ])
-      .on("zoom", onZoom);
+      .on("zoom", this.onZoom);
     d3.select(this.anchor).select("svg").call(zoom);
 
     // Initialize the links
@@ -74,5 +70,9 @@ export default class Network2D extends D3Visualization {
       .html(`<strong>${data.name}</strong> (${data.id})`)
       .style("left", event.pageX + 20 + "px")
       .style("top", event.pageY + "px");
+  };
+
+  onZoom = (event) => {
+    this.svg.attr("transform", event.transform);
   };
 }

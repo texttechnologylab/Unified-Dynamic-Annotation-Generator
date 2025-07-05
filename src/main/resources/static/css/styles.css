@@ -1,7 +1,36 @@
+body {
+  font-family: system-ui;
+}
+
+h1 {
+  font-weight: 500;
+}
+
+.container {
+  text-align: center;
+  margin: 0 10rem 0 10rem;
+}
+
+.row {
+  display: flex;
+}
+
+.col {
+  flex: 1 0 0;
+}
+
+.card {
+  border: 2px solid #dee2e6;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  margin: 1rem;
+}
+
 .tooltip {
   position: absolute;
   opacity: 0;
   background-color: white;
+  border: 1px solid #dee2e6;
   border-radius: 0.5rem;
   padding: 0.3rem;
   pointer-events: none;
