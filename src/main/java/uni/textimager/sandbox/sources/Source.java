@@ -1,5 +1,7 @@
 package uni.textimager.sandbox.sources;
 
+import org.jooq.Record;
+import org.jooq.Result;
 import uni.textimager.sandbox.generators.CategoryNumberMapping;
 import uni.textimager.sandbox.generators.Generator;
 
@@ -8,6 +10,12 @@ import java.util.Collection;
 import java.util.List;
 
 public class Source implements SourceInterface {
+
+    private final Result<? extends Record> annotations;
+
+    public Source(Result<? extends Record> annotations) {
+        this.annotations = annotations;
+    }
 
     @Override
     public <T extends Generator> Collection<T> createGeneratorCombi(Collection<Class<T>> generatorClasses) {
@@ -24,7 +32,7 @@ public class Source implements SourceInterface {
 
 
     public static void main(String[] args) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        Source s = new Source();
-        CategoryNumberMapping m = s.createGenerator(CategoryNumberMapping.class);
+        // Source s = new Source();
+        // CategoryNumberMapping m = s.createGenerator(CategoryNumberMapping.class);
     }
 }

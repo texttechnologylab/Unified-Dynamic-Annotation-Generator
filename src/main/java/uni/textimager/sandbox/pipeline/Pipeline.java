@@ -7,11 +7,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 
+@Getter
 public class Pipeline {
 
     private final Map<String, PipelineNode> visualizations;
     private final Map<String, PipelineNode> generators;
-    @Getter
     private final Map<String, PipelineNode> sources;
 
     private final String name;

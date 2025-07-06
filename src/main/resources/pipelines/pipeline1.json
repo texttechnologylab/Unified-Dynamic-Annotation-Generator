@@ -50,7 +50,12 @@
                                 ]
                             }
                         }
-                    ]
+                    ],
+                    "settings": {
+                        "column_begin": "start",
+                        "column_end": "ende",
+                        "column_coarsevalue": "coarseval"
+                    }
                 },{
                     "name": "TextPOS_2",
                     "type": "TextAnnotations",
@@ -103,8 +108,8 @@
             ],
             "derived_generators": [
                {
-                
-               } 
+
+               }
             ],
             "visualizations": [
                 {
