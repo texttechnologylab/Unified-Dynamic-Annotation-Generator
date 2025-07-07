@@ -5,6 +5,7 @@ import org.jooq.*;
 import org.jooq.impl.DSL;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import uni.textimager.sandbox.pipeline.Pipeline;
 
@@ -13,6 +14,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 
 @Component
+@ConditionalOnProperty(name = "app.database-generator.enabled", havingValue = "true", matchIfMissing = true)
 public class SourceBuilder implements ApplicationRunner {
 
     private final DataSource dataSource;

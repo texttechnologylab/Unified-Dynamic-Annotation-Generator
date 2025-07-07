@@ -2,12 +2,14 @@ package uni.textimager.sandbox.example;
 
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import uni.textimager.sandbox.importer.service.DynamicTableService;
 
 import java.util.List;
 
 @Component
+@ConditionalOnProperty(name = "app.database-generator.enabled", havingValue = "true", matchIfMissing = true)
 public class TableLister implements ApplicationRunner {
     private final DynamicTableService dynamicTableService;
 
