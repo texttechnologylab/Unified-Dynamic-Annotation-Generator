@@ -11,6 +11,9 @@ import uni.textimager.sandbox.database.QueryHelper;
 import javax.sql.DataSource;
 import java.sql.SQLException;
 
+// This example demonstrates how to use the QueryHelper class to perform a simple query
+// Uncomment the @Component annotation to enable this example in a Spring Boot application
+// @Component
 public class QueryHelperExample implements ApplicationRunner {
     private final DataSource dataSource;
 
