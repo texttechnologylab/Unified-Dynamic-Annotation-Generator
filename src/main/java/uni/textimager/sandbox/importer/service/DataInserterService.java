@@ -35,15 +35,24 @@ public class DataInserterService {
                     .toList();
             cols.forEach(this::validate);
 
-            String colCsv = String.join(",", cols);
-            String paramCsv = cols.stream().map(c -> ":" + c).collect(Collectors.joining(","));
+            String prefix = table.toUpperCase();
+            List<String> dbCols = cols.stream()
+                    .map(c -> prefix + "_" + c.toUpperCase().replace(":", "_"))
+                    .toList();
+
+            String colCsv = String.join(",", dbCols);
+            String paramCsv = dbCols.stream().map(c -> ":" + c).collect(Collectors.joining(","));
             String sql = "INSERT INTO " + table + "(" + colCsv + ") VALUES(" + paramCsv + ")";
 
             var params = list.stream().map(rec -> {
                 var src = new MapSqlParameterSource();
-                cols.forEach(col -> src.addValue(col, rec.attributes().get(col)));
+                cols.forEach(col -> {
+                    String dbCol = prefix + "_" + col.toUpperCase().replace(":", "_");
+                    src.addValue(dbCol, rec.attributes().get(col));
+                });
                 return src;
             }).toArray(MapSqlParameterSource[]::new);
+
 
             jdbc.batchUpdate(sql, params);
         }
