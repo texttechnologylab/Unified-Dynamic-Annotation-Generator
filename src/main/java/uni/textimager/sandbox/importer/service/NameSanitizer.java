@@ -17,12 +17,12 @@ public class NameSanitizer {
             "volatile", "while"
     ));
     private static final Set<String> SQL_RESERVED = Set.of(
-            "begin", "end", "null", "select", "from", "table", "order", "group", "by", "user", "timestamp", "value"
+            "null", "select", "from", "table", "order", "group", "by", "user", "timestamp", "value"
     );
 
     public String sanitize(String name) {
         String s = name.replaceAll("[^A-Za-z0-9_]", "_");
-        if (Character.isDigit(s.charAt(0))) s = "_" + s;
+        if (s.isEmpty() || Character.isDigit(s.charAt(0))) s = "_" + s;
         if (JAVA_KEYWORDS.contains(s) || SQL_RESERVED.contains(s.toLowerCase())) s = "_" + s;
         return s;
     }
