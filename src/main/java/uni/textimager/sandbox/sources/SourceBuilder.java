@@ -9,13 +9,15 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import uni.textimager.sandbox.database.QueryHelper;
 import uni.textimager.sandbox.pipeline.Pipeline;
+import uni.textimager.sandbox.pipeline.PipelineNode;
 
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Collection;
 
-@Component
-@ConditionalOnProperty(name = "app.database-generator.enabled", havingValue = "true", matchIfMissing = true)
+// @Component
+// @ConditionalOnProperty(name = "app.database-generator.enabled", havingValue = "true", matchIfMissing = true)
 public class SourceBuilder implements ApplicationRunner {
 
     private final DataSource dataSource;
@@ -28,6 +30,11 @@ public class SourceBuilder implements ApplicationRunner {
     public void run(ApplicationArguments args) throws SQLException, IOException {
         Pipeline pipeline = Pipeline.fromJSON("pipelines/pipeline1.json");
         System.out.println("Pipeline loaded: " + pipeline.getName());
+        Collection<PipelineNode> relevantGenerators = pipeline.getGenerators().values();
+        for (PipelineNode sourceNode : pipeline.getSources().values()) {
+            Source source = new Source(sourceNode.getConfig(), relevantGenerators);
+            System.out.println("Source created: " + source.getConfig().get("name"));
+        }
 
         DSLContext create = DSL.using(dataSource.getConnection());
         QueryHelper q = new QueryHelper(create);

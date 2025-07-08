@@ -50,3 +50,9 @@ Diese Settings lassen sich überall in einer settings-Liste setzen
 --------------------------
 - fixedColors: (not used by default) list of 2d lists mapping [category: color], the rest will be set randomly
 - colorPalette: string (not used by default), can be "warm" or "cold" to select the kinds of random colors that will be chosen.
+
+
+1 Source -> 1 SubstringMapping
+------------------------------------------------
+- sofaFile: string (not used by default) - The file that contains the sofa data to be used for the substring mapping.
+- sofaID: string (not used by default) - The ID of the sofa data to be used for the substring mapping.
