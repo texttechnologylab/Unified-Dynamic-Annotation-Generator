@@ -1,6 +1,7 @@
 package uni.textimager.sandbox.sources;
 
 import org.jooq.*;
+import org.jooq.Record;
 import org.jooq.impl.DSL;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -13,7 +14,7 @@ import uni.textimager.sandbox.pipeline.PipelineNode;
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Collection;
+import java.util.Map;
 
 @Component
 @ConditionalOnProperty(name = "app.database-generator.enabled", havingValue = "true", matchIfMissing = true)
@@ -30,14 +31,30 @@ public class SourceBuilder implements ApplicationRunner {
         Pipeline pipeline = Pipeline.fromJSON("pipelines/pipeline1.json");
         System.out.println("Pipeline loaded: " + pipeline.getName());
         DBAccess dbAccess = new DBAccess(dataSource);
-        Collection<PipelineNode> relevantGenerators = pipeline.getGenerators().values();
+        Map<String, PipelineNode> relevantGenerators = pipeline.getFilteredGenerators();
         for (PipelineNode sourceNode : pipeline.getSources().values()) {
-            Source source = new Source(dbAccess, sourceNode.getConfig(), relevantGenerators);
+            Source source = new Source(dbAccess, sourceNode.getConfig(), relevantGenerators, sourceNode.getChildren());
             System.out.println("Source created: " + source.getConfig().get("name"));
         }
 
-        DSLContext create = DSL.using(dataSource.getConnection());
+        DSLContext create = DSL.using(dbAccess.getDataSource().getConnection());
         QueryHelper q = new QueryHelper(create);
+
+        Table<?> pos = q.table("POS");
+        Field<Object> coarse = q.field("pos", "coarsevalue");
+        Field<Integer> count = DSL.count();
+
+        Result<? extends Record> result = q.dsl()
+                .select(coarse, count)
+                .from(pos)
+                .groupBy(coarse)
+                .fetch();
+
+        result.forEach(record -> {
+            System.out.println("COARSEVALUE: " + record.getValue(coarse));
+            System.out.println("COUNT: " + record.getValue(count));
+            System.out.println("-----");
+        });
 
 //        Table<?> pos = q.table("pos");
 //        Field<Object> begin = q.field("pos", "begin");

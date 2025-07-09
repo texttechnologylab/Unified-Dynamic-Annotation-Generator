@@ -13,6 +13,8 @@ public class Pipeline {
     private final Map<String, PipelineNode> visualizations;
     private final Map<String, PipelineNode> generators;
     private final Map<String, PipelineNode> sources;
+    private final Map<String, PipelineNode> filteredGenerators;
+    private final Map<String, PipelineNode> filteredSources;
 
     private final String name;
 
@@ -48,6 +50,20 @@ public class Pipeline {
         this.visualizations = visualizations;
         this.generators = generators;
         this.sources = sources;
+
+        System.out.println("Filtering irrelevant pipeline nodes...");
+        HashMap<String, PipelineNode> filteredSources = new HashMap<>();
+        HashMap<String, PipelineNode> filteredGenerators = new HashMap<>();
+        for (PipelineNode v : visualizations.values()) {
+            filterPipeline(v, filteredSources, filteredGenerators);
+        }
+        System.out.println("Removed Sources:");
+        System.out.println(Arrays.toString(keysOnlyInA(sources, filteredSources)));
+        System.out.println("Removed Generators:");
+        System.out.println(Arrays.toString(keysOnlyInA(generators, filteredGenerators)));
+
+        this.filteredGenerators = filteredGenerators;
+        this.filteredSources = filteredSources;
     }
 
     private static ArrayList<?> generateMapFromJSON(String path) throws IOException {
@@ -96,20 +112,7 @@ public class Pipeline {
             JSONView visualizationsView = pipelineView.get("visualizations");
             HashMap<String, PipelineNode> visualizations = (HashMap<String, PipelineNode>) generatePipelineVisualizationsFromJSONView(visualizationsView, generators);
 
-            // Step 2: Only keep relevant PipelineNodes for Visualizations
-            System.out.println("Filtering irrelevant pipeline nodes...");
-            HashMap<String, PipelineNode> filteredSources = new HashMap<>();
-            HashMap<String, PipelineNode> filteredGenerators = new HashMap<>();
-            for (PipelineNode v : visualizations.values()) {
-                filterPipeline(v, filteredSources, filteredGenerators);
-            }
-            System.out.println("Removed Sources:");
-            System.out.println(Arrays.toString(keysOnlyInA(sources, filteredSources)));
-            System.out.println("Removed Generators:");
-            System.out.println(Arrays.toString(keysOnlyInA(generators, filteredGenerators)));
-
-            // Step 3: Create Pipelines Object
-            return new Pipeline(name, visualizations, filteredGenerators, filteredSources);
+            return new Pipeline(name, visualizations, generators, sources);
 
         } catch (IllegalArgumentException e) {
             throw e;

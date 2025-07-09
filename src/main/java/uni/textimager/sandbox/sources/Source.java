@@ -16,9 +16,11 @@ import uni.textimager.sandbox.pipeline.PipelineNode;
 import uni.textimager.sandbox.pipeline.PipelineNodeType;
 
 
-import javax.sql.DataSource;
+import java.awt.*;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.List;
+import java.util.stream.Collectors;
 
 
 @Getter
@@ -29,7 +31,8 @@ public class Source implements SourceInterface {
 
 
     private final JSONView config;
-    private final Collection<PipelineNode> relevantGenerators;
+    private final Map<String, PipelineNode> relevantGenerators;
+    private final Map<String, PipelineNode> generatorsToBuild;
     private final String name;
     private final String type;
     private final String annotationTypeName;
@@ -39,10 +42,11 @@ public class Source implements SourceInterface {
 
 
 
-    public Source(DBAccess dbAccess, JSONView config, Collection<PipelineNode> relevantGenerators) throws SQLException {
+    public Source(DBAccess dbAccess, JSONView config, Map<String, PipelineNode> relevantGenerators, Map<String, PipelineNode> generatorsToBuild) throws SQLException {
         this.dbAccess = dbAccess;
         this.config = config;
         this.relevantGenerators = relevantGenerators;
+        this.generatorsToBuild = generatorsToBuild;
 
         this.name = config.get("name").toString();
 
@@ -77,6 +81,10 @@ public class Source implements SourceInterface {
     // Don't leave out filtered generators that are part of a combi with at least one relevant generator to keep visualization results consistent
     @Override
     public <T extends Generator> Collection<T> createGenerators() {
+        // Iterate through all generators, skip combi for now.
+        // Run the function createGeneratorsFromPipelineNodes for each generator
+
+
         if (type.equals(DEFAULT_TYPE_POS)) {
 
         } else if (type.equals(DEFAULT_TYPE_LEMMA)) {
@@ -88,7 +96,7 @@ public class Source implements SourceInterface {
     }
 
     // Recursive if wanted combi is not defined TODO: Print warning in that case
-    private <T extends Generator> Collection<T> createGeneratorsFromPipelineNodes(Collection<PipelineNode> generators) {
+    private <T extends Generator> Collection<T> createGeneratorsFromPipelineNodes(Collection<PipelineNode> generators) throws SQLException {
         if (generators.isEmpty()) {
             System.out.println("Warning: empty generator collection for source: " + name);
             return List.of();
@@ -101,22 +109,22 @@ public class Source implements SourceInterface {
             String generatorType = generator.getConfig().get(type).toString();
             switch (generatorType) {
                 case "CategoryNumberMapping", "CategoryNumberColorMapping":
-                    String featureNameCategory;
-                    switch (type) {
-                        case DEFAULT_TYPE_POS:
-                            featureNameCategory = featureNames.get("coarseValue");
-                            break;
-                        case DEFAULT_TYPE_LEMMA:
-                            featureNameCategory = featureNames.get("value");
-                            break;
-                        default:
-                            featureNameCategory = featureNames.get("value");
-                            break;
-                    }
-                    createCategoryNumberMapping(featureNameCategory);
+                    String featureNameCategory = switch (type) {
+                        case DEFAULT_TYPE_POS -> featureNames.get("coarseValue");
+                        case DEFAULT_TYPE_LEMMA -> featureNames.get("value");
+                        default -> featureNames.get("value");
+                    };
+                    HashMap<String, Double> categoryCountMap = createCategoryCountMap(featureNameCategory);
                     if (generatorType.equals("CategoryNumberColorMapping")) {
+                        List<String> sortedCategories = categoryCountMap.entrySet().stream()
+                                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                                .map(Map.Entry::getKey)
+                                .collect(Collectors.toList());
+                        HashMap<String, Color> categoryColorMap = categoryColorMapFromCategories(sortedCategories);
+                        return List.of((T) new CategoryNumberColorMapping(categoryCountMap, categoryColorMap));
+                    } else {
+                        return List.of((T) new CategoryNumberMapping(categoryCountMap));
                     }
-                    break;
                 case "SubstringColorMapping":
                     break;
                 default:
@@ -126,10 +134,63 @@ public class Source implements SourceInterface {
         return List.of();
     }
 
-    private HashMap<String, Double> createCategoryNumberMapping(String featureNameCategory) {
-        HashMap<String, Double> categoryNumberMapping = new HashMap<>();
+    private HashMap<String, Double> createCategoryCountMap(String featureNameCategory) throws SQLException {
+        DSLContext create = DSL.using(dbAccess.getDataSource().getConnection());
+        QueryHelper q = new QueryHelper(create);
 
-        return categoryNumberMapping;
+        Table<?> table = q.table(annotationTypeName);
+        Field<Object> category = q.field(annotationTypeName, featureNameCategory);
+        Field<Integer> count = DSL.count();
+
+        Result<? extends Record> result = q.dsl()
+                .select(category, count)
+                .from(table)
+                .groupBy(category)
+                .fetch();
+
+        HashMap<String, Double> categoryCountMapping = new HashMap<>();
+        result.forEach(record -> categoryCountMapping.put(record.getValue(category).toString(), record.getValue(count).doubleValue()));
+        return categoryCountMapping;
+    }
+
+    private HashMap<String, Color> categoryColorMapFromCategories(List<String> categories) {
+        List<Color> distinctColors = Arrays.asList(
+                Color.RED,
+                Color.BLUE,
+                Color.GREEN,
+                Color.MAGENTA,
+                Color.ORANGE,
+                Color.CYAN,
+                Color.YELLOW,
+                Color.PINK,
+                Color.GRAY,
+                new Color(0, 128, 128),
+                new Color(128, 0, 128),
+                new Color(128, 128, 0),
+                new Color(0, 0, 128),
+                new Color(255, 105, 180),
+                new Color(139, 69, 19),
+                new Color(0, 255, 127),
+                new Color(255, 165, 0),
+                new Color(0, 191, 255),
+                new Color(154, 205, 50)
+        );
+
+        HashMap<String, Color> categoryColorMap = new HashMap<>();
+        Iterator<Color> colorIterator = distinctColors.iterator();
+
+        for (String category : categories) {
+            Color color;
+            if (colorIterator.hasNext()) {
+                color = colorIterator.next();
+            } else {
+                // Random colors if we run out of predefined colors
+                color = new Color((int)(Math.random() * 0x1000000));
+            }
+            categoryColorMap.put(category, color);
+        }
+
+        return categoryColorMap;
     }
 
     private boolean containsOnlyGenerators(Collection<PipelineNode> nodes) {
