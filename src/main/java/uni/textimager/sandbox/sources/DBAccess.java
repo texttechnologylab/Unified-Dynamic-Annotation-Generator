@@ -1,0 +1,51 @@
+package uni.textimager.sandbox.sources;
+
+import lombok.Getter;
+import org.jooq.DSLContext;
+import org.jooq.Field;
+import org.jooq.Record;
+import org.jooq.Result;
+import org.jooq.Table;
+import org.jooq.impl.DSL;
+import uni.textimager.sandbox.database.QueryHelper;
+
+import javax.sql.DataSource;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+
+public class DBAccess {
+    @Getter
+    private final DataSource dataSource;
+
+    private Collection<String> sourceFiles;
+
+
+    public DBAccess(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    public Collection<String> getSourceFiles() throws SQLException {
+        if (sourceFiles == null) {
+            DSLContext create = DSL.using(dataSource.getConnection());
+            QueryHelper q = new QueryHelper(create);
+
+            Table<?> nullTable = q.table("_null");
+            Field<Object> file = q.field("_null", "filename");
+
+            Result<? extends org.jooq.Record> result = q.dsl()
+                    .selectDistinct(file)
+                    .from(nullTable)
+                    .fetch();
+
+            sourceFiles = new ArrayList<>();
+            for (Record record : result) {
+                Object value = record.getValue(file);
+                if (value != null) {
+                    sourceFiles.add(value.toString());
+                }
+            }
+        }
+        return sourceFiles;
+    }
+}

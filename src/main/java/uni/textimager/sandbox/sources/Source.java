@@ -1,11 +1,23 @@
 package uni.textimager.sandbox.sources;
 
 import lombok.Getter;
+import org.jooq.DSLContext;
+import org.jooq.Field;
+import org.jooq.Record;
+import org.jooq.Result;
+import org.jooq.Table;
+import org.jooq.impl.DSL;
+import uni.textimager.sandbox.database.QueryHelper;
+import uni.textimager.sandbox.generators.CategoryNumberColorMapping;
+import uni.textimager.sandbox.generators.CategoryNumberMapping;
 import uni.textimager.sandbox.generators.Generator;
 import uni.textimager.sandbox.pipeline.JSONView;
 import uni.textimager.sandbox.pipeline.PipelineNode;
 import uni.textimager.sandbox.pipeline.PipelineNodeType;
 
+
+import javax.sql.DataSource;
+import java.sql.SQLException;
 import java.util.*;
 
 
@@ -16,19 +28,19 @@ public class Source implements SourceInterface {
     public static final String DEFAULT_TYPE_LEMMA = "Lemma";
 
 
-
     private final JSONView config;
     private final Collection<PipelineNode> relevantGenerators;
     private final String name;
     private final String type;
     private final String annotationTypeName;
     private final Map<String, String> featureNames;
-    private final Collection<String> sourceFilesWhitelist;
-    private final Collection<String> sourceFilesBlacklist;
+    private final Collection<String> sourceFiles;
+    private final DBAccess dbAccess;
 
 
 
-    public Source(JSONView config, Collection<PipelineNode> relevantGenerators) {
+    public Source(DBAccess dbAccess, JSONView config, Collection<PipelineNode> relevantGenerators) throws SQLException {
+        this.dbAccess = dbAccess;
         this.config = config;
         this.relevantGenerators = relevantGenerators;
 
@@ -51,8 +63,15 @@ public class Source implements SourceInterface {
         this.featureNames.putAll(configGetOverriddenFeatureNames());
 
         // Initialize source files
-        this.sourceFilesWhitelist = configGetSourceFiles("sourceFilesWhitelist");
-        this.sourceFilesBlacklist = configGetSourceFiles("sourceFilesBlacklist");
+        Collection<String> sourceFilesWhitelist = configGetSourceFiles("sourceFilesWhitelist");
+        Collection<String> sourceFilesBlacklist = configGetSourceFiles("sourceFilesBlacklist");
+        // If no source files are provided, use all files from the database
+        if (sourceFilesWhitelist.isEmpty()) {
+            sourceFilesWhitelist.addAll(dbGetAllSourceFiles());
+        }
+        // Remove blacklisted files from the whitelist
+        sourceFilesWhitelist.removeAll(sourceFilesBlacklist);
+        this.sourceFiles = sourceFilesWhitelist;
     }
 
     // Don't leave out filtered generators that are part of a combi with at least one relevant generator to keep visualization results consistent
@@ -82,14 +101,35 @@ public class Source implements SourceInterface {
             String generatorType = generator.getConfig().get(type).toString();
             switch (generatorType) {
                 case "CategoryNumberMapping", "CategoryNumberColorMapping":
+                    String featureNameCategory;
+                    switch (type) {
+                        case DEFAULT_TYPE_POS:
+                            featureNameCategory = featureNames.get("coarseValue");
+                            break;
+                        case DEFAULT_TYPE_LEMMA:
+                            featureNameCategory = featureNames.get("value");
+                            break;
+                        default:
+                            featureNameCategory = featureNames.get("value");
+                            break;
+                    }
+                    createCategoryNumberMapping(featureNameCategory);
+                    if (generatorType.equals("CategoryNumberColorMapping")) {
+                    }
                     break;
-                case "Lemma":
+                case "SubstringColorMapping":
                     break;
                 default:
                     throw new IllegalArgumentException("Unknown generator type: " + generator.getConfig().get(type) + " for source: " + name);
             }
         }
         return List.of();
+    }
+
+    private HashMap<String, Double> createCategoryNumberMapping(String featureNameCategory) {
+        HashMap<String, Double> categoryNumberMapping = new HashMap<>();
+
+        return categoryNumberMapping;
     }
 
     private boolean containsOnlyGenerators(Collection<PipelineNode> nodes) {
@@ -131,6 +171,10 @@ public class Source implements SourceInterface {
         } catch (Exception e) {
             return new ArrayList<>();
         }
+    }
+
+    private Collection<String> dbGetAllSourceFiles() throws SQLException {
+        return dbAccess.getSourceFiles();
     }
 
 
