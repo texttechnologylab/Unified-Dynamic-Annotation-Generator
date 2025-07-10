@@ -28,6 +28,9 @@ public class NameSanitizer {
     }
 
     public String toClassName(String tag) {
+        if ("cas:NULL".equals(tag)) {
+            return "CAS";
+        }
         String[] parts = tag.split(":");
         String base = parts[parts.length - 1];
         String cname = base.substring(0, 1).toUpperCase() + base.substring(1);
