@@ -9,19 +9,47 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+/**
+ * Service for inserting batches of EntityRecord objects into database tables.
+ * Groups records by their tag (table name), validates identifiers,
+ * constructs batch-insert SQL statements, and executes them.
+ */
 @Service
 public class DataInserterService {
     private static final Pattern IDENT = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
     private final NamedParameterJdbcTemplate jdbc;
 
+    /**
+     * Construct service with a NamedParameterJdbcTemplate.
+     *
+     * @param jdbc the JDBC template for named-parameter access
+     */
     public DataInserterService(NamedParameterJdbcTemplate jdbc) {
         this.jdbc = jdbc;
     }
 
+    /**
+     * Validate that the given identifier matches SQL naming rules.
+     *
+     * @param id the identifier to validate
+     * @throws IllegalArgumentException if identifier is invalid
+     */
     private void validate(String id) {
         if (!IDENT.matcher(id).matches()) throw new IllegalArgumentException(id);
     }
 
+    /**
+     * Insert a list of EntityRecord into their respective tables.
+     * <ul>
+     *   <li>Group records by tag (table name).</li>
+     *   <li>Validate table names and column names against IDENT pattern.</li>
+     *   <li>Generate column list and parameter list prefixed with table name.</li>
+     *   <li>Execute batch update for each group.</li>
+     * </ul>
+     *
+     * @param records list of EntityRecord instances to insert
+     * @throws IllegalArgumentException if any table or column name is invalid
+     */
     public void insertRecords(List<EntityRecord> records) {
         var grouped = records.stream().collect(Collectors.groupingBy(EntityRecord::tag));
         for (var entry : grouped.entrySet()) {

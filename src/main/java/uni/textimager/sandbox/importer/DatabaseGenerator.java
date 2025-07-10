@@ -20,6 +20,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
+/**
+ * Application runner that generates database schema and populates tables from XMI files.
+ * <ul>
+ *   <li>Reads .xmi files from configured input directory.</li>
+ *   <li>Parses each file into EntityRecord objects.</li>
+ *   <li>Computes maximum attribute lengths per table for schema generation.</li>
+ *   <li>Creates or updates tables based on computed lengths.</li>
+ *   <li>Inserts all parsed records into respective tables.</li>
+ *   <li>Creates metadata table TableNames and records each table name.</li>
+ * </ul>
+ */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @ConditionalOnProperty(name = "app.database-generator.enabled", havingValue = "true", matchIfMissing = true)
@@ -34,6 +45,16 @@ public class DatabaseGenerator implements ApplicationRunner {
     @Value("${app.input-dir}")
     private String inputDir;
 
+    /**
+     * Construct DatabaseGenerator with required services and JDBC components.
+     *
+     * @param jdbc         JdbcTemplate for executing SQL statements
+     * @param dialect      database-specific SQL dialect implementation
+     * @param parser       service to parse XMI files into EntityRecord objects
+     * @param sanitizer    utility to sanitize tag and attribute names
+     * @param schemaGen    service to generate database schema based on attribute lengths
+     * @param dataInserter service to batch-insert EntityRecord instances into tables
+     */
     public DatabaseGenerator(
             JdbcTemplate jdbc,
             SqlDialect dialect,
@@ -49,6 +70,20 @@ public class DatabaseGenerator implements ApplicationRunner {
         this.dataInserter = dataInserter;
     }
 
+    /**
+     * Execute on application startup:
+     * <ol>
+     *   <li>Scan input directory for .xmi files.</li>
+     *   <li>Parse each file and collect EntityRecord objects.</li>
+     *   <li>Track maximum string lengths per table column for schema sizing.</li>
+     *   <li>Generate or update tables via SchemaGeneratorService.</li>
+     *   <li>Insert parsed records via DataInserterService.</li>
+     *   <li>Create metadata table "TableNames" and insert table names.</li>
+     * </ol>
+     *
+     * @param args application arguments (ignored)
+     * @throws Exception on file, I/O or parsing errors
+     */
     @Override
     public void run(ApplicationArguments args) throws Exception {
         Map<String, Map<String, Integer>> maxLengths = new LinkedHashMap<>();
