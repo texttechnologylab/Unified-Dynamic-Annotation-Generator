@@ -2,14 +2,14 @@ package uni.textimager.sandbox.generators;
 
 import java.awt.*;
 import java.util.ArrayList;
-import java.util.Map;
+import java.util.Collection;
 
 public class SubstringColorMapping extends Generator implements SubstringColorMappingInterface {
     private String text;
-    private ArrayList<ColoredSubstring> coloredSubstrings;
+    private Collection<ColoredSubstring> coloredSubstrings;
 
 
-    public SubstringColorMapping(String text, ArrayList<ColoredSubstring> coloredSubstrings) {
+    public SubstringColorMapping(String text, Collection<ColoredSubstring> coloredSubstrings) {
         this.text = text;
         this.coloredSubstrings = coloredSubstrings;
     }

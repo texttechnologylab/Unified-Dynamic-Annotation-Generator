@@ -10,3 +10,4 @@ TODO
 
 TODO Vielleicht
 - Mehrere Generatoren bei Visualization möglich (intern gleich behandeln wie Kombination von mehreren Generatoren)
+- Man kann die Featurenamen auch nochmal bei Erstellung des Generators überschreiben z.B. categoryFeature1 = "coarseValue", categoryFeature2 = "posValue" bei generator mit mehreren Kategorien

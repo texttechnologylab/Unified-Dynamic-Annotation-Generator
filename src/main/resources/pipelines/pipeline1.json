@@ -4,8 +4,71 @@
             "name": "main",
             "sources": [
                 {
-                    "name": "TextPOS_1",
-                    "type": "TextAnnotations",
+                    "name": "MyPOS",
+                    "type": "POS",
+                    "settings": {
+                        "annotationTypeName": "POSannotation",
+                        "sourceFilesWhitelist": ["ID21200100.xmi", "ID21200300.xmi"],
+                        "sourceFilesBlacklist": []
+                    },
+                    "createsGenerators": [
+                        {
+                            "type": "combi",
+                            "createsGenerators": [
+                                {
+                                    "type": "SubstringColorMapping",
+                                    "name": "Textfaerbung_Rede1",
+                                    "settings": {
+                                        "categoriesBlacklist": [
+                                            "article"
+                                        ],
+                                        "sofaFile": "ID21200100.xmi",
+                                        "sofaID": "2"
+                                    }
+                                },
+                                {
+                                    "type": "SubstringColorMapping",
+                                    "name": "Textfaerbung_Rede2",
+                                    "settings": {
+                                        "categoriesBlacklist": [
+                                            "article"
+                                        ],
+                                        "sofaFile": "ID21200300.xmi",
+                                        "sofaID": "2"
+                                    }
+                                },
+                                {
+                                    "type": "CategoryNumberColorMapping",
+                                    "name": "Gesamtverteilung",
+                                    "settings": {
+                                        "numberType": "percentage"
+                                    }
+                                }
+                            ],
+                            "settings": {
+                                "colorPalette": "warm",
+                                "categoriesWhitelist": [
+                                    "noun",
+                                    "verb",
+                                    "adjective",
+                                    "article"
+                                ],
+                                "fixedColors": [
+                                    ["noun", "FF0000"],
+                                    ["verb", "FFA500"]
+                                ]
+                            }
+                        }
+                    ],
+                    "featureNames": {
+                        "begin": "start",
+                        "end": "ende",
+                        "coarseValue": "coarseval",
+                        "xmi:id": "xmi_id"
+                    }
+                },{
+                    "name": "MySentences",
+                    "type": "Sentence",
                     "createsGenerators": [
                         {
                             "type": "combi",
@@ -51,10 +114,13 @@
                             }
                         }
                     ],
+                    "featureNames": {
+                        "begin": "start",
+                        "end": "ende",
+                        "coarseValue": "coarseval",
+                        "xmi:id": "xmi_id"
+                    },
                     "settings": {
-                        "column_begin": "start",
-                        "column_end": "ende",
-                        "column_coarsevalue": "coarseval"
                     }
                 },{
                     "name": "TextPOS_2",
@@ -116,7 +182,7 @@
                     "name": "My CakeDiagram",
                     "type": "CategoricalChart.PieChart",
                     "generator": {
-                        "name": "CategoryColorNumberMapping_1"
+                        "name": "Gesamtverteilung"
                     },
                     "settings": {
                         "fontsizeLabels": "12",
