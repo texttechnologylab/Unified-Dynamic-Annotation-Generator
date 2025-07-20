@@ -35,6 +35,7 @@ Diese Settings lassen sich überall in einer settings-Liste setzen
 - multiplyByGradient: color string (not used by default) - Used if we want to change all colors by a certain gradient
 
 1 CategoryMapping -> 1 CategoryMapping
+(the settings here can also be set in 1 Source -> X Generators and will explicitly be called as Mapping -> Mapping)
 --------------------------------------
 - categoryWhitelist: (not used by default) list all categories that stay a part of this mapping. Remove all others
 - categoryBlacklist: (not used by default) remove the categories from this list from the mapping.
@@ -42,9 +43,8 @@ Diese Settings lassen sich überall in einer settings-Liste setzen
 
 1 Source -> X Generators (X including 1)
 ------------------------
-(- categoryWhitelist: (not used by default) list all categories that stay a part of this mapping. Remove all others) Needed? can be set in the CategoryMapping copy instead.
-(- categoryBlacklist: (not used by default) remove the categories from this list from the mapping.) Needed? can be set in the CategoryMapping copy instead.
-- (We still need an option to if we also want to count/read/map null categories or not. Also a string setting for the null category name would be useful.)
+- sourceFilesWhitelist: extra whitelist for a specific generator
+- sourceFilesBlacklist: extra blacklist for a specific generator
 
 
 1 Source -> 1 ColorMapping

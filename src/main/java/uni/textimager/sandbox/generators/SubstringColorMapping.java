@@ -1,5 +1,7 @@
 package uni.textimager.sandbox.generators;
 
+import lombok.Getter;
+
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,41 +37,30 @@ public class SubstringColorMapping extends Generator implements SubstringColorMa
 
 
     // This class stands for a colored part of a text
+    @Getter
     public static class ColoredSubstring {
-        private final int start; // inclusive
+        private final int begin; // inclusive
         private final int end;  // exclusive
         private final Color color;
 
-        public ColoredSubstring(int start, int end, Color color) {
-            if (start < 0 || end <= start) {
-                throw new IllegalArgumentException("Invalid range: start=" + start + ", end=" + end);
+        public ColoredSubstring(int begin, int end, Color color) {
+            if (begin < 0 || end <= begin) {
+                throw new IllegalArgumentException("Invalid range: begin=" + begin + ", end=" + end);
             }
-            this.start = start;
+            this.begin = begin;
             this.end = end;
             this.color = color;
         }
 
         public ColoredSubstring(ColoredSubstring copyOf) {
-            this.start = copyOf.start;
+            this.begin = copyOf.begin;
             this.end = copyOf.end;
             this.color = new Color(copyOf.color.getRGB(), true);
         }
 
-        public int getStart() {
-            return start;
-        }
-
-        public int getEnd() {
-            return end;
-        }
-
-        public Color getColor() {
-            return color;
-        }
-
         @Override
         public String toString() {
-            return "ColoredSubstring{start=" + start + ", end=" + end + ", color=" + color + '}';
+            return "ColoredSubstring{begin=" + begin + ", end=" + end + ", color=" + color + '}';
         }
     }
 }

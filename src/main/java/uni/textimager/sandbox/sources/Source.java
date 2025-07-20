@@ -8,9 +8,7 @@ import org.jooq.Result;
 import org.jooq.Table;
 import org.jooq.impl.DSL;
 import uni.textimager.sandbox.database.QueryHelper;
-import uni.textimager.sandbox.generators.CategoryNumberColorMapping;
-import uni.textimager.sandbox.generators.CategoryNumberMapping;
-import uni.textimager.sandbox.generators.Generator;
+import uni.textimager.sandbox.generators.*;
 import uni.textimager.sandbox.pipeline.JSONView;
 import uni.textimager.sandbox.pipeline.PipelineNode;
 import uni.textimager.sandbox.pipeline.PipelineNodeType;
@@ -20,7 +18,6 @@ import java.awt.*;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.List;
-import java.util.stream.Collectors;
 
 
 @Getter
@@ -80,23 +77,32 @@ public class Source implements SourceInterface {
 
     // Don't leave out filtered generators that are part of a combi with at least one relevant generator to keep visualization results consistent
     @Override
-    public <T extends Generator> Collection<T> createGenerators() {
+    public <T extends Generator> Collection<T> createGenerators() throws SQLException {
         // Iterate through all generators, skip combi for now.
         // Run the function createGeneratorsFromPipelineNodes for each generator
 
+        ArrayList<T> generators = new ArrayList<>();
 
-        if (type.equals(DEFAULT_TYPE_POS)) {
-
-        } else if (type.equals(DEFAULT_TYPE_LEMMA)) {
-
-        } else {
-            // Default case still supports some basic generators
+        JSONView createsGenerators = config.get("createsGenerators");
+        for (JSONView generatorEntry : createsGenerators) {
+            String generatorType = generatorEntry.get("type").toString();
+            if (generatorType.equals("combi")) {
+                // Skip combi for now, we will handle it later TODO: Implement combi handling
+                continue;
+            }
+            if (!relevantGenerators.containsKey(generatorEntry.get("name").toString())) {
+                System.out.println("Skipping irrelevant generator: " + generatorEntry.get("name"));
+                continue;
+            }
+            PipelineNode generatorNode = generatorsToBuild.get(generatorEntry.get("name").toString());
+            generators.addAll(createGenerators(List.of(generatorNode), generatorEntry));
         }
-        return List.of();
+
+        return generators;
     }
 
     // Recursive if wanted combi is not defined TODO: Print warning in that case
-    private <T extends Generator> Collection<T> createGeneratorsFromPipelineNodes(Collection<PipelineNode> generators) throws SQLException {
+    private <T extends Generator> Collection<T> createGenerators(Collection<PipelineNode> generators, JSONView config) throws SQLException {
         if (generators.isEmpty()) {
             System.out.println("Warning: empty generator collection for source: " + name);
             return List.of();
@@ -106,27 +112,34 @@ public class Source implements SourceInterface {
         }
         if (generators.size() == 1) {
             PipelineNode generator = generators.iterator().next();
-            String generatorType = generator.getConfig().get(type).toString();
+            String generatorType = generator.getConfig().get("type").toString();
+            HashMap<String, Double> categoryCountMap;
             switch (generatorType) {
                 case "CategoryNumberMapping", "CategoryNumberColorMapping":
-                    String featureNameCategory = switch (type) {
-                        case DEFAULT_TYPE_POS -> featureNames.get("coarseValue");
-                        case DEFAULT_TYPE_LEMMA -> featureNames.get("value");
-                        default -> featureNames.get("value");
-                    };
-                    HashMap<String, Double> categoryCountMap = createCategoryCountMap(featureNameCategory);
+                    categoryCountMap = dbCreateCategoryCountMap(generateFeatureNameCategory());
                     if (generatorType.equals("CategoryNumberColorMapping")) {
-                        List<String> sortedCategories = categoryCountMap.entrySet().stream()
-                                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
-                                .map(Map.Entry::getKey)
-                                .collect(Collectors.toList());
-                        HashMap<String, Color> categoryColorMap = categoryColorMapFromCategories(sortedCategories);
-                        return List.of((T) new CategoryNumberColorMapping(categoryCountMap, categoryColorMap));
+                        return List.of((T) new CategoryNumberColorMapping(categoryCountMap));
                     } else {
                         return List.of((T) new CategoryNumberMapping(categoryCountMap));
                     }
-                case "SubstringColorMapping":
-                    break;
+                case "SubstringCategoryMapping", "SubstringColorMapping":
+                    String configSofaFile = null;
+                    String configSofaID = null;
+                    try { configSofaFile = config.get("settings").get("sofaFile").toString(); } catch (Exception ignored) {}
+                    try { configSofaID = config.get("settings").get("sofaID").toString(); } catch (Exception ignored) {}
+                    String[] sofa = dbGetSofa(configSofaFile, configSofaID);
+                    String sofaFile = sofa[0];
+                    String sofaID = sofa[1];
+                    String sofaString = sofa[2];
+
+                    String featureNameCategory = generateFeatureNameCategory();
+                    if (generatorType.equals("SubstringColorMapping")) {
+                        categoryCountMap = dbCreateCategoryCountMap(featureNameCategory);
+                        HashMap<String, Color> categoryColorMap = new CategoryNumberColorMapping(categoryCountMap).getCategoryColorMap(); // Dummy generator, use it to give more basic colors to more common categories
+                        return List.of((T) new SubstringColorMapping(sofaString, dbCreateColoredSubstrings(featureNameCategory, sofaFile, sofaID, categoryColorMap)));
+                    } else {
+                        return List.of((T) new SubstringCategoryMapping(sofaString, dbCreateCategorizedSubstrings(featureNameCategory, sofaFile, sofaID)));
+                    }
                 default:
                     throw new IllegalArgumentException("Unknown generator type: " + generator.getConfig().get(type) + " for source: " + name);
             }
@@ -134,17 +147,69 @@ public class Source implements SourceInterface {
         return List.of();
     }
 
-    private HashMap<String, Double> createCategoryCountMap(String featureNameCategory) throws SQLException {
+    private String generateFeatureNameCategory() {
+        return switch (type) {
+            case DEFAULT_TYPE_POS -> featureNames.get("coarseValue");
+            case DEFAULT_TYPE_LEMMA -> featureNames.get("value");
+            default -> featureNames.get("value");
+        };
+    }
+
+
+    private ArrayList<SubstringColorMapping.ColoredSubstring> dbCreateColoredSubstrings(String featureNameCategory, String sofaFile, String sofaID, HashMap<String, Color> categoryColorMap) throws SQLException {
+        ArrayList<SubstringCategoryMapping.CategorizedSubstring> categorizedSubstrings = dbCreateCategorizedSubstrings(featureNameCategory, sofaFile, sofaID);
+        ArrayList<SubstringColorMapping.ColoredSubstring> coloredSubstrings = new ArrayList<>();
+        for (SubstringCategoryMapping.CategorizedSubstring s : categorizedSubstrings) {
+            coloredSubstrings.add(new SubstringColorMapping.ColoredSubstring(s.getBegin(), s.getEnd(), categoryColorMap.get(s.getCategory())));
+        }
+        return coloredSubstrings;
+    }
+
+    private ArrayList<SubstringCategoryMapping.CategorizedSubstring> dbCreateCategorizedSubstrings(String featureNameCategory, String sofaFile, String sofaID) throws SQLException {
+        DSLContext create = DSL.using(dbAccess.getDataSource().getConnection());
+        QueryHelper q = new QueryHelper(create);
+
+        Table<?> table            = q.table(annotationTypeName);
+        Field<Object> category    = q.field(annotationTypeName, featureNameCategory);
+        Field<Object> begin       = q.field(annotationTypeName, featureNames.get("begin"));
+        Field<Object> end         = q.field(annotationTypeName, featureNames.get("end"));
+        Field<Object> filename    = q.field(annotationTypeName, "filename");
+        Field<Object> sofa        = q.field(annotationTypeName, featureNames.get("sofa"));
+
+        Result<? extends Record> result = q.dsl()
+                .select(category, begin, end)
+                .from(table)
+                .where(filename.equalIgnoreCase(sofaFile)
+                        .and(sofa.eq(sofaID)))
+                .fetch();
+
+        ArrayList<SubstringCategoryMapping.CategorizedSubstring> categorizedSubstrings = new ArrayList<>();
+        for (Record record : result) {
+            int substringBegin = record.get(begin, Integer.class);
+            int substringEnd = record.get(end, Integer.class);
+            String substringCategory = record.get(category, String.class);
+
+            categorizedSubstrings.add(new SubstringCategoryMapping.CategorizedSubstring(substringBegin, substringEnd, substringCategory));
+        }
+
+        return categorizedSubstrings;
+    }
+
+
+
+    private HashMap<String, Double> dbCreateCategoryCountMap(String featureNameCategory) throws SQLException {
         DSLContext create = DSL.using(dbAccess.getDataSource().getConnection());
         QueryHelper q = new QueryHelper(create);
 
         Table<?> table = q.table(annotationTypeName);
         Field<Object> category = q.field(annotationTypeName, featureNameCategory);
+        Field<Object> filename = q.field(annotationTypeName, "filename");
         Field<Integer> count = DSL.count();
 
         Result<? extends Record> result = q.dsl()
                 .select(category, count)
                 .from(table)
+                .where(filename.in(sourceFiles))
                 .groupBy(category)
                 .fetch();
 
@@ -153,44 +218,47 @@ public class Source implements SourceInterface {
         return categoryCountMapping;
     }
 
-    private HashMap<String, Color> categoryColorMapFromCategories(List<String> categories) {
-        List<Color> distinctColors = Arrays.asList(
-                Color.RED,
-                Color.BLUE,
-                Color.GREEN,
-                Color.MAGENTA,
-                Color.ORANGE,
-                Color.CYAN,
-                Color.YELLOW,
-                Color.PINK,
-                Color.GRAY,
-                new Color(0, 128, 128),
-                new Color(128, 0, 128),
-                new Color(128, 128, 0),
-                new Color(0, 0, 128),
-                new Color(255, 105, 180),
-                new Color(139, 69, 19),
-                new Color(0, 255, 127),
-                new Color(255, 165, 0),
-                new Color(0, 191, 255),
-                new Color(154, 205, 50)
-        );
-
-        HashMap<String, Color> categoryColorMap = new HashMap<>();
-        Iterator<Color> colorIterator = distinctColors.iterator();
-
-        for (String category : categories) {
-            Color color;
-            if (colorIterator.hasNext()) {
-                color = colorIterator.next();
-            } else {
-                // Random colors if we run out of predefined colors
-                color = new Color((int)(Math.random() * 0x1000000));
+    private String[] dbGetSofa(String sofaFile, String sofaID) throws SQLException {
+        if (sofaFile != null) sofaFile = sofaFile.trim();
+        if (sofaID != null) sofaID = sofaID.trim();
+        String sourceFile = "";
+        if (sourceFiles.size() == 1) {
+            sourceFile = sourceFiles.iterator().next();
+            if (sofaFile != null && !sourceFile.equalsIgnoreCase(sofaFile)) {
+                System.out.println("Warning: User-entered sofaFile " + sofaFile + " does not exist in this source, choosing source's only source-file " + sourceFile + " instead.");
             }
-            categoryColorMap.put(category, color);
+        } else if (sourceFiles.size() > 1) {
+            String search = sofaFile;
+            if (sourceFiles.stream().anyMatch(s -> s.equalsIgnoreCase(search))) {
+                sourceFile = sofaFile;
+            } else {
+                throw new IllegalArgumentException("User-entered sofaFile " + sofaFile + " does not exist in this source. Can't decide on SOFA as this source has multiple source-files.");
+            }
+        }
+        // From here we have a sourceFile for our SOFA.
+        DSLContext create = DSL.using(dbAccess.getDataSource().getConnection());
+        QueryHelper q = new QueryHelper(create);
+
+        Table<?> table = q.table("SOFA");
+        Field<Object> sofastring = q.field("SOFA", "sofastring");
+        Field<Object> filename = q.field("SOFA", "filename");
+
+        List<Object> sofastringList = q.dsl()
+                .select(sofastring)
+                .from(table)
+                .where(filename.equalIgnoreCase(sourceFile))
+                .fetch(sofastring);
+
+        String sofaString = null;
+        if (sofastringList.isEmpty()) {
+            throw new IllegalArgumentException("No SOFA found in database for file " + sourceFile);
+        } else if (sofastringList.size() == 1) {
+            sofaString = (String) sofastringList.iterator().next();
+        } else {
+            // TODO: Handle multiple SOFAs in one file if sofaID is set
         }
 
-        return categoryColorMap;
+        return new String[] {sourceFile, "2", sofaString}; // TODO: don't hardcode sofaID, but use the one from the config if it exists (or find it if there is only one)
     }
 
     private boolean containsOnlyGenerators(Collection<PipelineNode> nodes) {

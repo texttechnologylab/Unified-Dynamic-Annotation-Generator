@@ -1,0 +1,89 @@
+{
+    "pipelines": [
+        {
+            "name": "main",
+            "sources": [
+                {
+                    "name": "MyPOS",
+                    "type": "POS",
+                    "settings": {
+                        "sourceFilesWhitelist": ["ID21200100.xmi"],
+                        "sourceFilesBlacklist": []
+                    },
+                    "createsGenerators": [
+                        {
+                            "type": "CategoryNumberColorMapping",
+                            "name": "Gesamtverteilung",
+                            "settings": {
+                                "categoriesBlacklist": [
+                                    "article"
+                                ],
+                                "fixedColors": [
+                                    ["noun", "FF0000"],
+                                    ["verb", "FFA500"]
+                                ]
+                            }
+                        },{
+                            "type": "SubstringCategoryMapping",
+                            "name": "Textfaerbung",
+                            "settings": {
+                                "categoriesBlacklist": [
+                                    "article"
+                                ],
+                                "fixedColors": [
+                                    ["noun", "FF0000"],
+                                    ["verb", "FFA500"]
+                                ]
+                            }
+                        },{
+                            "type": "CategoryNumberMapping",
+                            "name": "Gesamtverteilung2",
+                            "settings": {
+                                "categoriesBlacklist": [
+                                    "article"
+                                ],
+                                "fixedColors": [
+                                    ["noun", "FF0000"],
+                                    ["verb", "FFA500"]
+                                ]
+                            }
+                        }
+
+                    ]
+                }
+            ],
+            "derived_generators": [
+               {
+
+               }
+            ],
+            "visualizations": [
+                {
+                    "name": "My CakeDiagram 2",
+                    "type": "CategoricalChart.PieChart",
+                    "generator": {
+                        "name": "Textfaerbung"
+                    },
+                    "settings": {
+                        "fontsizeLabels": "12",
+                        "fontsizeValues": "20",
+                        "diagramWidth": "500",
+                        "diagramHeight": "500"
+                    }
+                },{
+                    "name": "My CakeDiagram",
+                    "type": "CategoricalChart.PieChart",
+                    "generator": {
+                        "name": "Gesamtverteilung"
+                    },
+                    "settings": {
+                        "fontsizeLabels": "12",
+                        "fontsizeValues": "20",
+                        "diagramWidth": "500",
+                        "diagramHeight": "500"
+                    }
+                }
+            ]
+        }
+    ]
+}

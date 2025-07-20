@@ -8,12 +8,14 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import uni.textimager.sandbox.database.QueryHelper;
+import uni.textimager.sandbox.generators.Generator;
 import uni.textimager.sandbox.pipeline.Pipeline;
 import uni.textimager.sandbox.pipeline.PipelineNode;
 
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Map;
 
 @Component
@@ -28,13 +30,15 @@ public class SourceBuilder implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws SQLException, IOException {
-        Pipeline pipeline = Pipeline.fromJSON("pipelines/pipeline1.json");
+        Pipeline pipeline = Pipeline.fromJSON("pipelines/pipeline2.json");
         System.out.println("Pipeline loaded: " + pipeline.getName());
         DBAccess dbAccess = new DBAccess(dataSource);
         Map<String, PipelineNode> relevantGenerators = pipeline.getFilteredGenerators();
         for (PipelineNode sourceNode : pipeline.getSources().values()) {
             Source source = new Source(dbAccess, sourceNode.getConfig(), relevantGenerators, sourceNode.getChildren());
             System.out.println("Source created: " + source.getConfig().get("name"));
+            ArrayList<Generator> list = (ArrayList<Generator>) source.createGenerators();
+            System.out.println("Generators created: " + list.size());
         }
 
         DSLContext create = DSL.using(dbAccess.getDataSource().getConnection());
