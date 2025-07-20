@@ -6,6 +6,9 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Utility service for sanitizing (cleaning) identifiers to conform to Java and SQL naming rules.
+ */
 @Service
 public class NameSanitizer {
     private static final Set<String> JAVA_KEYWORDS = new HashSet<>(Arrays.asList(
@@ -20,6 +23,17 @@ public class NameSanitizer {
             "null", "select", "from", "table", "order", "group", "by", "user", "timestamp", "value"
     );
 
+    /**
+     * Sanitize an arbitrary string into a valid identifier:
+     * <ul>
+     *   <li>Replace non-alphanumeric and non-underscore characters with underscores.</li>
+     *   <li>Prefix with underscore if empty or starting with digit.</li>
+     *   <li>Prefix with underscore if resulting name is a Java keyword or SQL reserved word.</li>
+     * </ul>
+     *
+     * @param name original string
+     * @return sanitized identifier
+     */
     public String sanitize(String name) {
         String s = name.replaceAll("[^A-Za-z0-9_]", "_");
         if (s.isEmpty() || Character.isDigit(s.charAt(0))) s = "_" + s;
@@ -27,7 +41,22 @@ public class NameSanitizer {
         return s;
     }
 
+    /**
+     * Convert a tag (possibly namespaced by colon) into a Java class name:
+     * <ul>
+     *   <li>Special-case "cas:NULL" to "CAS".</li>
+     *   <li>Split on colon, take last segment.</li>
+     *   <li>Capitalize first character.</li>
+     *   <li>Prefix with underscore if reserved SQL word.</li>
+     * </ul>
+     *
+     * @param tag namespaced tag string
+     * @return valid Java class name
+     */
     public String toClassName(String tag) {
+        if ("cas:NULL".equals(tag)) {
+            return "CAS";
+        }
         String[] parts = tag.split(":");
         String base = parts[parts.length - 1];
         String cname = base.substring(0, 1).toUpperCase() + base.substring(1);

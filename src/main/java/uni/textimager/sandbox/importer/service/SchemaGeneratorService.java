@@ -6,16 +6,42 @@ import uni.textimager.sandbox.importer.dialect.SqlDialect;
 
 import java.util.Map;
 
+/**
+ * Service for generating database schema from entity attribute length metadata.
+ */
 @Service
 public class SchemaGeneratorService {
     private final JdbcTemplate jdbcTemplate;
     private final SqlDialect dialect;
 
+    /**
+     * Construct service with JDBC template and SQL dialect.
+     *
+     * @param jdbcTemplate template for executing SQL statements
+     * @param dialect      database-specific SQL dialect
+     */
     public SchemaGeneratorService(JdbcTemplate jdbcTemplate, SqlDialect dialect) {
         this.jdbcTemplate = jdbcTemplate;
         this.dialect = dialect;
     }
 
+    /**
+     * Generate tables for each entity with columns sized according to provided maximum lengths.
+     * <ul>
+     *   <li>Table name is the entity key.</li>
+     *   <li>Primary key column name: {@code entity_pk_id}, auto-increment per dialect.</li>
+     *   <li>For each attribute:
+     *     <ul>
+     *       <li>Column name: {@code ENTITY_ATTRNAME}, colons in attribute names replaced with underscores.</li>
+     *       <li>Type: CLOB if max length &gt; 255, otherwise VARCHAR(max length or 1 minimum).</li>
+     *     </ul>
+     *   </li>
+     *   <li>Define primary key constraint on the auto-increment column.</li>
+     *   <li>DDL executed with {@link JdbcTemplate#execute(String)}.</li>
+     * </ul>
+     *
+     * @param maxLengths map of entity names to maps of attribute names and their maximum lengths
+     */
     public void generateSchema(Map<String, Map<String, Integer>> maxLengths) {
         maxLengths.forEach((entity, lengths) -> {
             String pk = entity.toLowerCase() + "_pk_id";
