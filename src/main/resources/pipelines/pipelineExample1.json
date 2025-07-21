@@ -1,0 +1,66 @@
+{
+  "pipelines": [
+    {
+      "name": "main",
+      "sources": [
+        {
+          "name": "POS_1",
+          "type": "POS",
+          "settings": {
+            "sourceFilesWhitelist": ["ID21200100.xmi", "ID21200300.xmi"]
+          },
+          "createsGenerators": [
+            {
+              "type": "combi",
+              "createsGenerators": [
+                {
+                  "type": "SubstringColorMapping",
+                  "name": "Textfaerbung",
+                  "settings": {
+                    "sofaFile": "ID21200300.xmi"
+                  }
+                },
+                {
+                  "type": "CategoryNumberColorMapping",
+                  "name": "CategoryNumberColorMapping_1"
+                }
+              ],
+              "settings": {
+                "featureName": "posValue",
+                "categoriesWhitelist": [
+                  "noun",
+                  "verb",
+                  "adjective",
+                  "article"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "visualizations": [
+        {
+          "name": "My CakeDiagram",
+          "type": "CategoricalChart.PieChart",
+          "generator": {
+            "name": "CategoryNumberColorMapping_1"
+          },
+          "settings": {
+            "fontsizeLabels": "12",
+            "fontsizeValues": "20",
+            "diagramWidth": "500",
+            "diagramHeight": "500"
+          }
+        },
+        {
+          "name": "My Colored Text",
+          "type": "TextColorization",
+          "visible": true,
+          "generator": {
+            "name": "Textfaerbung"
+          }
+        }
+      ]
+    }
+  ]
+}

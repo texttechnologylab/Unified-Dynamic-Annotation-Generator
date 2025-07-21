@@ -30,8 +30,8 @@ public class DBAccess {
             DSLContext create = DSL.using(dataSource.getConnection());
             QueryHelper q = new QueryHelper(create);
 
-            Table<?> nullTable = q.table("_null");
-            Field<Object> file = q.field("_null", "filename");
+            Table<?> nullTable = q.table("cas");
+            Field<Object> file = q.field("cas", "filename");
 
             Result<? extends org.jooq.Record> result = q.dsl()
                     .selectDistinct(file)
@@ -46,6 +46,7 @@ public class DBAccess {
                 }
             }
         }
-        return sourceFiles;
+
+        return new ArrayList<>(sourceFiles);
     }
 }

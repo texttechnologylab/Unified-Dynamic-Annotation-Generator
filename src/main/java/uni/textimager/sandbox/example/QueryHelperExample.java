@@ -29,10 +29,10 @@ public class QueryHelperExample implements ApplicationRunner {
         QueryHelper q = new QueryHelper(create);
 
         // Adjusted to reference the _NULL table
-        Table<?> nullTable = q.table("_null");
+        Table<?> nullTable = q.table("cas");
 
         // Only select the filename field
-        Field<Object> file = q.field("_null", "filename");
+        Field<Object> file = q.field("cas", "filename");
 
         Result<? extends Record> result = q.dsl()
                 .selectDistinct(file) // This is equivalent to SELECT DISTINCT

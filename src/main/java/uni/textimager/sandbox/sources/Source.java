@@ -61,98 +61,197 @@ public class Source implements SourceInterface {
         this.featureNames = AnnotationFeatures.featureNames_default(new HashMap<>());
 
         // Replace default feature names with provided ones
-        this.featureNames.putAll(configGetOverriddenFeatureNames());
+        this.featureNames.putAll(configSourceGetOverriddenFeatureNames());
 
-        // Initialize source files
-        Collection<String> sourceFilesWhitelist = configGetSourceFiles("sourceFilesWhitelist");
-        Collection<String> sourceFilesBlacklist = configGetSourceFiles("sourceFilesBlacklist");
-        // If no source files are provided, use all files from the database
-        if (sourceFilesWhitelist.isEmpty()) {
-            sourceFilesWhitelist.addAll(dbGetAllSourceFiles());
-        }
-        // Remove blacklisted files from the whitelist
-        sourceFilesWhitelist.removeAll(sourceFilesBlacklist);
-        this.sourceFiles = sourceFilesWhitelist;
+        // Set all source files that are used in this source
+        this.sourceFiles = generateSourceFiles(config);
     }
 
     // Don't leave out filtered generators that are part of a combi with at least one relevant generator to keep visualization results consistent
     @Override
-    public <T extends Generator> Collection<T> createGenerators() throws SQLException {
-        // Iterate through all generators, skip combi for now.
-        // Run the function createGeneratorsFromPipelineNodes for each generator
-
-        ArrayList<T> generators = new ArrayList<>();
+    public Collection<Generator> createGenerators() throws SQLException {
+        ArrayList<Generator> generators = new ArrayList<>();
 
         JSONView createsGenerators = config.get("createsGenerators");
         for (JSONView generatorEntry : createsGenerators) {
             String generatorType = generatorEntry.get("type").toString();
             if (generatorType.equals("combi")) {
-                // Skip combi for now, we will handle it later TODO: Implement combi handling
-                continue;
+                ArrayList<PipelineNode> subGeneratorNodes = new ArrayList<>();
+                boolean combiNeeded = false;
+                for (JSONView subGeneratorEntry : generatorEntry.get("createsGenerators")) {
+                    if (relevantGenerators.containsKey(subGeneratorEntry.get("name").toString())) combiNeeded = true;
+                    subGeneratorNodes.add(generatorsToBuild.get(subGeneratorEntry.get("name").toString()));
+                }
+                if (!combiNeeded) {
+                    String combiName = "unnamed combi";
+                    try { combiName = generatorEntry.get("name").toString(); } catch (Exception ignored) {}
+                    System.out.println("Skipping irrelevant combi-generator \"" + combiName + "\".");
+                    continue;
+                }
+                generators.addAll(createGeneratorsCombi(subGeneratorNodes, generatorEntry));
+            } else if (generatorType.equals("bundle")) {
+                for (JSONView subGeneratorEntry : generatorEntry.get("createsGenerators")) {
+                    if (!relevantGenerators.containsKey(subGeneratorEntry.get("name").toString())) {
+                        System.out.println("Skipping irrelevant bundle-part generator \"" + subGeneratorEntry.get("name") + "\".");
+                        continue;
+                    }
+                    PipelineNode generatorNode = generatorsToBuild.get(subGeneratorEntry.get("name").toString());
+                    generators.add(createGenerator(generatorNode, generatorEntry, subGeneratorEntry));
+                }
+            } else {
+                if (!relevantGenerators.containsKey(generatorEntry.get("name").toString())) {
+                    System.out.println("Skipping irrelevant generator \"" + generatorEntry.get("name") + "\".");
+                    continue;
+                }
+                PipelineNode generatorNode = generatorsToBuild.get(generatorEntry.get("name").toString());
+                generators.add(createGenerator(generatorNode, null, generatorEntry));
             }
-            if (!relevantGenerators.containsKey(generatorEntry.get("name").toString())) {
-                System.out.println("Skipping irrelevant generator: " + generatorEntry.get("name"));
-                continue;
-            }
-            PipelineNode generatorNode = generatorsToBuild.get(generatorEntry.get("name").toString());
-            generators.addAll(createGenerators(List.of(generatorNode), generatorEntry));
+
         }
 
         return generators;
     }
 
-    // Recursive if wanted combi is not defined TODO: Print warning in that case
-    private <T extends Generator> Collection<T> createGenerators(Collection<PipelineNode> generators, JSONView config) throws SQLException {
-        if (generators.isEmpty()) {
-            System.out.println("Warning: empty generator collection for source: " + name);
-            return List.of();
-        }
-        if (!containsOnlyGenerators(generators)) {
-            throw new IllegalArgumentException("Source " + name + " contains non-generator nodes, returning empty collection.");
-        }
-        if (generators.size() == 1) {
-            PipelineNode generator = generators.iterator().next();
-            String generatorType = generator.getConfig().get("type").toString();
-            HashMap<String, Double> categoryCountMap;
-            switch (generatorType) {
-                case "CategoryNumberMapping", "CategoryNumberColorMapping":
-                    categoryCountMap = dbCreateCategoryCountMap(generateFeatureNameCategory());
-                    if (generatorType.equals("CategoryNumberColorMapping")) {
-                        return List.of((T) new CategoryNumberColorMapping(categoryCountMap));
-                    } else {
-                        return List.of((T) new CategoryNumberMapping(categoryCountMap));
-                    }
-                case "SubstringCategoryMapping", "SubstringColorMapping":
-                    String configSofaFile = null;
-                    String configSofaID = null;
-                    try { configSofaFile = config.get("settings").get("sofaFile").toString(); } catch (Exception ignored) {}
-                    try { configSofaID = config.get("settings").get("sofaID").toString(); } catch (Exception ignored) {}
-                    String[] sofa = dbGetSofa(configSofaFile, configSofaID);
-                    String sofaFile = sofa[0];
-                    String sofaID = sofa[1];
-                    String sofaString = sofa[2];
 
-                    String featureNameCategory = generateFeatureNameCategory();
-                    if (generatorType.equals("SubstringColorMapping")) {
-                        categoryCountMap = dbCreateCategoryCountMap(featureNameCategory);
-                        HashMap<String, Color> categoryColorMap = new CategoryNumberColorMapping(categoryCountMap).getCategoryColorMap(); // Dummy generator, use it to give more basic colors to more common categories
-                        return List.of((T) new SubstringColorMapping(sofaString, dbCreateColoredSubstrings(featureNameCategory, sofaFile, sofaID, categoryColorMap)));
-                    } else {
-                        return List.of((T) new SubstringCategoryMapping(sofaString, dbCreateCategorizedSubstrings(featureNameCategory, sofaFile, sofaID)));
-                    }
-                default:
-                    throw new IllegalArgumentException("Unknown generator type: " + generator.getConfig().get(type) + " for source: " + name);
+    private Collection<Generator> createGeneratorsCombi(Collection<PipelineNode> generators, JSONView configCombi) throws SQLException {
+        // Step 1 - Find common traits for generators
+        HashMap<String, HashMap<String, Color>> mapFeatureToCategoryColorMap = new HashMap<>();
+        for (PipelineNode g : generators) {
+            String generatorType = g.getConfig().get("type").toString();
+            if (generatorType.equals("CategoryNumberColorMapping") || generatorType.equals("SubstringColorMapping")) {
+                mapFeatureToCategoryColorMap.put(generateFeatureNameCategory(configCombi, g.getConfig()), null);
             }
         }
-        return List.of();
+
+        // Step 2 - Generate data for common traits
+        Collection<String> combiSourceFiles = generateSourceFiles(configCombi, sourceFiles);
+        for (String feature : mapFeatureToCategoryColorMap.keySet()) {
+            mapFeatureToCategoryColorMap.put(feature, dbCreateCategoryColorMap(feature, combiSourceFiles));
+        }
+
+        // Step 3 - Create generators using the common data
+        ArrayList<Generator> combiGenerators = new ArrayList<>();
+        for (PipelineNode g : generators) {
+            String generatorType = g.getConfig().get("type").toString();
+            if (generatorType.equals("CategoryNumberColorMapping")) {
+                String featureName = generateFeatureNameCategory(configCombi, g.getConfig());
+                Collection<String> generatorSourceFiles = generateSourceFiles(g.getConfig(), combiSourceFiles);
+                HashMap<String, Double> categoryNumberMap = dbCreateCategoryCountMap(featureName, generatorSourceFiles);
+                HashMap<String, Color> categoryColorMap = new HashMap<>(mapFeatureToCategoryColorMap.get(featureName));
+                categoryColorMap.keySet().retainAll(categoryNumberMap.keySet());
+                combiGenerators.add(new CategoryNumberColorMapping(categoryNumberMap, categoryColorMap));
+            } else if (generatorType.equals("SubstringColorMapping")) {
+                String configSofaFile = generateSofaFile(configCombi, g.getConfig());
+                String configSofaID = generateSofaID(configCombi, g.getConfig());
+                String[] sofa = dbGetSofa(configSofaFile, configSofaID);
+                String sofaFile = sofa[0];
+                String sofaID = sofa[1];
+                String sofaString = sofa[2];
+                String featureName = generateFeatureNameCategory(configCombi, g.getConfig());
+                HashMap<String, Color> categoryColorMap = mapFeatureToCategoryColorMap.get(featureName);
+                combiGenerators.add(new SubstringColorMapping(sofaString, dbCreateColoredSubstrings(featureName, sofaFile, sofaID, categoryColorMap)));
+            } else { // Default case: Just treat the unknown bundle generator like a normal single generator.
+                combiGenerators.add(createGenerator(g, configCombi, g.getConfig()));
+            }
+        }
+
+        return combiGenerators;
     }
 
-    private String generateFeatureNameCategory() {
+
+
+    private Generator createGenerator(PipelineNode generator, JSONView configBundle, JSONView config) throws SQLException {
+        String generatorType = generator.getConfig().get("type").toString();
+        Collection<String> sourceFiles = generateSourceFiles(configBundle, config);
+        switch (generatorType) {
+            case "CategoryNumberMapping", "CategoryNumberColorMapping":
+                HashMap<String, Double> categoryCountMap = dbCreateCategoryCountMap(generateFeatureNameCategory(configBundle, config), sourceFiles);
+                if (generatorType.equals("CategoryNumberColorMapping")) {
+                    return new CategoryNumberColorMapping(categoryCountMap);
+                } else {
+                    return new CategoryNumberMapping(categoryCountMap);
+                }
+            case "SubstringCategoryMapping", "SubstringColorMapping":
+                String configSofaFile = generateSofaFile(configBundle, config);
+                String configSofaID = generateSofaID(configBundle, config);
+                String[] sofa = dbGetSofa(configSofaFile, configSofaID);
+                String sofaFile = sofa[0];
+                String sofaID = sofa[1];
+                String sofaString = sofa[2];
+
+                String featureNameCategory = generateFeatureNameCategory(configBundle, config);
+                if (generatorType.equals("SubstringColorMapping")) {
+                    HashMap<String, Color> categoryColorMap = dbCreateCategoryColorMap(featureNameCategory, sourceFiles);
+                    return new SubstringColorMapping(sofaString, dbCreateColoredSubstrings(featureNameCategory, sofaFile, sofaID, categoryColorMap));
+                } else {
+                    return new SubstringCategoryMapping(sofaString, dbCreateCategorizedSubstrings(featureNameCategory, sofaFile, sofaID));
+                }
+            default:
+                throw new IllegalArgumentException("Unknown generator type: " + generator.getConfig().get("type") + " for source: " + name);
+        }
+    }
+
+    private String generateFeatureNameCategory(JSONView configBundle, JSONView config) {
+        try { return config.get("settings").get("featureName").toString(); } catch (Exception ignored) {}
+        try { return configBundle.get("settings").get("featureName").toString(); } catch (Exception ignored) {}
+
         return switch (type) {
             case DEFAULT_TYPE_POS -> featureNames.get("coarseValue");
             case DEFAULT_TYPE_LEMMA -> featureNames.get("value");
             default -> featureNames.get("value");
         };
+    }
+
+    private String generateSofaFile(JSONView configBundle, JSONView config) {
+        try { return config.get("settings").get("sofaFile").toString(); } catch (Exception ignored) {}
+        try { return configBundle.get("settings").get("sofaFile").toString(); } catch (Exception ignored) {}
+        return null;
+    }
+
+    private String generateSofaID(JSONView configBundle, JSONView config) {
+        try { return config.get("settings").get("sofaID").toString(); } catch (Exception ignored) {}
+        try { return configBundle.get("settings").get("sofaID").toString(); } catch (Exception ignored) {}
+        return null;
+    }
+
+    private Collection<String> generateCategories(JSONView configBundle, JSONView config) {
+        Collection<String> categoriesBundleWhitelist = generateCategories(configBundle, sourceFiles);
+        return generateCategories(config, categoriesBundleWhitelist);
+    }
+    private Collection<String> generateCategories(JSONView config, Collection<String> allCategories) {
+        Collection<String> categoriesWhitelist = configGetStringList(config, "sourceFilesWhitelist", false);
+        Collection<String> categoriesBlacklist = configGetStringList(config, "sourceFilesBlacklist", false);
+
+        if (categoriesWhitelist == null) {
+            return null; // null means that we don't want to exclude any categories
+        }
+
+        return categoriesWhitelist;
+    }
+
+    private Collection<String> generateSourceFiles(JSONView configBundle, JSONView config) {
+        Collection<String> sourceFilesBundleWhitelist = generateSourceFiles(configBundle, sourceFiles);
+        return generateSourceFiles(config, sourceFilesBundleWhitelist);
+    }
+    private Collection<String> generateSourceFiles(JSONView config, Collection<String> allSourceFiles) {
+        Collection<String> sourceFilesWhitelist = configGetSourceFiles(config, "sourceFilesWhitelist");
+        Collection<String> sourceFilesBlacklist = configGetSourceFiles(config, "sourceFilesBlacklist");
+
+        if (sourceFilesWhitelist.isEmpty()) {
+            // If no source files are provided, use all files
+            sourceFilesWhitelist.addAll(allSourceFiles);
+        } else if (!allSourceFiles.containsAll(sourceFilesWhitelist)) {
+            System.out.println("Warning: Source file whitelist contains elements that are unknown or excluded on a higher level. Removing those elements.");
+            sourceFilesWhitelist.retainAll(allSourceFiles);
+        }
+        // Remove blacklisted files from the whitelist
+        sourceFilesWhitelist.removeAll(sourceFilesBlacklist);
+
+        return sourceFilesWhitelist;
+    }
+
+    private Collection<String> generateSourceFiles(JSONView config) throws SQLException {
+        return generateSourceFiles(config, dbGetAllSourceFiles());
     }
 
 
@@ -196,8 +295,20 @@ public class Source implements SourceInterface {
     }
 
 
+    private HashMap<String, Color> dbCreateCategoryColorMap(String featureNameCategory, Collection<String> sourceFiles) throws SQLException {
+        HashMap<String, Double> categoryCountMap = dbCreateCategoryCountMap(featureNameCategory, sourceFiles);
+        return new CategoryNumberColorMapping(categoryCountMap).getCategoryColorMap(); // Dummy generator, use it to give more basic colors to more common categories
+    }
 
-    private HashMap<String, Double> dbCreateCategoryCountMap(String featureNameCategory) throws SQLException {
+
+    private HashMap<String, Double> dbCreateCategoryCountMap(String featureNameCategory, Collection<String> sourceFiles) throws SQLException {
+        if (sourceFiles == null || sourceFiles.isEmpty()) {
+            if (sourceFiles != null) {
+                System.out.println("Warning: Got empty source files list when trying to build a generator for feature \"" + featureNameCategory + "\". Defaulting to source files of Source object.");
+            }
+            sourceFiles = this.sourceFiles;
+        }
+
         DSLContext create = DSL.using(dbAccess.getDataSource().getConnection());
         QueryHelper q = new QueryHelper(create);
 
@@ -265,7 +376,7 @@ public class Source implements SourceInterface {
         return nodes.stream().allMatch(node -> node.getType() == PipelineNodeType.GENERATOR);
     }
 
-    private Map<String, String> configGetOverriddenFeatureNames() {
+    private Map<String, String> configSourceGetOverriddenFeatureNames() {
         try {
             JSONView featureNames = config.get("featureNames");
             if (featureNames.isMap()) {
@@ -279,12 +390,12 @@ public class Source implements SourceInterface {
                 }
             }
             return new HashMap<>();
-        } catch (Exception e) {
+        } catch (Exception ignored) {
             return new HashMap<>();
         }
     }
 
-    private Collection<String> configGetSourceFiles(String key) {
+    private Collection<String> configGetStringList(JSONView config, String key, boolean returnEmptyIfNotConfigured) {
         try {
             JSONView sourceFiles = config.get("settings").get(key);
             if (sourceFiles.isList()) {
@@ -296,19 +407,22 @@ public class Source implements SourceInterface {
                     return stringList;
                 }
             }
-            return new ArrayList<>();
-        } catch (Exception e) {
-            return new ArrayList<>();
+            if (returnEmptyIfNotConfigured) {
+                return new ArrayList<>();
+            }
+            return null;
+        } catch (Exception ignored) {
+            if (returnEmptyIfNotConfigured) {
+                return new ArrayList<>();
+            }
+            return null;
         }
+    }
+    private Collection<String> configGetSourceFiles(JSONView config, String key) {
+        return configGetStringList(config, key, true);
     }
 
     private Collection<String> dbGetAllSourceFiles() throws SQLException {
         return dbAccess.getSourceFiles();
-    }
-
-
-    public static void main(String[] args) {
-        // Source s = new Source();
-        // CategoryNumberMapping m = s.createGenerator(CategoryNumberMapping.class);
     }
 }

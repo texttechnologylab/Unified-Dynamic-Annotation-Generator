@@ -6,5 +6,5 @@ import java.sql.SQLException;
 import java.util.Collection;
 
 public interface SourceInterface {
-    <T extends Generator> Collection<T> createGenerators() throws SQLException;
+    Collection<Generator> createGenerators() throws SQLException;
 }

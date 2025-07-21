@@ -30,7 +30,7 @@ public class SourceBuilder implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws SQLException, IOException {
-        Pipeline pipeline = Pipeline.fromJSON("pipelines/pipeline2.json");
+        Pipeline pipeline = Pipeline.fromJSON("pipelines/pipelineExample1.json");
         System.out.println("Pipeline loaded: " + pipeline.getName());
         DBAccess dbAccess = new DBAccess(dataSource);
         Map<String, PipelineNode> relevantGenerators = pipeline.getFilteredGenerators();
