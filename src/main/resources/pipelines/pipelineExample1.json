@@ -27,12 +27,7 @@
               ],
               "settings": {
                 "featureName": "posValue",
-                "categoriesWhitelist": [
-                  "noun",
-                  "verb",
-                  "adjective",
-                  "article"
-                ]
+                "categoriesWhitelist": ["$", "NN"]
               }
             }
           ]

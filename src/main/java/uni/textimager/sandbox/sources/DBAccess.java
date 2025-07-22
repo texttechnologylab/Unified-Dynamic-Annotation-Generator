@@ -13,6 +13,8 @@ import javax.sql.DataSource;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 public class DBAccess {
     @Getter
@@ -25,7 +27,7 @@ public class DBAccess {
         this.dataSource = dataSource;
     }
 
-    public Collection<String> getSourceFiles() throws SQLException {
+    public Set<String> getSourceFiles() throws SQLException {
         if (sourceFiles == null) {
             DSLContext create = DSL.using(dataSource.getConnection());
             QueryHelper q = new QueryHelper(create);
@@ -47,6 +49,6 @@ public class DBAccess {
             }
         }
 
-        return new ArrayList<>(sourceFiles);
+        return new HashSet<>(sourceFiles);
     }
 }
