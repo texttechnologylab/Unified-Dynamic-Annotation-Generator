@@ -2,6 +2,12 @@
     "pipelines": [
         {
             "name": "main",
+            "customTypes": [
+                {
+                    "name": "CUSTOM1",
+                    "contains": ["POS", "MORPHOLOGICALFEATURES", "LEMMA"]
+                }
+            ],
             "sources": [
                 {
                     "name": "MyPOS",

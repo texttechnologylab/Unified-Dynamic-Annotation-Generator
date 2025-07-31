@@ -13,6 +13,7 @@ public class Pipeline {
     private final Map<String, PipelineNode> visualizations;
     private final Map<String, PipelineNode> generators;
     private final Map<String, PipelineNode> sources;
+    private final List<PipelineNode> customTypes;
     private final Map<String, PipelineNode> filteredGenerators;
     private final Map<String, PipelineNode> filteredSources;
 
@@ -45,11 +46,12 @@ public class Pipeline {
         return null;
     }
 
-    private Pipeline(String name, Map<String, PipelineNode> visualizations, Map<String, PipelineNode> generators, Map<String, PipelineNode> sources) {
+    private Pipeline(String name, Map<String, PipelineNode> visualizations, Map<String, PipelineNode> generators, Map<String, PipelineNode> sources, List<PipelineNode> customTypes) {
         this.name = name;
         this.visualizations = visualizations;
         this.generators = generators;
         this.sources = sources;
+        this.customTypes = customTypes;
 
         System.out.println("Filtering irrelevant pipeline nodes...");
         HashMap<String, PipelineNode> filteredSources = new HashMap<>();
@@ -112,13 +114,31 @@ public class Pipeline {
             JSONView visualizationsView = pipelineView.get("visualizations");
             HashMap<String, PipelineNode> visualizations = (HashMap<String, PipelineNode>) generatePipelineVisualizationsFromJSONView(visualizationsView, generators);
 
-            return new Pipeline(name, visualizations, generators, sources);
+            // Step 2: Generate customTypes if defined
+            List<PipelineNode> customTypes = generatePipelineCustomTypesFromJSONView(pipelineView);
+
+            return new Pipeline(name, visualizations, generators, sources, customTypes);
 
         } catch (IllegalArgumentException e) {
             throw e;
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid pipeline JSON.");
         }
+    }
+
+    private static List<PipelineNode> generatePipelineCustomTypesFromJSONView(JSONView pipelineView) {
+        ArrayList<PipelineNode> customTypes = new ArrayList<>();
+        try {
+            JSONView customTypesView = pipelineView.get("customTypes");
+            for (JSONView customTypeEntry : customTypesView) {
+                // TODO: integrate customTypes into pipeline with dependencies and filter non-used types. Make it a map like the other PipelineNode collections.
+                PipelineNode current = new PipelineNode(PipelineNodeType.CUSTOMTYPE, new HashMap<>(), customTypeEntry);
+                customTypes.add(current);
+            }
+        } catch (Exception e) {
+            return new ArrayList<>();
+        }
+        return customTypes;
     }
 
     private static Map<String, PipelineNode> generatePipelineVisualizationsFromJSONView(JSONView visualizationsView, Map<String, PipelineNode> generators) {

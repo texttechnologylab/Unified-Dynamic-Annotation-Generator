@@ -25,8 +25,8 @@ public class QueryHelperExample implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws SQLException {
-        DSLContext create = DSL.using(dataSource.getConnection());
-        QueryHelper q = new QueryHelper(create);
+        DSLContext dslContext = DSL.using(dataSource.getConnection());
+        QueryHelper q = new QueryHelper(dslContext);
 
         // Adjusted to reference the _NULL table
         Table<?> nullTable = q.table("cas");

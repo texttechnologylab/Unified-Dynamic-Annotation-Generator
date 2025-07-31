@@ -29,8 +29,8 @@ public class DBAccess {
 
     public Set<String> getSourceFiles() throws SQLException {
         if (sourceFiles == null) {
-            DSLContext create = DSL.using(dataSource.getConnection());
-            QueryHelper q = new QueryHelper(create);
+            DSLContext dslContext = DSL.using(dataSource.getConnection());
+            QueryHelper q = new QueryHelper(dslContext);
 
             Table<?> nullTable = q.table("cas");
             Field<Object> file = q.field("cas", "filename");

@@ -26,8 +26,7 @@
                 }
               ],
               "settings": {
-                "featureName": "posValue",
-                "categoriesWhitelist": ["$", "NN"]
+                "categoriesBlacklist": ["NOUN"]
               }
             }
           ]
@@ -36,7 +35,7 @@
       "visualizations": [
         {
           "name": "My CakeDiagram",
-          "type": "CategoricalChart.PieChart",
+          "type": "PieChart",
           "generator": {
             "name": "CategoryNumberColorMapping_1"
           },

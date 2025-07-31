@@ -1,5 +1,5 @@
 package uni.textimager.sandbox.pipeline;
 
 public enum PipelineNodeType {
-    VISUALIZATION, GENERATOR, SOURCE
+    VISUALIZATION, GENERATOR, SOURCE, CUSTOMTYPE
 }
