@@ -27,8 +27,7 @@ public class NameSanitizer {
      * Sanitize an arbitrary string into a valid identifier:
      * <ul>
      *   <li>Replace non-alphanumeric and non-underscore characters with underscores.</li>
-     *   <li>Prefix with underscore if empty or starting with digit.</li>
-     *   <li>Prefix with underscore if resulting name is a Java keyword or SQL reserved word.</li>
+     *   <li>Prefix with underscore if empty or starting with digit.</
      * </ul>
      *
      * @param name original string
@@ -37,7 +36,6 @@ public class NameSanitizer {
     public String sanitize(String name) {
         String s = name.replaceAll("[^A-Za-z0-9_]", "_");
         if (s.isEmpty() || Character.isDigit(s.charAt(0))) s = "_" + s;
-        if (JAVA_KEYWORDS.contains(s) || SQL_RESERVED.contains(s.toLowerCase())) s = "_" + s;
         return s;
     }
 
@@ -47,7 +45,6 @@ public class NameSanitizer {
      *   <li>Special-case "cas:NULL" to "CAS".</li>
      *   <li>Split on colon, take last segment.</li>
      *   <li>Capitalize first character.</li>
-     *   <li>Prefix with underscore if reserved SQL word.</li>
      * </ul>
      *
      * @param tag namespaced tag string
@@ -59,8 +56,6 @@ public class NameSanitizer {
         }
         String[] parts = tag.split(":");
         String base = parts[parts.length - 1];
-        String cname = base.substring(0, 1).toUpperCase() + base.substring(1);
-        if (SQL_RESERVED.contains(cname.toLowerCase())) cname = "_" + cname;
-        return cname;
+        return base.substring(0, 1).toUpperCase() + base.substring(1);
     }
 }
