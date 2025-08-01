@@ -4,8 +4,9 @@
       "name": "main",
       "sources": [
         {
-          "name": "POS_1",
+          "name": "TEST_1",
           "type": "POS",
+          "annotationTypeName": "POS",
           "settings": {
             "sourceFilesWhitelist": ["ID21200100.xmi", "ID21200300.xmi"]
           },
@@ -26,7 +27,7 @@
                 }
               ],
               "settings": {
-                "categoriesBlacklist": ["NOUN"]
+                "categoriesBlacklist": ["ABC"]
               }
             }
           ]

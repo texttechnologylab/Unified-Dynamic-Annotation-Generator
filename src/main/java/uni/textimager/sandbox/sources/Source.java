@@ -204,7 +204,6 @@ public class Source implements SourceInterface {
 
         return switch (type) {
             case DEFAULT_TYPE_POS -> featureNames.get("coarseValue");
-            case DEFAULT_TYPE_LEMMA -> featureNames.get("value");
             default -> featureNames.get("value");
         };
     }
@@ -272,14 +271,14 @@ public class Source implements SourceInterface {
         ArrayList<SubstringCategoryMapping.CategorizedSubstring> categorizedSubstrings = dbCreateCategorizedSubstrings(featureNameCategory, sofaFile, sofaID, categoriesWhitelist, categoriesBlacklist);
         ArrayList<SubstringColorMapping.ColoredSubstring> coloredSubstrings = new ArrayList<>();
         for (SubstringCategoryMapping.CategorizedSubstring s : categorizedSubstrings) {
-            coloredSubstrings.add(new SubstringColorMapping.ColoredSubstring(s.getBegin(), s.getEnd(), categoryColorMap.get(s.getCategory())));
+            coloredSubstrings.add(new SubstringColorMapping.ColoredSubstring(s.getBegin(), s.getEnd(), categoryColorMap.get(s.getCategory()), s.getCategoryValueMap()));
         }
         return coloredSubstrings;
     }
 
     private ArrayList<SubstringCategoryMapping.CategorizedSubstring> dbCreateCategorizedSubstrings(String featureNameCategory, String sofaFile, String sofaID, Collection<String> categoriesWhitelist, Collection<String> categoriesBlacklist) throws SQLException {
-        DSLContext create = DSL.using(dbAccess.getDataSource().getConnection());
-        QueryHelper q = new QueryHelper(create);
+        DSLContext dslContext = DSL.using(dbAccess.getDataSource().getConnection());
+        QueryHelper q = new QueryHelper(dslContext);
 
         Table<?> table            = q.table(annotationTypeName);
         Field<Object> category    = q.field(annotationTypeName, featureNameCategory);
@@ -302,7 +301,7 @@ public class Source implements SourceInterface {
             int substringEnd = record.get(end, Integer.class);
             String substringCategory = record.get(category, String.class);
 
-            categorizedSubstrings.add(new SubstringCategoryMapping.CategorizedSubstring(substringBegin, substringEnd, substringCategory));
+            categorizedSubstrings.add(new SubstringCategoryMapping.CategorizedSubstring(substringBegin, substringEnd, featureNameCategory, substringCategory));
         }
 
         return categorizedSubstrings;
@@ -323,8 +322,8 @@ public class Source implements SourceInterface {
             sourceFiles = this.sourceFiles;
         }
 
-        DSLContext create = DSL.using(dbAccess.getDataSource().getConnection());
-        QueryHelper q = new QueryHelper(create);
+        DSLContext dslContext = DSL.using(dbAccess.getDataSource().getConnection());
+        QueryHelper q = new QueryHelper(dslContext);
 
         Table<?> table = q.table(annotationTypeName);
         Field<Object> category = q.field(annotationTypeName, featureNameCategory);
@@ -362,8 +361,8 @@ public class Source implements SourceInterface {
             }
         }
         // From here we have a sourceFile for our SOFA.
-        DSLContext create = DSL.using(dbAccess.getDataSource().getConnection());
-        QueryHelper q = new QueryHelper(create);
+        DSLContext dslContext = DSL.using(dbAccess.getDataSource().getConnection());
+        QueryHelper q = new QueryHelper(dslContext);
 
         Table<?> table = q.table("SOFA");
         Field<Object> sofastring = q.field("SOFA", "sofastring");

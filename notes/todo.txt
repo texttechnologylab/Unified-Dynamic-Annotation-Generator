@@ -6,6 +6,7 @@ Implementation Order
 
 TODO
 - Implement "active" option
+- Tabelle URI + type
 
 
 TODO Vielleicht

@@ -2,24 +2,16 @@ package uni.textimager.sandbox.generators;
 
 import lombok.Getter;
 
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.*;
 
-public class SubstringCategoryMapping extends Generator implements SubstringCategoryMappingInterface {
-    private String text;
-    private Collection<CategorizedSubstring> categorizedSubstrings;
+public class SubstringCategoryMapping extends SubstringMapping implements SubstringCategoryMappingInterface {
 
-    public SubstringCategoryMapping(String text, Collection<CategorizedSubstring> categorizedSubstrings) {
-        this.text = text;
-        this.categorizedSubstrings = categorizedSubstrings;
+    public SubstringCategoryMapping(String text, List<CategorizedSubstring> categorizedSubstrings) {
+        super(text, new ArrayList<>(categorizedSubstrings));
     }
 
-    public SubstringCategoryMapping(SubstringCategoryMapping copyOf) {
-        this.text = copyOf.text;
-        this.categorizedSubstrings = new ArrayList<>();
-        for (CategorizedSubstring cs : copyOf.categorizedSubstrings) {
-            this.categorizedSubstrings.add(new CategorizedSubstring(cs));
-        }
+    public SubstringCategoryMapping(SubstringMapping copyOf) {
+        super(copyOf);
     }
 
     @Override
@@ -27,32 +19,25 @@ public class SubstringCategoryMapping extends Generator implements SubstringCate
         return new SubstringCategoryMapping(this);
     }
 
+    public static class CategorizedSubstring extends FormattedSubstring {
 
-    // This class stands for a colored part of a text
-    @Getter
-    public static class CategorizedSubstring {
-        private final int begin; // inclusive
-        private final int end;  // exclusive
-        private final String category;
+        public CategorizedSubstring(int begin, int end, String substringCategoryName, String substringCategoryValue) {
+            super(begin, end, Map.of(substringCategoryName, substringCategoryValue), false, null, null, null, null, false, false, false);
+        }
 
-        public CategorizedSubstring(int begin, int end, String category) {
-            if (begin < 0 || end <= begin) {
-                throw new IllegalArgumentException("Invalid range: begin=" + begin + ", end=" + end);
+        public CategorizedSubstring(int begin, int end, String substringCategoryValue) {
+            super(begin, end, Map.of("category", substringCategoryValue), false, null, null, null, null, false, false, false);
+        }
+
+        public CategorizedSubstring(FormattedSubstring copyOf) {
+            super(copyOf);
+        }
+
+        public String getCategory() {
+            if (getCategoryValueMap().size() != 1) {
+                throw new IllegalArgumentException("Multiple (or none) categories defined but CategorizedSubstring.getCategory() called (requires single category definition).");
             }
-            this.begin = begin;
-            this.end = end;
-            this.category = category;
-        }
-
-        public CategorizedSubstring(SubstringCategoryMapping.CategorizedSubstring copyOf) {
-            this.begin = copyOf.begin;
-            this.end = copyOf.end;
-            this.category = copyOf.category;
-        }
-
-        @Override
-        public String toString() {
-            return "CategorizedSubstring{begin=" + begin + ", end=" + end + ", category=" + category + '}';
+            return getCategoryValueMap().values().stream().findFirst().get();
         }
     }
 }
