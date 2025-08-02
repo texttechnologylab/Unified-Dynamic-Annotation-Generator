@@ -42,7 +42,6 @@ public class CategoryNumberColorMapping extends CategoryNumberMapping implements
     @Override
     public String generateJSONCategoricalChart() {
         StringBuilder jsonStr = new StringBuilder("[\n");
-
         for (Map.Entry<String, Double> entry : categoryNumberMap.entrySet().stream()
                 .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
                 .toList()) {

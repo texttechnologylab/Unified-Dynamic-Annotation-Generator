@@ -3,6 +3,7 @@ package uni.textimager.sandbox.generators;
 
 import lombok.NonNull;
 
+import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -17,7 +18,7 @@ public class CategoryNumberMapping extends Generator implements CategoryNumberMa
 
 
     public CategoryNumberMapping(HashMap<String, Double> categoryNumberMap) {
-        this.categoryNumberMap = categoryNumberMap;
+        this.categoryNumberMap = new HashMap<>(categoryNumberMap);
         fractionModeEnabled = false;
         numberSuffix = null;
         calculateTotal();
@@ -105,19 +106,29 @@ public class CategoryNumberMapping extends Generator implements CategoryNumberMa
     }
 
     @Override
-    public String generateJSONCategoricalChart() {
-        StringBuilder jsonStr = new StringBuilder("[\n");
+    public String generateJSONCategoricalChart(Color fixedColor) {
+        if (fixedColor == null) {
+            CategoryNumberColorMapping colorMapping = new CategoryNumberColorMapping(categoryNumberMap);
+            return colorMapping.generateJSONCategoricalChart();
+        }
 
+        String color = String.format("#%02x%02x%02x", fixedColor.getRed(), fixedColor.getGreen(), fixedColor.getBlue());
+        StringBuilder jsonStr = new StringBuilder("[\n");
         for (Map.Entry<String, Double> entry : categoryNumberMap.entrySet().stream()
                 .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
                 .toList()) {
             String category = entry.getKey();
             Double value = entry.getValue();
-            jsonStr.append("  {\"label\": \"").append(category).append("\", \"value\": ").append(value).append("\"},\n");
+            jsonStr.append("  {\"label\": \"").append(category).append("\", \"value\": ").append(value).append(", \"color\": \"").append(color).append("\"},\n");
         }
         jsonStr.setLength(jsonStr.length() - 2);
         jsonStr.append("\n]");
         return jsonStr.toString();
+    }
+
+    @Override
+    public String generateJSONCategoricalChart() {
+        return generateJSONCategoricalChart(Color.BLUE);
     }
 
     private void calculateTotal() {
