@@ -44,8 +44,15 @@ public class SourceBuilder implements ApplicationRunner {
             System.out.println("Source created: " + source.getConfig().get("name"));
             List<uni.textimager.sandbox.generators.Generator> list = source.createGenerators();
             System.out.println("Generators created: " + list.size());
-            CategoryNumberMapping test = (CategoryNumberMapping) list.get(0);
-            System.out.println(test.generateJSONCategoricalChart());
+            try {
+                CategoryNumberMapping test = (CategoryNumberMapping) list.get(0);
+                System.out.println(test.generateJSONCategoricalChart());
+            } catch (Exception ignored) {}
+            try {
+                CategoryNumberMapping test = (CategoryNumberMapping) list.get(1);
+                System.out.println(test.generateJSONCategoricalChart());
+            } catch (Exception ignored) {}
+
         }
 //
 //        DSLContext create = DSL.using(dataSource.getConnection());
