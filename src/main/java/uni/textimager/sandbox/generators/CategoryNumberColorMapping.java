@@ -1,6 +1,7 @@
 package uni.textimager.sandbox.generators;
 
 import lombok.Getter;
+import lombok.NonNull;
 
 import java.awt.*;
 import java.util.*;
@@ -30,7 +31,7 @@ public class CategoryNumberColorMapping extends CategoryNumberMapping implements
     }
 
     @Override
-    public void multiplyByColor(Color color) {
+    public void multiplyByColor(@NonNull Color color) {
 
     }
 
@@ -40,6 +41,15 @@ public class CategoryNumberColorMapping extends CategoryNumberMapping implements
     }
 
     @Override
+    public String generateJSONCategoricalChart(Color fixedColor) {
+        if (fixedColor == null) {
+            return generateJSONCategoricalChart();
+        }
+        return super.generateJSONCategoricalChart(fixedColor);
+    }
+
+
+    @Override
     public String generateJSONCategoricalChart() {
         StringBuilder jsonStr = new StringBuilder("[\n");
         for (Map.Entry<String, Double> entry : categoryNumberMap.entrySet().stream()
@@ -47,7 +57,8 @@ public class CategoryNumberColorMapping extends CategoryNumberMapping implements
                 .toList()) {
             String category = entry.getKey();
             Double value = entry.getValue();
-            String color = String.format("#%02x%02x%02x", categoryColorMap.get(category).getRed(), categoryColorMap.get(category).getGreen(), categoryColorMap.get(category).getBlue());
+            Color colorObj = categoryColorMap.get(category);
+            String color = String.format("#%02x%02x%02x", colorObj.getRed(), colorObj.getGreen(), colorObj.getBlue());
             jsonStr.append("  {\"label\": \"").append(category).append("\", \"value\": ").append(value).append(", \"color\": \"").append(color).append("\"},\n");
         }
         jsonStr.setLength(jsonStr.length() - 2);

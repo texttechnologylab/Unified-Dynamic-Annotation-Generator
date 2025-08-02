@@ -128,7 +128,7 @@ public class CategoryNumberMapping extends Generator implements CategoryNumberMa
 
     @Override
     public String generateJSONCategoricalChart() {
-        return generateJSONCategoricalChart(Color.BLUE);
+        return generateJSONCategoricalChart(null);
     }
 
     private void calculateTotal() {
