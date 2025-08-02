@@ -4,15 +4,16 @@ package uni.textimager.sandbox.generators;
 import lombok.NonNull;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 public class CategoryNumberMapping extends Generator implements CategoryNumberMappingInterface{
-    private HashMap<String, Double> categoryNumberMap;
+    HashMap<String, Double> categoryNumberMap;
 
-    private boolean fractionModeEnabled;
-    private double fractionMode;
-    private double total;
-    private String numberSuffix;
+    boolean fractionModeEnabled;
+    double fractionMode;
+    double total;
+    String numberSuffix;
 
 
     public CategoryNumberMapping(HashMap<String, Double> categoryNumberMap) {
@@ -101,6 +102,22 @@ public class CategoryNumberMapping extends Generator implements CategoryNumberMa
     @Override
     public CategoryNumberMapping copy() {
         return new CategoryNumberMapping(this);
+    }
+
+    @Override
+    public String generateJSONCategoricalChart() {
+        StringBuilder jsonStr = new StringBuilder("[\n");
+
+        for (Map.Entry<String, Double> entry : categoryNumberMap.entrySet().stream()
+                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                .toList()) {
+            String category = entry.getKey();
+            Double value = entry.getValue();
+            jsonStr.append("  {\"label\": \"").append(category).append("\", \"value\": ").append(value).append("\"},\n");
+        }
+        jsonStr.setLength(jsonStr.length() - 2);
+        jsonStr.append("\n]");
+        return jsonStr.toString();
     }
 
     private void calculateTotal() {

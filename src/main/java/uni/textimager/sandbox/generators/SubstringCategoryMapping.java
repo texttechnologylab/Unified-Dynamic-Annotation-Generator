@@ -1,7 +1,5 @@
 package uni.textimager.sandbox.generators;
 
-import lombok.Getter;
-
 import java.util.*;
 
 public class SubstringCategoryMapping extends SubstringMapping implements SubstringCategoryMappingInterface {
@@ -19,7 +17,7 @@ public class SubstringCategoryMapping extends SubstringMapping implements Substr
         return new SubstringCategoryMapping(this);
     }
 
-    public static class CategorizedSubstring extends FormattedSubstring {
+    public static class CategorizedSubstring extends Substring {
 
         public CategorizedSubstring(int begin, int end, String substringCategoryName, String substringCategoryValue) {
             super(begin, end, Map.of(substringCategoryName, substringCategoryValue), false, null, null, null, null, false, false, false);
@@ -29,7 +27,7 @@ public class SubstringCategoryMapping extends SubstringMapping implements Substr
             super(begin, end, Map.of("category", substringCategoryValue), false, null, null, null, null, false, false, false);
         }
 
-        public CategorizedSubstring(FormattedSubstring copyOf) {
+        public CategorizedSubstring(Substring copyOf) {
             super(copyOf);
         }
 

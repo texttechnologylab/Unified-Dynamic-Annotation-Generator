@@ -1,7 +1,5 @@
 package uni.textimager.sandbox.generators;
 
-import lombok.Getter;
-
 import java.awt.*;
 import java.util.*;
 import java.util.List;
@@ -26,7 +24,7 @@ public class SubstringColorMapping extends SubstringMapping implements Substring
         return new SubstringColorMapping(this);
     }
 
-    public static class ColoredSubstring extends FormattedSubstring {
+    public static class ColoredSubstring extends Substring {
 
         public ColoredSubstring(int begin, int end, Color color) {
             super(begin, end, Map.of(), false, color, null, null, null, false, false, false);
@@ -36,7 +34,7 @@ public class SubstringColorMapping extends SubstringMapping implements Substring
             super(begin, end, new HashMap<>(categoryValueMap), false, color, null, null, null, false, false, false);
         }
 
-        public ColoredSubstring(FormattedSubstring copyOf) {
+        public ColoredSubstring(Substring copyOf) {
             super(copyOf);
         }
 

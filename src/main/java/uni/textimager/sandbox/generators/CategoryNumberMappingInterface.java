@@ -6,4 +6,5 @@ public interface CategoryNumberMappingInterface extends CategoryMappingInterface
     String getNumberString(String category);
     double getNumber(String category);
     double getTotal();
+    String generateJSONCategoricalChart();
 }

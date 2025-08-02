@@ -5,11 +5,11 @@ import lombok.Getter;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
-import java.util.stream.Collectors;
+
 
 public class CategoryNumberColorMapping extends CategoryNumberMapping implements CategoryNumberColorMappingInterface {
     @Getter
-    private HashMap<String, Color> categoryColorMap;
+    HashMap<String, Color> categoryColorMap;
 
     public CategoryNumberColorMapping(HashMap<String, Double> categoryNumberMap, HashMap<String, Color> categoryColorMap) {
         super(categoryNumberMap);
@@ -37,6 +37,23 @@ public class CategoryNumberColorMapping extends CategoryNumberMapping implements
     @Override
     public CategoryNumberColorMapping copy() {
         return new CategoryNumberColorMapping(this);
+    }
+
+    @Override
+    public String generateJSONCategoricalChart() {
+        StringBuilder jsonStr = new StringBuilder("[\n");
+
+        for (Map.Entry<String, Double> entry : categoryNumberMap.entrySet().stream()
+                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                .toList()) {
+            String category = entry.getKey();
+            Double value = entry.getValue();
+            String color = String.format("#%02x%02x%02x", categoryColorMap.get(category).getRed(), categoryColorMap.get(category).getGreen(), categoryColorMap.get(category).getBlue());
+            jsonStr.append("  {\"label\": \"").append(category).append("\", \"value\": ").append(value).append(", \"color\": \"").append(color).append("\"},\n");
+        }
+        jsonStr.setLength(jsonStr.length() - 2);
+        jsonStr.append("\n]");
+        return jsonStr.toString();
     }
 
 

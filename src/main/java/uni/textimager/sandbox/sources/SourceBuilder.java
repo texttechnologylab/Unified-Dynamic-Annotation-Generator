@@ -9,6 +9,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import uni.textimager.sandbox.database.QueryHelper;
+import uni.textimager.sandbox.generators.CategoryNumberMapping;
 import uni.textimager.sandbox.pipeline.JSONView;
 import uni.textimager.sandbox.pipeline.Pipeline;
 import uni.textimager.sandbox.pipeline.PipelineNode;
@@ -41,8 +42,10 @@ public class SourceBuilder implements ApplicationRunner {
         for (PipelineNode sourceNode : pipeline.getSources().values()) {
             Source source = new Source(dbAccess, sourceNode.getConfig(), relevantGenerators, sourceNode.getChildren());
             System.out.println("Source created: " + source.getConfig().get("name"));
-            Collection<uni.textimager.sandbox.generators.Generator> list = source.createGenerators();
+            List<uni.textimager.sandbox.generators.Generator> list = source.createGenerators();
             System.out.println("Generators created: " + list.size());
+            CategoryNumberMapping test = (CategoryNumberMapping) list.get(0);
+            System.out.println(test.generateJSONCategoricalChart());
         }
 //
 //        DSLContext create = DSL.using(dataSource.getConnection());

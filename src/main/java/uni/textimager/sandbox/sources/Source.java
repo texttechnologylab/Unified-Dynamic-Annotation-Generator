@@ -67,7 +67,7 @@ public class Source implements SourceInterface {
 
     // Don't leave out filtered generators that are part of a combi with at least one relevant generator to keep visualization results consistent
     @Override
-    public Collection<Generator> createGenerators() throws SQLException {
+    public List<Generator> createGenerators() throws SQLException {
         ArrayList<Generator> generators = new ArrayList<>();
 
         JSONView createsGenerators = config.get("createsGenerators");

@@ -8,23 +8,23 @@ import java.util.List;
 
 public abstract class SubstringMapping extends Generator implements SubstringMappingInterface {
     private final String text;
-    private final List<FormattedSubstring> formattedSubstrings;
+    private final List<Substring> substrings;
 
-    public SubstringMapping(String text, List<FormattedSubstring> formattedSubstrings) {
+    public SubstringMapping(String text, List<Substring> substrings) {
         this.text = text;
-        this.formattedSubstrings = formattedSubstrings;
+        this.substrings = substrings;
     }
 
     public SubstringMapping(SubstringMapping copyOf) {
         this.text = copyOf.text;
-        this.formattedSubstrings = new ArrayList<>();
-        for (FormattedSubstring fs : copyOf.formattedSubstrings) {
-            this.formattedSubstrings.add(new FormattedSubstring(fs));
+        this.substrings = new ArrayList<>();
+        for (Substring fs : copyOf.substrings) {
+            this.substrings.add(new Substring(fs));
         }
     }
 
     @Getter
-    public static class FormattedSubstring {
+    public static class Substring {
         private final int begin; // inclusive
         private final int end;  // exclusive
         private final Map<String, String> categoryValueMap;
@@ -37,7 +37,7 @@ public abstract class SubstringMapping extends Generator implements SubstringMap
         private final boolean bold;
         private final boolean italic;
 
-        public FormattedSubstring(int begin, int end, Map<String, String> categoryValueMap, boolean preciseColorMode, Color color, Color colorText, Color colorHighlight, Color colorUnderlined, boolean underlined, boolean bold, boolean italic) {
+        public Substring(int begin, int end, Map<String, String> categoryValueMap, boolean preciseColorMode, Color color, Color colorText, Color colorHighlight, Color colorUnderlined, boolean underlined, boolean bold, boolean italic) {
             if (begin < 0 || end <= begin) {
                 throw new IllegalArgumentException("Invalid range: begin=" + begin + ", end=" + end);
             }
@@ -54,7 +54,7 @@ public abstract class SubstringMapping extends Generator implements SubstringMap
             this.italic = italic;
         }
 
-        public FormattedSubstring(SubstringMapping.FormattedSubstring copyOf) {
+        public Substring(Substring copyOf) {
             this.begin = copyOf.begin;
             this.end = copyOf.end;
             this.categoryValueMap = new HashMap<>(copyOf.categoryValueMap);
