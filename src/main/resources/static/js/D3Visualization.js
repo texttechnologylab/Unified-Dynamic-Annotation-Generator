@@ -1,8 +1,9 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 
 export default class AbstractChart {
-  constructor(anchor, margin, width, height) {
+  constructor(anchor, endpoint, margin, width, height) {
     this.anchor = anchor;
+    this.endpoint = endpoint;
     this.margin = margin;
     this.width = width - this.margin.left - this.margin.right;
     this.height = height - this.margin.top - this.margin.bottom;
@@ -21,8 +22,15 @@ export default class AbstractChart {
       .attr("transform", `translate(${this.margin.left}, ${this.margin.top})`);
   }
 
-  create() {
-    throw new Error("Method not implemented.");
+  async fetch() {
+    const response = await fetch(this.endpoint);
+    const result = await response.json();
+
+    return result;
+  }
+
+  render() {
+    throw new Error("Method render() not implemented.");
   }
 
   mouseover = (event) => {

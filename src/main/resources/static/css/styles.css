@@ -24,6 +24,10 @@ h1 {
   border-radius: 0.5rem;
   padding: 1.5rem;
   margin: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
 .tooltip {
