@@ -2,14 +2,8 @@ import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import D3Visualization from "../D3Visualization.js";
 
 export default class Map2D extends D3Visualization {
-  constructor(anchor, endpoint, { width, height }) {
-    super(
-      anchor,
-      endpoint,
-      { top: 0, right: 0, bottom: 0, left: 0 },
-      width,
-      height
-    );
+  constructor(anchor, key, { width, height }) {
+    super(anchor, key, { top: 0, right: 0, bottom: 0, left: 0 }, width, height);
   }
 
   render() {

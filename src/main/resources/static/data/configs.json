@@ -3,9 +3,8 @@
     "id": "bar-chart",
     "type": "BarChart",
     "title": "BarChart",
-    "endpoint": "/data/categories.json",
     "options": {
-      "width": 600,
+      "width": 800,
       "height": 600,
       "horizontal": false
     }
@@ -14,9 +13,8 @@
     "id": "line-chart",
     "type": "LineChart",
     "title": "LineChart",
-    "endpoint": "/data/coordinates.json",
     "options": {
-      "width": 600,
+      "width": 800,
       "height": 600,
       "line": true,
       "dots": true
@@ -26,7 +24,6 @@
     "id": "pie-chart",
     "type": "PieChart",
     "title": "PieChart",
-    "endpoint": "/data/categories.json",
     "options": {
       "radius": 300,
       "hole": 0
@@ -36,29 +33,26 @@
     "id": "text-document",
     "type": "TextDocument",
     "title": "TextDocument",
-    "endpoint": "/data/textCategories.json",
     "options": {
       "width": 600,
       "height": 600
     }
   },
   {
-    "id": "map2d",
+    "id": "map-2d",
     "type": "Map2D",
     "title": "Map2D",
-    "endpoint": "/data/geo.json",
     "options": {
-      "width": 600,
+      "width": 800,
       "height": 600
     }
   },
   {
-    "id": "network2d",
+    "id": "network-2d",
     "type": "Network2D",
     "title": "Network2D",
-    "endpoint": "/data/nodesandedges.json",
     "options": {
-      "width": 600,
+      "width": 800,
       "height": 600,
       "radius": 10
     }

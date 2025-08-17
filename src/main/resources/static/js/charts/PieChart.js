@@ -1,14 +1,16 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import D3Visualization from "../D3Visualization.js";
+import { appendSlider } from "../utils/controls.js";
 
 export default class PieChart extends D3Visualization {
-  constructor(anchor, endpoint, { radius, hole = 0 }) {
+  constructor(anchor, key, { radius, hole = 0, controls = true }) {
     super(
       anchor,
-      endpoint,
+      key,
       { top: radius, right: radius, bottom: radius, left: radius },
       radius * 2,
-      radius * 2
+      radius * 2,
+      controls
     );
 
     this.radius = radius;
@@ -17,6 +19,13 @@ export default class PieChart extends D3Visualization {
 
   render() {
     this.fetch().then((data) => {
+      // Add controls on first render
+      if (this.controlsEmpty()) {
+        const min = data[data.length - 1].value;
+        const max = data[0].value;
+        appendSlider(this.controls, min, max);
+      }
+
       // Create a color scale
       const color = d3.scaleOrdinal().range(data.map((item) => item.color));
 

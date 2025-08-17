@@ -2,16 +2,23 @@
 <html>
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>${title}</title>
 
     <link href="/css/styles.css" rel="stylesheet" />
+    <link 
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" 
+      rel="stylesheet" 
+      integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" 
+      crossorigin="anonymous"
+    >
   </head>
 
   <body>
     <div class="container">
       <#list configs?eval_json as config>
         <div 
-          class="card" 
+          class="demo-card" 
           data-id="${config.id}"
         >
           <h2>${config.title}</h2>
@@ -26,14 +33,14 @@
       const configs = JSON.parse("${configs?json_string}");
 
       document.querySelectorAll("[data-id]").forEach((item) => {
-        const config = configs.find((conf) => conf.id === item.dataset.id);
+        const id = item.dataset.id;
+        const config = configs.find((conf) => conf.id === id);
         const Visualization = getter[config.type];
 
         const anchor = item.querySelector(".anchor");
-        const endpoint = config.endpoint;
         const options = config.options;
 
-        new Visualization(anchor, endpoint, options).render();
+        new Visualization(anchor, id, options).render();
       });
     </script>
   </body>

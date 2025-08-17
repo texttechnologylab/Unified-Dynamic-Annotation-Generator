@@ -6,8 +6,11 @@ h1 {
   font-weight: 500;
 }
 
+svg {
+  background-color: #ffffff;
+}
+
 .container {
-  text-align: center;
   margin: 0 10rem 0 10rem;
 }
 
@@ -19,11 +22,12 @@ h1 {
   flex: 1 0 0;
 }
 
-.card {
-  border: 1px solid #dee2e6;
+.demo-card {
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  background-color: #f8f9fa;
   border-radius: 0.5rem;
   padding: 1.5rem;
-  margin: 1rem;
+  margin: 3rem;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -41,3 +45,18 @@ h1 {
   box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.15);
   z-index: 100;
 }
+
+.controls {
+  padding-bottom: 0.5rem;
+}
+
+/* .slider {
+  position: relative;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+input[type="range"] {
+  position: absolute;
+  pointer-events: none;
+} */

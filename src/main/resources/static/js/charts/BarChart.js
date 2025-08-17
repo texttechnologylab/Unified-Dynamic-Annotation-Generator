@@ -1,14 +1,20 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import D3Visualization from "../D3Visualization.js";
+import { appendSlider } from "../utils/controls.js";
 
 export default class BarChart extends D3Visualization {
-  constructor(anchor, endpoint, { width, height, horizontal = false }) {
+  constructor(
+    anchor,
+    key,
+    { width, height, horizontal = false, controls = true }
+  ) {
     super(
       anchor,
-      endpoint,
+      key,
       { top: 30, right: 30, bottom: 70, left: 60 },
       width,
-      height
+      height,
+      controls
     );
 
     this.horizontal = horizontal;
@@ -16,7 +22,12 @@ export default class BarChart extends D3Visualization {
 
   render() {
     this.fetch().then((data) => {
-      data = data.sort((a, b) => b.value - a.value);
+      // Add controls on first render
+      if (this.controlsEmpty()) {
+        const min = data[data.length - 1].value;
+        const max = data[0].value;
+        appendSlider(this.controls, min, max);
+      }
 
       // Add x axis
       const xAxis = this.horizontal ? this.linear(data) : this.band(data);

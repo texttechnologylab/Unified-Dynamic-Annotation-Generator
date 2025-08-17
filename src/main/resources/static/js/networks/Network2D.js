@@ -2,10 +2,10 @@ import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import D3Visualization from "../D3Visualization.js";
 
 export default class Network2D extends D3Visualization {
-  constructor(anchor, endpoint, { width, height, radius }) {
+  constructor(anchor, key, { width, height, radius }) {
     super(
       anchor,
-      endpoint,
+      key,
       { top: 10, right: 30, bottom: 30, left: 40 },
       width,
       height

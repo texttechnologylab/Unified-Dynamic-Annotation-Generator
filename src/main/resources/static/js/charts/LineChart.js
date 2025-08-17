@@ -1,14 +1,21 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import D3Visualization from "../D3Visualization.js";
+import { flatData } from "../utils/helper.js";
+import { appendSwitch } from "../utils/controls.js";
 
 export default class LineChart extends D3Visualization {
-  constructor(anchor, endpoint, { width, height, line = true, dots = true }) {
+  constructor(
+    anchor,
+    key,
+    { width, height, line = true, dots = true, controls = true }
+  ) {
     super(
       anchor,
-      endpoint,
+      key,
       { top: 10, right: 30, bottom: 30, left: 60 },
       width,
-      height
+      height,
+      controls
     );
 
     this.line = line;
@@ -17,11 +24,20 @@ export default class LineChart extends D3Visualization {
 
   render() {
     this.fetch().then((data) => {
+      // Add controls on first render
+      if (this.controlsEmpty()) {
+        for (const item of data) {
+          appendSwitch(this.controls, item.name);
+        }
+      }
+
+      const coordinates = flatData(data, "coordinates");
+
       // Add x axis
       const xAxis = d3
         .scaleLinear()
         .range([0, this.width])
-        .domain([0, d3.max(data.coordinates, (item) => item.x)]);
+        .domain(d3.extent(coordinates, (item) => item.x));
       this.svg
         .append("g")
         .attr("transform", `translate(0, ${this.height})`)
@@ -31,7 +47,7 @@ export default class LineChart extends D3Visualization {
       const yAxis = d3
         .scaleLinear()
         .range([this.height, 0])
-        .domain([0, d3.max(data.coordinates, (item) => item.y)]);
+        .domain(d3.extent(coordinates, (item) => item.y));
       this.svg.append("g").call(d3.axisLeft(yAxis));
 
       const line = d3
@@ -42,23 +58,24 @@ export default class LineChart extends D3Visualization {
       // Add the line
       if (this.line) {
         this.svg
-          .datum(data.coordinates)
-          .append("path")
-          .attr("d", line)
+          .selectAll(".line")
+          .data(data)
+          .join("path")
+          .attr("d", (item) => line(item.coordinates))
           .attr("fill", "none")
-          .attr("stroke", data.color)
+          .attr("stroke", (item) => item.color)
           .attr("stroke-width", 1.5);
       }
 
       // Add the dots
       this.svg
-        .selectAll("circle")
-        .data(data.coordinates)
+        .selectAll(".circle")
+        .data(coordinates)
         .join("circle")
         .attr("cx", (item) => xAxis(item.x))
         .attr("cy", (item) => yAxis(item.y))
         .attr("r", 4)
-        .attr("fill", this.dots ? data.color : "transparent")
+        .attr("fill", this.dots ? (item) => item.color : "transparent")
         .on("mouseover", this.mouseover)
         .on("mousemove", this.mousemove)
         .on("mouseleave", this.mouseleave);

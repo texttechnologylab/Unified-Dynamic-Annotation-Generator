@@ -1,14 +1,17 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import D3Visualization from "../D3Visualization.js";
+import { flatData } from "../utils/helper.js";
+import { appendSwitch } from "../utils/controls.js";
 
 export default class HighlightText extends D3Visualization {
-  constructor(anchor, endpoint, { width, height }) {
+  constructor(anchor, key, { width, height, controls = true }) {
     super(
       anchor,
-      endpoint,
+      key,
       { top: 0, right: 0, bottom: 0, left: 0 },
       width,
-      height
+      height,
+      controls
     );
 
     d3.select(this.anchor).select("svg").remove();
@@ -19,16 +22,24 @@ export default class HighlightText extends D3Visualization {
       .style("height", this.height + "px")
       .style("text-align", "start")
       .style("line-height", "1.8rem")
+      .style("background-color", "#ffffff")
       .style("overflow-y", "auto");
   }
 
   render() {
     this.fetch().then((data) => {
-      data = this.generateSpans(data);
+      // Add controls on first render
+      if (this.controlsEmpty()) {
+        for (const item of data.datasets) {
+          appendSwitch(this.controls, item.name);
+        }
+      }
+
+      const spans = this.generateSpans(data);
 
       this.div
         .selectAll("span")
-        .data(data)
+        .data(spans)
         .join("span")
         .text((d) => d.text)
         .attr("style", (item) => item.style)
@@ -39,31 +50,33 @@ export default class HighlightText extends D3Visualization {
     });
   }
 
-  generateSpans({ text, categories }) {
-    const result = [];
-    const events = [];
+  renderControls(data) {
+    for (const category of data.datasets) {
+      this.controls
+        .append("div")
+        .attr("class", "form-check form-switch")
+        .append("label")
+        .attr("class", "form-check-label")
+        .text(category.name)
+        .append("input")
+        .attr("type", "checkbox")
+        .attr("class", "form-check-input")
+        .attr("value", category.name)
+        .attr("checked", true)
+        .on("change", (event) => console.log(event.target.value));
+    }
+  }
 
-    categories
-      .flatMap((item) => item.segments)
-      .forEach((segment) => {
-        const style = this.getStyle(segment);
-        events.push({
-          index: segment.begin,
-          label: `<span style="color: ${segment.color};">${segment.label}</span>`,
-          style,
-        });
-        events.push({
-          index: segment.end,
-          label: `<span style="color: ${segment.color};">${segment.label}</span>`,
-          style,
-        });
-      });
-    events.sort((a, b) => a.index - b.index);
+  generateSpans({ text, datasets }) {
+    // Split segments into begin and end events
+    const events = this.splitSegments(datasets);
+    const result = [];
 
     let last = 0;
     let styles = [];
     let labels = [];
 
+    // Add styles to events to generate the spans
     for (const event of events) {
       if (last < event.index) {
         result.push({
@@ -73,12 +86,14 @@ export default class HighlightText extends D3Visualization {
         });
       }
 
+      // Update the current styles
       if (styles.find((item) => item === event.style)) {
         styles = styles.filter((item) => item !== event.style);
       } else {
         styles.push(event.style);
       }
 
+      // Update the current labels
       if (labels.find((item) => item === event.label)) {
         labels = labels.filter((item) => item !== event.label);
       } else {
@@ -88,6 +103,7 @@ export default class HighlightText extends D3Visualization {
       last = event.index;
     }
 
+    // Add optional last element without styles
     if (last < text.length) {
       result.push({
         text: text.slice(last),
@@ -95,6 +111,25 @@ export default class HighlightText extends D3Visualization {
     }
 
     return result;
+  }
+
+  splitSegments(datasets) {
+    const events = flatData(datasets, "segments").flatMap((segment) => {
+      return [
+        {
+          index: segment.begin,
+          label: `<span style="color: ${segment.color};">${segment.label}</span>`,
+          style: this.getStyle(segment),
+        },
+        {
+          index: segment.end,
+          label: `<span style="color: ${segment.color};">${segment.label}</span>`,
+          style: this.getStyle(segment),
+        },
+      ];
+    });
+
+    return events.sort((a, b) => a.index - b.index);
   }
 
   getStyle(item) {
