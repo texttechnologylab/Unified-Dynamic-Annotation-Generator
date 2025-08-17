@@ -1,4 +1,4 @@
-package uni.textimager.sandbox.api.controller;
+package uni.textimager.sandbox.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

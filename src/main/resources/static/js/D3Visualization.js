@@ -33,7 +33,7 @@ export default class AbstractChart {
   }
 
   async fetch() {
-    const response = await fetch(`/data/${this.key}.json`);
+    const response = await fetch(`/api/data?id=${this.key}&type=${this.key}`);
     const result = await response.json();
 
     return result;

@@ -4,7 +4,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import uni.textimager.sandbox.api.service.DataQueryHandler;
+
+import uni.textimager.sandbox.api.DataQueryHandler;
 
 import java.util.*;
 

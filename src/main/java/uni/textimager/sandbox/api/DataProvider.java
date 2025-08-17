@@ -1,4 +1,4 @@
-package uni.textimager.sandbox.api.service;
+package uni.textimager.sandbox.api;
 
 import java.util.Map;
 
