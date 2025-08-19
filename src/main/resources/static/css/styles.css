@@ -49,14 +49,3 @@ svg {
 .controls {
   padding-bottom: 0.5rem;
 }
-
-/* .slider {
-  position: relative;
-  cursor: pointer;
-  pointer-events: auto;
-}
-
-input[type="range"] {
-  position: absolute;
-  pointer-events: none;
-} */

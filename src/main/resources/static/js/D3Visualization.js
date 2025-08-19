@@ -1,9 +1,9 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 
-export default class AbstractChart {
-  constructor(anchor, key, margin, width, height, controls) {
+export default class D3Visualization {
+  constructor(anchor, endpoint, margin, width, height) {
     this.anchor = anchor;
-    this.key = key;
+    this.endpoint = endpoint;
     this.margin = margin;
     this.width = width - this.margin.left - this.margin.right;
     this.height = height - this.margin.top - this.margin.bottom;
@@ -15,12 +15,10 @@ export default class AbstractChart {
       .attr("class", "tooltip");
 
     // Add controls to anchor div:
-    if (controls) {
-      this.controls = d3
-        .select(this.anchor)
-        .append("div")
-        .attr("class", "controls");
-    }
+    this.controls = d3
+      .select(this.anchor)
+      .append("div")
+      .attr("class", "controls");
 
     // Add svg to anchor div
     this.svg = d3
@@ -32,15 +30,16 @@ export default class AbstractChart {
       .attr("transform", `translate(${this.margin.left}, ${this.margin.top})`);
   }
 
-  async fetch() {
-    const response = await fetch(`/api/data?id=${this.key}&type=${this.key}`);
-    const result = await response.json();
+  async fetch(params = {}) {
+    const url = new URL(this.endpoint);
+
+    for (const [key, value] of Object.entries(params)) {
+      url.searchParams.append(key, value);
+    }
+
+    const result = await fetch(url).then((response) => response.json());
 
     return result;
-  }
-
-  controlsEmpty() {
-    return this.controls?.selectAll("*").empty();
   }
 
   clear() {

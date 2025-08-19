@@ -4,15 +4,8 @@ import { flatData } from "../utils/helper.js";
 import { appendSwitch } from "../utils/controls.js";
 
 export default class HighlightText extends D3Visualization {
-  constructor(anchor, key, { width, height, controls = true }) {
-    super(
-      anchor,
-      key,
-      { top: 0, right: 0, bottom: 0, left: 0 },
-      width,
-      height,
-      controls
-    );
+  constructor(anchor, key, { width, height }) {
+    super(anchor, key, { top: 0, right: 0, bottom: 0, left: 0 }, width, height);
 
     d3.select(this.anchor).select("svg").remove();
     this.div = d3
@@ -26,45 +19,30 @@ export default class HighlightText extends D3Visualization {
       .style("overflow-y", "auto");
   }
 
-  render() {
-    this.fetch().then((data) => {
-      // Add controls on first render
-      if (this.controlsEmpty()) {
-        for (const item of data.datasets) {
-          appendSwitch(this.controls, item.name);
-        }
+  async render(data) {
+    this.clear();
+
+    if (!data) {
+      data = await this.fetch();
+
+      // Add controls
+      for (const item of data.datasets) {
+        appendSwitch(this.controls, item.name, (value) => console.log(value));
       }
-
-      const spans = this.generateSpans(data);
-
-      this.div
-        .selectAll("span")
-        .data(spans)
-        .join("span")
-        .text((d) => d.text)
-        .attr("style", (item) => item.style)
-        .filter((item) => item.label)
-        .style("cursor", "pointer")
-        .on("mouseover", this.mouseover)
-        .on("mouseleave", this.mouseleave);
-    });
-  }
-
-  renderControls(data) {
-    for (const category of data.datasets) {
-      this.controls
-        .append("div")
-        .attr("class", "form-check form-switch")
-        .append("label")
-        .attr("class", "form-check-label")
-        .text(category.name)
-        .append("input")
-        .attr("type", "checkbox")
-        .attr("class", "form-check-input")
-        .attr("value", category.name)
-        .attr("checked", true)
-        .on("change", (event) => console.log(event.target.value));
     }
+
+    const spans = this.generateSpans(data);
+
+    this.div
+      .selectAll("span")
+      .data(spans)
+      .join("span")
+      .text((d) => d.text)
+      .attr("style", (item) => item.style)
+      .filter((item) => item.label)
+      .style("cursor", "pointer")
+      .on("mouseover", this.mouseover)
+      .on("mouseleave", this.mouseleave);
   }
 
   generateSpans({ text, datasets }) {

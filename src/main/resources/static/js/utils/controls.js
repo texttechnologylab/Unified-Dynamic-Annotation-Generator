@@ -1,6 +1,6 @@
 import { minOf, maxOf } from "./helper.js";
 
-function appendSwitch(anchor, name) {
+function appendSwitch(anchor, name, onchange) {
   anchor
     .append("div")
     .attr("class", "form-check form-switch")
@@ -12,10 +12,10 @@ function appendSwitch(anchor, name) {
     .attr("class", "form-check-input")
     .attr("value", name)
     .attr("checked", true)
-    .on("change", (event) => console.log(event.target.value));
+    .on("change", (event) => onchange(event.target.value));
 }
 
-function appendSlider(anchor, min, max) {
+function appendSlider(anchor, min, max, onchange) {
   const values = [min, max];
 
   const label = anchor
@@ -23,12 +23,9 @@ function appendSlider(anchor, min, max) {
     .attr("class", "form-label w-100")
     .append("span")
     .text(`Range: ${min} - ${max}`);
-  // .append("div")
-  // .attr("class", "slider");
 
   anchor
     .select("label")
-    // .select("div")
     .append("input")
     .attr("type", "range")
     .attr("class", "form-range")
@@ -39,11 +36,12 @@ function appendSlider(anchor, min, max) {
       values[1] = parseInt(event.target.value);
       label.text(`Range: ${minOf(values)} - ${maxOf(values)}`);
     })
-    .on("change", (event) => console.log(event.target.value));
+    .on("change", () => {
+      onchange(minOf(values), maxOf(values));
+    });
 
   anchor
     .select("label")
-    // .select("div")
     .append("input")
     .attr("type", "range")
     .attr("class", "form-range")
@@ -54,7 +52,9 @@ function appendSlider(anchor, min, max) {
       values[0] = parseInt(event.target.value);
       label.text(`Range: ${minOf(values)} - ${maxOf(values)}`);
     })
-    .on("change", (event) => console.log(event.target.value));
+    .on("change", () => {
+      onchange(minOf(values), maxOf(values));
+    });
 }
 
 export { appendSwitch, appendSlider };

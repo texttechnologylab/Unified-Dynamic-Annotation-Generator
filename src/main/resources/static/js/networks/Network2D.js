@@ -14,63 +14,67 @@ export default class Network2D extends D3Visualization {
     this.radius = radius;
   }
 
-  render() {
-    this.fetch().then((data) => {
-      // Initialize zoom functionality
-      const zoom = d3
-        .zoom()
-        .scaleExtent([0.5, 3])
-        .translateExtent([
-          [0, 0],
-          [this.width, this.height],
-        ])
-        .on("zoom", this.onZoom);
-      d3.select(this.anchor).select("svg").call(zoom);
+  async render(data) {
+    this.clear();
 
-      // Initialize the links
-      const link = this.svg
-        .selectAll("line")
-        .data(data.links)
-        .join("line")
-        .style("stroke", (item) => item.color);
+    if (!data) {
+      data = await this.fetch();
+    }
 
-      // Initialize the nodes
-      const node = this.svg
-        .selectAll("circle")
-        .data(data.nodes)
-        .join("circle")
-        .attr("r", this.radius)
-        .style("fill", (item) => item.color)
-        .on("mouseover", this.mouseover)
-        .on("mousemove", this.mousemove)
-        .on("mouseleave", this.mouseleave);
+    // Initialize zoom functionality
+    const zoom = d3
+      .zoom()
+      .scaleExtent([0.5, 3])
+      .translateExtent([
+        [0, 0],
+        [this.width, this.height],
+      ])
+      .on("zoom", this.onZoom);
+    d3.select(this.anchor).select("svg").call(zoom);
 
-      // This function is run at each iteration of the force algorithm, updating the nodes position.
-      const onTick = () => {
-        link
-          .attr("x1", (item) => item.source.x)
-          .attr("y1", (item) => item.source.y)
-          .attr("x2", (item) => item.target.x)
-          .attr("y2", (item) => item.target.y);
+    // Initialize the links
+    const link = this.svg
+      .selectAll("line")
+      .data(data.links)
+      .join("line")
+      .style("stroke", (item) => item.color);
 
-        node.attr("cx", (item) => item.x).attr("cy", (item) => item.y);
-      };
+    // Initialize the nodes
+    const node = this.svg
+      .selectAll("circle")
+      .data(data.nodes)
+      .join("circle")
+      .attr("r", this.radius)
+      .style("fill", (item) => item.color)
+      .on("mouseover", this.mouseover)
+      .on("mousemove", this.mousemove)
+      .on("mouseleave", this.mouseleave);
 
-      d3.forceSimulation(data.nodes)
-        // links between nodes
-        .force(
-          "link",
-          d3.forceLink(data.links).id((item) => item.id)
-        )
-        // avoid node overlaps
-        .force("collide", d3.forceCollide().radius(this.radius))
-        // attraction or repulsion between nodes
-        .force("charge", d3.forceManyBody())
-        // nodes are attracted by the center of the chart area
-        .force("center", d3.forceCenter(this.width / 2, this.height / 2))
-        // nodes position is updated every tick
-        .on("tick", onTick);
-    });
+    // This function is run at each iteration of the force algorithm, updating the nodes position.
+    const onTick = () => {
+      link
+        .attr("x1", (item) => item.source.x)
+        .attr("y1", (item) => item.source.y)
+        .attr("x2", (item) => item.target.x)
+        .attr("y2", (item) => item.target.y);
+
+      node.attr("cx", (item) => item.x).attr("cy", (item) => item.y);
+    };
+
+    d3.forceSimulation(data.nodes)
+      // links between nodes
+      .force(
+        "link",
+        d3.forceLink(data.links).id((item) => item.id)
+      )
+      // avoid node overlaps
+      .force("collide", d3.forceCollide().radius(this.radius))
+      // attraction or repulsion between nodes
+      .force("charge", d3.forceManyBody())
+      // nodes are attracted by the center of the chart area
+      .force("center", d3.forceCenter(this.width / 2, this.height / 2))
+      // nodes position is updated every tick
+      .on("tick", onTick);
   }
 
   mousemove = (event, data) => {

@@ -3,53 +3,57 @@ import D3Visualization from "../D3Visualization.js";
 import { appendSlider } from "../utils/controls.js";
 
 export default class PieChart extends D3Visualization {
-  constructor(anchor, key, { radius, hole = 0, controls = true }) {
+  constructor(anchor, key, { radius, hole = 0 }) {
     super(
       anchor,
       key,
       { top: radius, right: radius, bottom: radius, left: radius },
       radius * 2,
-      radius * 2,
-      controls
+      radius * 2
     );
 
     this.radius = radius;
     this.hole = hole;
   }
 
-  render() {
-    this.fetch().then((data) => {
-      // Add controls on first render
-      if (this.controlsEmpty()) {
-        const min = data[data.length - 1].value;
-        const max = data[0].value;
-        appendSlider(this.controls, min, max);
-      }
+  async render(data) {
+    this.clear();
 
-      // Create a color scale
-      const color = d3.scaleOrdinal().range(data.map((item) => item.color));
+    if (!data) {
+      data = await this.fetch();
 
-      // Create the pie generator
-      const pie = d3.pie().value((item) => item.value);
+      // Add controls
+      const min = data[data.length - 1].value;
+      const max = data[0].value;
 
-      // Create the arc generator
-      const arc = d3
-        .arc()
-        .innerRadius(this.hole) // For a pie chart (0 for no hole, >0 for a donut chart)
-        .outerRadius(this.radius);
+      appendSlider(this.controls, min, max, (min, max) => {
+        this.fetch({ min, max }).then((data) => this.render(data));
+      });
+    }
 
-      // Bind data to pie slices
-      this.svg
-        .selectAll()
-        .data(pie(data))
-        .join("path")
-        .attr("d", arc)
-        .attr("fill", color)
-        .attr("stroke", "white")
-        .style("stroke-width", "2px")
-        .on("mouseover", this.mouseover)
-        .on("mousemove", this.mousemove)
-        .on("mouseleave", this.mouseleave);
-    });
+    // Create a color scale
+    const color = d3.scaleOrdinal().range(data.map((item) => item.color));
+
+    // Create the pie generator
+    const pie = d3.pie().value((item) => item.value);
+
+    // Create the arc generator
+    const arc = d3
+      .arc()
+      .innerRadius(this.hole) // For a pie chart (0 for no hole, >0 for a donut chart)
+      .outerRadius(this.radius);
+
+    // Bind data to pie slices
+    this.svg
+      .selectAll()
+      .data(pie(data))
+      .join("path")
+      .attr("d", arc)
+      .attr("fill", color)
+      .attr("stroke", "white")
+      .style("stroke-width", "2px")
+      .on("mouseover", this.mouseover)
+      .on("mousemove", this.mousemove)
+      .on("mouseleave", this.mouseleave);
   }
 }

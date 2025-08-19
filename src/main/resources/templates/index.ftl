@@ -35,12 +35,14 @@
       document.querySelectorAll("[data-id]").forEach((item) => {
         const id = item.dataset.id;
         const config = configs.find((conf) => conf.id === id);
-        const Visualization = getter[config.type];
+
+        const ChartClass = getter[config.type];
 
         const anchor = item.querySelector(".anchor");
+        const endpoint = window.location.origin + "/data/" + id + ".json" // "/api/data?type=void&sort=value&desc=true&id=" + id;
         const options = config.options;
 
-        new Visualization(anchor, id, options).render();
+        new ChartClass(anchor, endpoint, options).render();
       });
     </script>
   </body>
