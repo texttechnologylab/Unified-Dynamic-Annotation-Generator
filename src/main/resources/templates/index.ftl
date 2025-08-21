@@ -39,7 +39,7 @@
         const ChartClass = getter[config.type];
 
         const anchor = item.querySelector(".anchor");
-        const endpoint = window.location.origin + "/data/" + id + ".json" // "/api/data?type=void&sort=value&desc=true&id=" + id;
+        const endpoint = window.location.origin + "/api/data?type=any&id=" + id;
         const options = config.options;
 
         new ChartClass(anchor, endpoint, options).render();

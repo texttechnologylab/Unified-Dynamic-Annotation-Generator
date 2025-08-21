@@ -30,7 +30,7 @@
     }
   },
   {
-    "id": "text-document",
+    "id": "text",
     "type": "TextDocument",
     "title": "TextDocument",
     "options": {
