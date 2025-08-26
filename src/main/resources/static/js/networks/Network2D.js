@@ -2,10 +2,10 @@ import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import D3Visualization from "../D3Visualization.js";
 
 export default class Network2D extends D3Visualization {
-  constructor(anchor, key, { width, height, radius }) {
+  constructor(root, endpoint, { width, height, radius }) {
     super(
-      anchor,
-      key,
+      root,
+      endpoint,
       { top: 10, right: 30, bottom: 30, left: 40 },
       width,
       height
@@ -30,7 +30,7 @@ export default class Network2D extends D3Visualization {
         [this.width, this.height],
       ])
       .on("zoom", this.onZoom);
-    d3.select(this.anchor).select("svg").call(zoom);
+    this.root.select("svg").call(zoom);
 
     // Initialize the links
     const link = this.svg

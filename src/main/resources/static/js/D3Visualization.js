@@ -1,28 +1,19 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 
 export default class D3Visualization {
-  constructor(anchor, endpoint, margin, width, height) {
-    this.anchor = anchor;
+  constructor(root, endpoint, margin, width, height) {
+    this.root = d3.select(root);
     this.endpoint = endpoint;
     this.margin = margin;
     this.width = width - this.margin.left - this.margin.right;
     this.height = height - this.margin.top - this.margin.bottom;
 
-    // Add tooltip to anchor div
-    this.tooltip = d3
-      .select(this.anchor)
-      .append("div")
-      .attr("class", "tooltip");
+    this.tooltip = this.root.select(".dv-tooltip");
+    this.controls = this.root.select(".dv-sidepanel-body");
 
-    // Add controls to anchor div:
-    this.controls = d3
-      .select(this.anchor)
-      .append("div")
-      .attr("class", "controls");
-
-    // Add svg to anchor div
-    this.svg = d3
-      .select(this.anchor)
+    // Add svg
+    this.svg = this.root
+      .select(".dv-chart-area")
       .append("svg")
       .attr("width", this.width + this.margin.left + this.margin.right)
       .attr("height", this.height + this.margin.top + this.margin.bottom)
@@ -43,7 +34,7 @@ export default class D3Visualization {
   }
 
   clear() {
-    d3.select(this.anchor).select("svg").select("g").selectAll("*").remove();
+    this.svg.selectAll("*").remove();
   }
 
   render() {
@@ -51,7 +42,7 @@ export default class D3Visualization {
   }
 
   mouseover = (event) => {
-    this.tooltip.style("opacity", 1);
+    this.tooltip.style("opacity", 0.96);
     d3.select(event.currentTarget).style("opacity", 0.8);
   };
 

@@ -3,10 +3,10 @@ import D3Visualization from "../D3Visualization.js";
 import { appendSlider } from "../utils/controls.js";
 
 export default class BarChart extends D3Visualization {
-  constructor(anchor, key, { width, height, horizontal = false }) {
+  constructor(root, endpoint, { width, height, horizontal = false }) {
     super(
-      anchor,
-      key,
+      root,
+      endpoint,
       { top: 30, right: 30, bottom: 70, left: 60 },
       width,
       height

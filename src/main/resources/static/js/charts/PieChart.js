@@ -3,10 +3,10 @@ import D3Visualization from "../D3Visualization.js";
 import { appendSlider } from "../utils/controls.js";
 
 export default class PieChart extends D3Visualization {
-  constructor(anchor, key, { radius, hole = 0 }) {
+  constructor(root, endpoint, { radius, hole = 0 }) {
     super(
-      anchor,
-      key,
+      root,
+      endpoint,
       { top: radius, right: radius, bottom: radius, left: radius },
       radius * 2,
       radius * 2

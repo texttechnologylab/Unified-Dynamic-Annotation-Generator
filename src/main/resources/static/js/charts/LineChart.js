@@ -4,10 +4,10 @@ import { flatData } from "../utils/helper.js";
 import { appendSwitch } from "../utils/controls.js";
 
 export default class LineChart extends D3Visualization {
-  constructor(anchor, key, { width, height, line = true, dots = true }) {
+  constructor(root, endpoint, { width, height, line = true, dots = true }) {
     super(
-      anchor,
-      key,
+      root,
+      endpoint,
       { top: 10, right: 30, bottom: 30, left: 60 },
       width,
       height
@@ -62,7 +62,7 @@ export default class LineChart extends D3Visualization {
         .attr("d", (item) => line(item.coordinates))
         .attr("fill", "none")
         .attr("stroke", (item) => item.color)
-        .attr("stroke-width", 1.5);
+        .attr("stroke-width", 2.5);
     }
 
     // Add the dots

@@ -1,7 +1,7 @@
 import { minOf, maxOf } from "./helper.js";
 
-function appendSwitch(anchor, name, onchange) {
-  anchor
+function appendSwitch(element, name, onchange) {
+  element
     .append("div")
     .attr("class", "form-check form-switch")
     .append("label")
@@ -15,20 +15,24 @@ function appendSwitch(anchor, name, onchange) {
     .on("change", (event) => onchange(event.target.value));
 }
 
-function appendSlider(anchor, min, max, onchange) {
+function appendSlider(element, min, max, onchange) {
   const values = [min, max];
 
-  const label = anchor
+  const label = element
     .append("label")
     .attr("class", "form-label w-100")
     .append("span")
     .text(`Range: ${min} - ${max}`);
 
-  anchor
+  const container = element
     .select("label")
+    .append("div")
+    .attr("class", "position-relative");
+
+  container
     .append("input")
     .attr("type", "range")
-    .attr("class", "form-range")
+    .attr("class", "form-range dv-slider-double")
     .attr("min", min)
     .attr("max", max)
     .attr("value", max)
@@ -40,11 +44,10 @@ function appendSlider(anchor, min, max, onchange) {
       onchange(minOf(values), maxOf(values));
     });
 
-  anchor
-    .select("label")
+  container
     .append("input")
     .attr("type", "range")
-    .attr("class", "form-range")
+    .attr("class", "form-range dv-slider-double")
     .attr("min", min)
     .attr("max", max)
     .attr("value", min)

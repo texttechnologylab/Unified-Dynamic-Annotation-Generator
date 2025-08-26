@@ -4,18 +4,23 @@ import { flatData } from "../utils/helper.js";
 import { appendSwitch } from "../utils/controls.js";
 
 export default class HighlightText extends D3Visualization {
-  constructor(anchor, key, { width, height }) {
-    super(anchor, key, { top: 0, right: 0, bottom: 0, left: 0 }, width, height);
+  constructor(root, endpoint, { width, height }) {
+    super(
+      root,
+      endpoint,
+      { top: 0, right: 0, bottom: 0, left: 0 },
+      width,
+      height
+    );
 
-    d3.select(this.anchor).select("svg").remove();
-    this.div = d3
-      .select(this.anchor)
+    this.root.select("svg").remove();
+    this.div = this.root
+      .select(".dv-chart-area")
       .append("div")
       .style("width", this.width + "px")
       .style("height", this.height + "px")
-      .style("text-align", "start")
       .style("line-height", "1.8rem")
-      .style("background-color", "#ffffff")
+      .style("padding", "1rem")
       .style("overflow-y", "auto");
   }
 
