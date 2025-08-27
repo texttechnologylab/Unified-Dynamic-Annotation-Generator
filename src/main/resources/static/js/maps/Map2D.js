@@ -24,19 +24,20 @@ export default class Map2D extends D3Visualization {
       // Initialize zoom functionality
       const zoom = d3
         .zoom()
-        .scaleExtent([0.5, 5])
+        .scaleExtent([0.8, 18])
         .translateExtent([
           [0, 0],
           [this.width, this.height],
         ])
-        .on("zoom", this.onZoom);
+        .on("zoom", (event) => {
+          this.svg.attr("transform", event.transform);
+        });
       this.root.select("svg").call(zoom);
 
       // Map and projection
       const projection = d3
         .geoEquirectangular()
-        .scale(this.width / 1.3 / Math.PI)
-        .translate([this.width / 2, this.height / 2]);
+        .fitSize([this.width, this.height], world);
 
       // A path generator
       const path = d3.geoPath().projection(projection);
@@ -50,9 +51,15 @@ export default class Map2D extends D3Visualization {
         .attr("fill", "#b8b8b8")
         .style("stroke", "#fff")
         .style("stroke-width", 0.1)
-        .on("mouseover", this.mouseover)
-        .on("mousemove", this.mousemove)
-        .on("mouseleave", this.mouseleave);
+        .on("mouseover", (event) => this.mouseover(event.currentTarget))
+        .on("mousemove", (event, data) =>
+          this.mousemove(
+            event.pageY,
+            event.pageX + 20,
+            `<strong>${data?.properties.name}</strong>`
+          )
+        )
+        .on("mouseleave", (event) => this.mouseleave(event.currentTarget));
 
       // Draw the data
       this.svg
@@ -63,20 +70,15 @@ export default class Map2D extends D3Visualization {
         .style("fill", "none")
         .style("stroke", (item) => item.color)
         .style("stroke-width", 2)
-        .on("mouseover", this.mouseover)
-        .on("mousemove", this.mousemove)
-        .on("mouseleave", this.mouseleave);
+        .on("mouseover", (event) => this.mouseover(event.currentTarget))
+        .on("mousemove", (event, data) =>
+          this.mousemove(
+            event.pageY,
+            event.pageX + 20,
+            `<strong>${data.label}</strong>`
+          )
+        )
+        .on("mouseleave", (event) => this.mouseleave(event.currentTarget));
     });
   }
-
-  mousemove = (event, data) => {
-    this.tooltip
-      .html(`<strong>${data?.properties?.name || data.label}</strong>`)
-      .style("left", event.pageX + 20 + "px")
-      .style("top", event.pageY + "px");
-  };
-
-  onZoom = (event) => {
-    this.svg.attr("transform", event.transform);
-  };
 }

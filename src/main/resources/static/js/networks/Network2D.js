@@ -22,14 +22,9 @@ export default class Network2D extends D3Visualization {
     }
 
     // Initialize zoom functionality
-    const zoom = d3
-      .zoom()
-      .scaleExtent([0.5, 3])
-      .translateExtent([
-        [0, 0],
-        [this.width, this.height],
-      ])
-      .on("zoom", this.onZoom);
+    const zoom = d3.zoom().on("zoom", (event) => {
+      this.svg.attr("transform", event.transform);
+    });
     this.root.select("svg").call(zoom);
 
     // Initialize the links
@@ -46,9 +41,15 @@ export default class Network2D extends D3Visualization {
       .join("circle")
       .attr("r", this.radius)
       .style("fill", (item) => item.color)
-      .on("mouseover", this.mouseover)
-      .on("mousemove", this.mousemove)
-      .on("mouseleave", this.mouseleave);
+      .on("mouseover", (event) => this.mouseover(event.currentTarget))
+      .on("mousemove", (event, data) =>
+        this.mousemove(
+          event.pageY,
+          event.pageX + 20,
+          `<strong>${data.name}</strong> (${data.id})`
+        )
+      )
+      .on("mouseleave", (event) => this.mouseleave(event.currentTarget));
 
     // This function is run at each iteration of the force algorithm, updating the nodes position.
     const onTick = () => {
@@ -76,15 +77,4 @@ export default class Network2D extends D3Visualization {
       // nodes position is updated every tick
       .on("tick", onTick);
   }
-
-  mousemove = (event, data) => {
-    this.tooltip
-      .html(`<strong>${data.name}</strong> (${data.id})`)
-      .style("left", event.pageX + 20 + "px")
-      .style("top", event.pageY + "px");
-  };
-
-  onZoom = (event) => {
-    this.svg.attr("transform", event.transform);
-  };
 }

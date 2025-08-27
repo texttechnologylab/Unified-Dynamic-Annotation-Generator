@@ -45,9 +45,16 @@ export default class HighlightText extends D3Visualization {
       .text((d) => d.text)
       .attr("style", (item) => item.style)
       .filter((item) => item.label)
-      .style("cursor", "pointer")
-      .on("mouseover", this.mouseover)
-      .on("mouseleave", this.mouseleave);
+      .on("mouseover", (event) => this.mouseover(event.currentTarget))
+      .on("mousemove", (event, data) => {
+        const rect = event.target.getBoundingClientRect();
+        this.mousemove(
+          rect.bottom + window.scrollY,
+          rect.left + window.scrollX,
+          `<strong>${data.label}</strong>`
+        );
+      })
+      .on("mouseleave", (event) => this.mouseleave(event.currentTarget));
   }
 
   generateSpans({ text, datasets }) {
@@ -122,22 +129,4 @@ export default class HighlightText extends D3Visualization {
       highlight: `background-color: ${item.color};`,
     }[item.style];
   }
-
-  mouseover = (event, data) => {
-    const rect = event.target.getBoundingClientRect();
-
-    this.tooltip
-      .html(`<strong>${data.label}</strong>`)
-      .style("left", rect.left + window.scrollX + "px")
-      .style("top", rect.top + window.scrollY - rect.height * 1.5 + "px")
-      .style("opacity", 1);
-
-    d3.select(event.target).style("opacity", 0.8);
-  };
-
-  mouseleave = (event) => {
-    this.tooltip.style("opacity", 0);
-
-    d3.select(event.target).style("opacity", 1);
-  };
 }

@@ -4,9 +4,8 @@ export default class D3Visualization {
   constructor(root, endpoint, margin, width, height) {
     this.root = d3.select(root);
     this.endpoint = endpoint;
-    this.margin = margin;
-    this.width = width - this.margin.left - this.margin.right;
-    this.height = height - this.margin.top - this.margin.bottom;
+    this.width = width - margin.left - margin.right;
+    this.height = height - margin.top - margin.bottom;
 
     this.tooltip = this.root.select(".dv-tooltip");
     this.controls = this.root.select(".dv-sidepanel-body");
@@ -15,16 +14,18 @@ export default class D3Visualization {
     this.svg = this.root
       .select(".dv-chart-area")
       .append("svg")
-      .attr("width", this.width + this.margin.left + this.margin.right)
-      .attr("height", this.height + this.margin.top + this.margin.bottom)
+      .attr("width", width)
+      .attr("height", height)
       .append("g")
-      .attr("transform", `translate(${this.margin.left}, ${this.margin.top})`);
+      .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+    this.filter = {};
   }
 
   async fetch(params = {}) {
     const url = new URL(this.endpoint);
 
-    for (const [key, value] of Object.entries(params)) {
+    for (const [key, value] of Object.entries({ ...params, ...this.filter })) {
       url.searchParams.append(key, value);
     }
 
@@ -41,23 +42,20 @@ export default class D3Visualization {
     throw new Error("Method render() not implemented.");
   }
 
-  mouseover = (event) => {
-    this.tooltip.style("opacity", 0.96);
-    d3.select(event.currentTarget).style("opacity", 0.8);
-  };
+  mouseover(target) {
+    this.tooltip.style("opacity", 0.9);
+    d3.select(target).style("opacity", 0.8);
+  }
 
-  mousemove = (event, data) => {
-    const label = data.label || data.data?.label;
-    const value = data.value || data.data?.value;
-
+  mousemove(top, left, html) {
     this.tooltip
-      .html(`<strong>${label}</strong><br>${value}`)
-      .style("left", event.pageX + 20 + "px")
-      .style("top", event.pageY + "px");
-  };
+      .html(html)
+      .style("top", top + "px")
+      .style("left", left + "px");
+  }
 
-  mouseleave = (event) => {
+  mouseleave(target) {
     this.tooltip.style("opacity", 0);
-    d3.select(event.currentTarget).style("opacity", 1);
-  };
+    d3.select(target).style("opacity", 1);
+  }
 }

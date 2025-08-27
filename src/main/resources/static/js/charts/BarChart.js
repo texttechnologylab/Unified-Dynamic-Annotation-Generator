@@ -26,7 +26,9 @@ export default class BarChart extends D3Visualization {
       const max = data[0].value;
 
       appendSlider(this.controls, min, max, (min, max) => {
-        this.fetch({ min, max }).then((data) => this.render(data));
+        this.filter.min = min;
+        this.filter.max = max;
+        this.fetch().then((data) => this.render(data));
       });
     }
 
@@ -65,9 +67,15 @@ export default class BarChart extends D3Visualization {
       .attr("width", width)
       .attr("height", height)
       .attr("fill", (item) => item.color)
-      .on("mouseover", this.mouseover)
-      .on("mousemove", this.mousemove)
-      .on("mouseleave", this.mouseleave);
+      .on("mouseover", (event) => this.mouseover(event.currentTarget))
+      .on("mousemove", (event, data) =>
+        this.mousemove(
+          event.pageY,
+          event.pageX + 20,
+          `<strong>${data.label}</strong><br>${data.value}`
+        )
+      )
+      .on("mouseleave", (event) => this.mouseleave(event.currentTarget));
   }
 
   band(data) {

@@ -74,15 +74,10 @@ export default class LineChart extends D3Visualization {
       .attr("cy", (item) => yAxis(item.y))
       .attr("r", 4)
       .attr("fill", this.dots ? (item) => item.color : "transparent")
-      .on("mouseover", this.mouseover)
-      .on("mousemove", this.mousemove)
-      .on("mouseleave", this.mouseleave);
+      .on("mouseover", (event) => this.mouseover(event.currentTarget))
+      .on("mousemove", (event, data) =>
+        this.mousemove(event.pageY, event.pageX + 20, `(${data.x}, ${data.y})`)
+      )
+      .on("mouseleave", (event) => this.mouseleave(event.currentTarget));
   }
-
-  mousemove = (event, data) => {
-    this.tooltip
-      .html(`(${data.x}, ${data.y})`)
-      .style("left", event.pageX + 20 + "px")
-      .style("top", event.pageY + "px");
-  };
 }
