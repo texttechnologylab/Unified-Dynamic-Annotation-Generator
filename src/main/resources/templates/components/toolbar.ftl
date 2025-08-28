@@ -3,17 +3,25 @@
     <button
       class="dv-btn dv-title"
       type="button"
-      data-toggle="sidepanel"
-      data-target="#${config.id}-sidepanel"
+      title="Controls"
+      data-dv-toggle="sidepanel"
+      data-dv-target="#${config.id}-sidepanel"
     >
       <i class="bi bi-sliders"></i>
     </button>
+
     <span class="dv-title dv-bold">${config.title}</span>
-    <div class="dropend">
-      <button class="dv-btn dv-title" type="button" data-bs-toggle="dropdown">
-        <i class="bi bi-download"></i>
-      </button>
-      <div class="dropdown-menu dv-dropdown-menu"></div>
+
+    <button
+      class="dv-btn dv-title"
+      type="button"
+      title="Exports"
+      data-bs-toggle="dropdown"
+    >
+      <i class="bi bi-download"></i>
+    </button>
+    <div class="dropdown-menu">
+      <div class="dv-dropdown"></div>
     </div>
   </div>
 </#macro>

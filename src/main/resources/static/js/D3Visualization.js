@@ -7,6 +7,8 @@ export default class D3Visualization {
     this.width = width - margin.left - margin.right;
     this.height = height - margin.top - margin.bottom;
 
+    this.filter = {};
+
     this.tooltip = this.root.select(".dv-tooltip");
     this.controls = this.root.select(".dv-sidepanel-body");
 
@@ -15,27 +17,25 @@ export default class D3Visualization {
       .select(".dv-chart-area")
       .append("svg")
       .attr("width", width)
-      .attr("height", height)
+      .attr("height", height);
+    this.svg
       .append("g")
       .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
-    this.filter = {};
+    this.root.classed("dv-hidden", false);
   }
 
-  async fetch(params = {}) {
+  async fetch() {
     const url = new URL(this.endpoint);
-
-    for (const [key, value] of Object.entries({ ...params, ...this.filter })) {
+    for (const [key, value] of Object.entries(this.filter)) {
       url.searchParams.append(key, value);
     }
 
-    const result = await fetch(url).then((response) => response.json());
-
-    return result;
+    return await fetch(url).then((response) => response.json());
   }
 
   clear() {
-    this.svg.selectAll("*").remove();
+    this.svg.select("g").selectAll("*").remove();
   }
 
   render() {

@@ -6,6 +6,14 @@
   --btn-active-color: #e1e1e1;
 }
 
+button {
+  cursor: pointer;
+}
+
+.dv-hidden {
+  display: none;
+}
+
 .dv-bold {
   font-weight: bold;
 }
@@ -53,8 +61,8 @@
   }
 }
 
-.dv-card {
-  margin: 3rem;
+.dv-flex-container {
   display: flex;
-  justify-content: center;
+  justify-content: space-evenly;
+  flex-wrap: wrap;
 }

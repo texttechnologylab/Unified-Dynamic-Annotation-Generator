@@ -1,6 +1,7 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import D3Visualization from "../D3Visualization.js";
 import { appendSlider } from "../utils/controls.js";
+import ExportHandler from "../utils/ExportHandler.js";
 
 export default class PieChart extends D3Visualization {
   constructor(root, endpoint, { radius, hole = 0 }) {
@@ -11,6 +12,10 @@ export default class PieChart extends D3Visualization {
       radius * 2,
       radius * 2
     );
+    this.handler = new ExportHandler(this.root.select(".dv-dropdown"), [
+      "svg",
+      "json",
+    ]);
 
     this.radius = radius;
     this.hole = hole;
@@ -47,6 +52,7 @@ export default class PieChart extends D3Visualization {
 
     // Bind data to pie slices
     this.svg
+      .select("g")
       .selectAll()
       .data(pie(data))
       .join("path")
@@ -63,5 +69,8 @@ export default class PieChart extends D3Visualization {
         )
       )
       .on("mouseleave", (event) => this.mouseleave(event.currentTarget));
+
+    // Pass data to export handler
+    this.handler.update(data, this.svg.node());
   }
 }

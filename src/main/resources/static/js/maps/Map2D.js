@@ -1,5 +1,6 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import D3Visualization from "../D3Visualization.js";
+import ExportHandler from "../utils/ExportHandler.js";
 
 export default class Map2D extends D3Visualization {
   constructor(root, endpoint, { width, height }) {
@@ -10,6 +11,10 @@ export default class Map2D extends D3Visualization {
       width,
       height
     );
+    this.handler = new ExportHandler(this.root.select(".dv-dropdown"), [
+      "svg",
+      "json",
+    ]);
   }
 
   async render(data) {
@@ -30,9 +35,9 @@ export default class Map2D extends D3Visualization {
           [this.width, this.height],
         ])
         .on("zoom", (event) => {
-          this.svg.attr("transform", event.transform);
+          this.svg.select("g").attr("transform", event.transform);
         });
-      this.root.select("svg").call(zoom);
+      this.svg.call(zoom);
 
       // Map and projection
       const projection = d3
@@ -44,6 +49,7 @@ export default class Map2D extends D3Visualization {
 
       // Draw the map
       this.svg
+        .select("g")
         .selectAll("path")
         .data(world.features)
         .join("path")
@@ -63,6 +69,7 @@ export default class Map2D extends D3Visualization {
 
       // Draw the data
       this.svg
+        .select("g")
         .selectAll()
         .data(data)
         .join("path")
@@ -79,6 +86,9 @@ export default class Map2D extends D3Visualization {
           )
         )
         .on("mouseleave", (event) => this.mouseleave(event.currentTarget));
+
+      // Pass data to export handler
+      this.handler.update(data, this.svg.node());
     });
   }
 }

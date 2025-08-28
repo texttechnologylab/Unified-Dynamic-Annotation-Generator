@@ -1,6 +1,7 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import D3Visualization from "../D3Visualization.js";
 import { appendSlider } from "../utils/controls.js";
+import ExportHandler from "../utils/ExportHandler.js";
 
 export default class BarChart extends D3Visualization {
   constructor(root, endpoint, { width, height, horizontal = false }) {
@@ -11,6 +12,10 @@ export default class BarChart extends D3Visualization {
       width,
       height
     );
+    this.handler = new ExportHandler(this.root.select(".dv-dropdown"), [
+      "svg",
+      "json",
+    ]);
 
     this.horizontal = horizontal;
   }
@@ -35,6 +40,7 @@ export default class BarChart extends D3Visualization {
     // Add x axis
     const xAxis = this.horizontal ? this.linear(data) : this.band(data);
     this.svg
+      .select("g")
       .append("g")
       .attr("transform", `translate(0, ${this.height})`)
       .call(d3.axisBottom(xAxis))
@@ -44,7 +50,7 @@ export default class BarChart extends D3Visualization {
 
     // Add y axis
     const yAxis = this.horizontal ? this.band(data) : this.linear(data);
-    this.svg.append("g").call(d3.axisLeft(yAxis));
+    this.svg.select("g").append("g").call(d3.axisLeft(yAxis));
 
     const x = this.horizontal ? xAxis(0) : (item) => xAxis(item.label);
     const y = this.horizontal
@@ -59,6 +65,7 @@ export default class BarChart extends D3Visualization {
 
     // Add the bars
     this.svg
+      .select("g")
       .selectAll()
       .data(data)
       .join("rect")
@@ -76,6 +83,9 @@ export default class BarChart extends D3Visualization {
         )
       )
       .on("mouseleave", (event) => this.mouseleave(event.currentTarget));
+
+    // Pass data to export handler
+    this.handler.update(data, this.svg.node());
   }
 
   band(data) {

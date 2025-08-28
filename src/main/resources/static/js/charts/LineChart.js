@@ -2,6 +2,7 @@ import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import D3Visualization from "../D3Visualization.js";
 import { flatData } from "../utils/helper.js";
 import { appendSwitch } from "../utils/controls.js";
+import ExportHandler from "../utils/ExportHandler.js";
 
 export default class LineChart extends D3Visualization {
   constructor(root, endpoint, { width, height, line = true, dots = true }) {
@@ -12,6 +13,10 @@ export default class LineChart extends D3Visualization {
       width,
       height
     );
+    this.handler = new ExportHandler(this.root.select(".dv-dropdown"), [
+      "svg",
+      "json",
+    ]);
 
     this.line = line;
     this.dots = dots;
@@ -37,6 +42,7 @@ export default class LineChart extends D3Visualization {
       .range([0, this.width])
       .domain(d3.extent(coordinates, (item) => item.x));
     this.svg
+      .select("g")
       .append("g")
       .attr("transform", `translate(0, ${this.height})`)
       .call(d3.axisBottom(xAxis));
@@ -46,7 +52,7 @@ export default class LineChart extends D3Visualization {
       .scaleLinear()
       .range([this.height, 0])
       .domain(d3.extent(coordinates, (item) => item.y));
-    this.svg.append("g").call(d3.axisLeft(yAxis));
+    this.svg.select("g").append("g").call(d3.axisLeft(yAxis));
 
     const line = d3
       .line()
@@ -56,6 +62,7 @@ export default class LineChart extends D3Visualization {
     // Add the line
     if (this.line) {
       this.svg
+        .select("g")
         .selectAll(".line")
         .data(data)
         .join("path")
@@ -67,6 +74,7 @@ export default class LineChart extends D3Visualization {
 
     // Add the dots
     this.svg
+      .select("g")
       .selectAll(".circle")
       .data(coordinates)
       .join("circle")
@@ -79,5 +87,8 @@ export default class LineChart extends D3Visualization {
         this.mousemove(event.pageY, event.pageX + 20, `(${data.x}, ${data.y})`)
       )
       .on("mouseleave", (event) => this.mouseleave(event.currentTarget));
+
+    // Pass data to export handler
+    this.handler.update(data, this.svg.node());
   }
 }

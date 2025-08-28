@@ -14,54 +14,45 @@
       crossorigin="anonymous"
     />
     <link
-      rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
+      rel="stylesheet"
     />
   </head>
 
+  <#include "/components/toolbar.ftl">
+  <#include "/components/sidepanel.ftl">
+  
   <body>
-    <#include "/components/toolbar.ftl">
-    <#include "/components/sidepanel.ftl">
-
-    <div class="container">
+    <div class="dv-flex-container">
       <#list configs?eval_json as config>
-        <div class="dv-card">
+        <div class="dv-chart dv-hidden" data-chart-id="${config.id}">
+          <@toolbar config=config />
 
-          <div class="dv-chart" data-id="${config.id}">
-            <@toolbar config=config />
-
-            <div class="dv-chart-area">
-              <@sidepanel config=config />
-            </div>
-
-            <div class="dv-tooltip"></div>
+          <div class="dv-chart-area">
+            <@sidepanel config=config />
           </div>
-          
+
+          <div class="dv-tooltip"></div>
         </div>
       </#list>
     </div>
 
     <script type="module">
       import getter from "/js/utils/getter.js";
-      import sidepanels from "/js/utils/sidepanels.js";
+      import components from "/js/utils/components.js";
 
       const configs = JSON.parse("${configs?json_string}");
 
-      document.querySelectorAll("[data-id]").forEach((item) => {
-        const id = item.dataset.id;
+      document.querySelectorAll("[data-chart-id]").forEach((node) => {
+        const id = node.dataset.chartId;
         const config = configs.find((conf) => conf.id === id);
 
         const ChartClass = getter[config.type];
         const endpoint = window.location.origin + "/api/data?type=any&id=" + id;
 
-        new ChartClass(item, endpoint, config.options).render();
+        new ChartClass(node, endpoint, config.options).render();
       });
-      sidepanels.init();
+      components.init();
     </script>
-    <script
-      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
-      integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q"
-      crossorigin="anonymous"
-    ></script>
   </body>
 </html>

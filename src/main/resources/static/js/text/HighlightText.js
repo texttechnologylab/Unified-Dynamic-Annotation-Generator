@@ -1,7 +1,7 @@
-import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import D3Visualization from "../D3Visualization.js";
 import { flatData } from "../utils/helper.js";
 import { appendSwitch } from "../utils/controls.js";
+import ExportHandler from "../utils/ExportHandler.js";
 
 export default class HighlightText extends D3Visualization {
   constructor(root, endpoint, { width, height }) {
@@ -12,14 +12,16 @@ export default class HighlightText extends D3Visualization {
       width,
       height
     );
+    this.handler = new ExportHandler(this.root.select(".dv-dropdown"), [
+      "json",
+    ]);
 
-    this.root.select("svg").remove();
+    this.svg.remove();
     this.div = this.root
       .select(".dv-chart-area")
       .append("div")
       .style("width", this.width + "px")
       .style("height", this.height + "px")
-      .style("line-height", "1.8rem")
       .style("padding", "1rem")
       .style("overflow-y", "auto");
   }
@@ -55,6 +57,9 @@ export default class HighlightText extends D3Visualization {
         );
       })
       .on("mouseleave", (event) => this.mouseleave(event.currentTarget));
+
+    // Pass data to export handler
+    this.handler.update(spans, null);
   }
 
   generateSpans({ text, datasets }) {

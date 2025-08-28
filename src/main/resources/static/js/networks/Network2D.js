@@ -1,5 +1,6 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import D3Visualization from "../D3Visualization.js";
+import ExportHandler from "../utils/ExportHandler.js";
 
 export default class Network2D extends D3Visualization {
   constructor(root, endpoint, { width, height, radius }) {
@@ -10,6 +11,10 @@ export default class Network2D extends D3Visualization {
       width,
       height
     );
+    this.handler = new ExportHandler(this.root.select(".dv-dropdown"), [
+      "svg",
+      "json",
+    ]);
 
     this.radius = radius;
   }
@@ -23,12 +28,13 @@ export default class Network2D extends D3Visualization {
 
     // Initialize zoom functionality
     const zoom = d3.zoom().on("zoom", (event) => {
-      this.svg.attr("transform", event.transform);
+      this.svg.select("g").attr("transform", event.transform);
     });
-    this.root.select("svg").call(zoom);
+    this.svg.call(zoom);
 
     // Initialize the links
     const link = this.svg
+      .select("g")
       .selectAll("line")
       .data(data.links)
       .join("line")
@@ -36,6 +42,7 @@ export default class Network2D extends D3Visualization {
 
     // Initialize the nodes
     const node = this.svg
+      .select("g")
       .selectAll("circle")
       .data(data.nodes)
       .join("circle")
@@ -76,5 +83,8 @@ export default class Network2D extends D3Visualization {
       .force("center", d3.forceCenter(this.width / 2, this.height / 2))
       // nodes position is updated every tick
       .on("tick", onTick);
+
+    // Pass data to export handler
+    this.handler.update(data, this.svg.node());
   }
 }
