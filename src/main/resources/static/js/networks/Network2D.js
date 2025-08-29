@@ -13,6 +13,7 @@ export default class Network2D extends D3Visualization {
     );
     this.handler = new ExportHandler(this.root.select(".dv-dropdown"), [
       "svg",
+      "png",
       "json",
     ]);
 

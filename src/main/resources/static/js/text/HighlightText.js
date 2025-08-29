@@ -13,6 +13,7 @@ export default class HighlightText extends D3Visualization {
       height
     );
     this.handler = new ExportHandler(this.root.select(".dv-dropdown"), [
+      "csv",
       "json",
     ]);
 

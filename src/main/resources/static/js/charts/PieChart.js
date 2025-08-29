@@ -14,6 +14,8 @@ export default class PieChart extends D3Visualization {
     );
     this.handler = new ExportHandler(this.root.select(".dv-dropdown"), [
       "svg",
+      "png",
+      "csv",
       "json",
     ]);
 

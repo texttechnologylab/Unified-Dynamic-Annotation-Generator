@@ -15,6 +15,8 @@ export default class LineChart extends D3Visualization {
     );
     this.handler = new ExportHandler(this.root.select(".dv-dropdown"), [
       "svg",
+      "png",
+      "csv",
       "json",
     ]);
 
@@ -89,6 +91,6 @@ export default class LineChart extends D3Visualization {
       .on("mouseleave", (event) => this.mouseleave(event.currentTarget));
 
     // Pass data to export handler
-    this.handler.update(data, this.svg.node());
+    this.handler.update(coordinates, this.svg.node());
   }
 }
