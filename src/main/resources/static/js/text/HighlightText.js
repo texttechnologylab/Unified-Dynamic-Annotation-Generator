@@ -1,6 +1,6 @@
 import D3Visualization from "../D3Visualization.js";
 import { flatData } from "../utils/helper.js";
-import { appendSwitch } from "../utils/controls.js";
+import Controls from "../utils/Controls.js";
 import ExportHandler from "../utils/ExportHandler.js";
 
 export default class HighlightText extends D3Visualization {
@@ -12,7 +12,8 @@ export default class HighlightText extends D3Visualization {
       width,
       height
     );
-    this.handler = new ExportHandler(this.root.select(".dv-dropdown"), [
+    this.controls = new Controls(this.root.select(".dv-sidepanel-body"));
+    this.exports = new ExportHandler(this.root.select(".dv-dropdown"), [
       "csv",
       "json",
     ]);
@@ -27,16 +28,22 @@ export default class HighlightText extends D3Visualization {
       .style("overflow-y", "auto");
   }
 
+  init(data) {
+    // Add controls
+    for (const item of data.datasets) {
+      this.controls.appendSwitch(item.name, (value) => {
+        console.log(value);
+        this.fetch().then((data) => this.render(data));
+      });
+    }
+  }
+
   async render(data) {
     this.clear();
 
     if (!data) {
       data = await this.fetch();
-
-      // Add controls
-      for (const item of data.datasets) {
-        appendSwitch(this.controls, item.name, (value) => console.log(value));
-      }
+      this.init(data);
     }
 
     const spans = this.generateSpans(data);
@@ -49,18 +56,17 @@ export default class HighlightText extends D3Visualization {
       .attr("style", (item) => item.style)
       .filter((item) => item.label)
       .on("mouseover", (event) => this.mouseover(event.currentTarget))
-      .on("mousemove", (event, data) => {
-        const rect = event.target.getBoundingClientRect();
+      .on("mousemove", (event, data) =>
         this.mousemove(
-          rect.bottom + window.scrollY,
-          rect.left + window.scrollX,
+          event.pageY,
+          event.pageX + 20,
           `<strong>${data.label}</strong>`
-        );
-      })
+        )
+      )
       .on("mouseleave", (event) => this.mouseleave(event.currentTarget));
 
     // Pass data to export handler
-    this.handler.update(spans, null);
+    this.exports.update(spans, null);
   }
 
   generateSpans({ text, datasets }) {
