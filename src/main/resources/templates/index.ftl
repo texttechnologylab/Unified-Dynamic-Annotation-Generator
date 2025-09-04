@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>${title}</title>
 
+    <link href="/css/variables.css" rel="stylesheet" />
     <link href="/css/index.css" rel="stylesheet" />
     <link href="/css/chart.css" rel="stylesheet" />
     <link

@@ -1,6 +1,6 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import D3Visualization from "../D3Visualization.js";
-import Controls from "../utils/Controls.js";
+import ControlsHandler from "../utils/ControlsHandler.js";
 import ExportHandler from "../utils/ExportHandler.js";
 import { maxOf, minOf } from "../utils/helper.js";
 
@@ -14,7 +14,7 @@ export default class BarChart extends D3Visualization {
       height
     );
 
-    this.controls = new Controls(this.root.select(".dv-sidepanel-body"));
+    this.controls = new ControlsHandler(this.root.select(".dv-sidepanel-body"));
     this.exports = new ExportHandler(this.root.select(".dv-dropdown"), [
       "svg",
       "png",

@@ -1,7 +1,7 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import D3Visualization from "../D3Visualization.js";
 import { flatData } from "../utils/helper.js";
-import Controls from "../utils/Controls.js";
+import ControlsHandler from "../utils/ControlsHandler.js";
 import ExportHandler from "../utils/ExportHandler.js";
 
 export default class LineChart extends D3Visualization {
@@ -13,7 +13,7 @@ export default class LineChart extends D3Visualization {
       width,
       height
     );
-    this.controls = new Controls(this.root.select(".dv-sidepanel-body"));
+    this.controls = new ControlsHandler(this.root.select(".dv-sidepanel-body"));
     this.exports = new ExportHandler(this.root.select(".dv-dropdown"), [
       "svg",
       "png",

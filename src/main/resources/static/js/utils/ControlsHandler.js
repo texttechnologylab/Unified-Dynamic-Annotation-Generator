@@ -1,6 +1,6 @@
 import { minOf, maxOf, randomId } from "./helper.js";
 
-export default class Controls {
+export default class ControlsHandler {
   constructor(node, icons) {
     this.node = node;
     this.icons = {
