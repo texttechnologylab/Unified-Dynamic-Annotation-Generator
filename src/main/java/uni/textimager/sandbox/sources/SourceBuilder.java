@@ -8,6 +8,7 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+import uni.textimager.sandbox.database.DBConstants;
 import uni.textimager.sandbox.database.QueryHelper;
 import uni.textimager.sandbox.generators.CategoryNumberMapping;
 import uni.textimager.sandbox.pipeline.JSONView;
@@ -35,11 +36,13 @@ public class SourceBuilder implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws SQLException, IOException {
-        Pipeline pipeline = Pipeline.fromJSON("pipelines/pipelineExample1.json");
+        Pipeline pipeline = Pipeline.fromJSON("pipelines/pipeline3_customTypes.json");
         System.out.println("Pipeline loaded: " + pipeline.getName());
-        DBAccess dbAccess = new DBAccess(dataSource);
+        dbSavePipelinesVisualizationsJSONs(List.of(pipeline));
+        dbBuildGeneratorTables();
         dbBuildCustomTypes(pipeline);
         Map<String, PipelineNode> relevantGenerators = pipeline.getFilteredGenerators();
+        DBAccess dbAccess = new DBAccess(dataSource);
         for (PipelineNode sourceNode : pipeline.getSources().values()) {
             Source source = new Source(dbAccess, sourceNode.getConfig(), relevantGenerators, sourceNode.getChildren());
             System.out.println("Source created: " + source.getConfig().get("name"));
@@ -48,11 +51,18 @@ public class SourceBuilder implements ApplicationRunner {
             try {
                 CategoryNumberMapping test = (CategoryNumberMapping) list.get(0);
                 System.out.println(test.generateJSONCategoricalChart());
-            } catch (Exception ignored) {}
+                test.saveToDB(dbAccess);
+            } catch (Exception ignored) {
+                ignored.printStackTrace();
+                System.out.println("Exception1");
+            }
             try {
                 CategoryNumberMapping test = (CategoryNumberMapping) list.get(1);
                 System.out.println(test.generateJSONCategoricalChart());
-            } catch (Exception ignored) {}
+                test.saveToDB(dbAccess);
+            } catch (Exception ignored) {
+                System.out.println("Exception2");
+            }
 
         }
 //
@@ -95,6 +105,45 @@ public class SourceBuilder implements ApplicationRunner {
 //            System.out.println("-----");
 //        });
 
+    }
+
+    private void dbSavePipelinesVisualizationsJSONs(Collection<Pipeline> pipelines) throws SQLException {
+        try (Connection connection = dataSource.getConnection()) {
+            DSLContext dsl = DSL.using(connection);
+
+            dsl.createTableIfNotExists(DBConstants.TABLENAME_VISUALIZATIONJSONS)
+                    .column(DBConstants.TABLEATTR_PIPELINEID, org.jooq.impl.SQLDataType.VARCHAR.length(DBConstants.DEFAULTSIZE_VARCHAR).nullable(false))
+                    .column(DBConstants.TABLEATTR_JSONSTR, org.jooq.impl.SQLDataType.CLOB.nullable(false))
+                    .constraints(DSL.constraint("PK_" + DBConstants.TABLENAME_VISUALIZATIONJSONS).primaryKey(DBConstants.TABLEATTR_PIPELINEID))
+                    .execute();
+
+            for (Pipeline p : pipelines) {
+                String pipelineID = p.getName();
+                String visualizationsJSON = p.getRootJSONView().get("visualizations").toJson(false);
+
+                dsl.insertInto(DSL.table(DBConstants.TABLENAME_VISUALIZATIONJSONS),
+                                DSL.field(DBConstants.TABLEATTR_PIPELINEID),
+                                DSL.field(DBConstants.TABLEATTR_JSONSTR))
+                        .values(pipelineID, visualizationsJSON)
+                        .execute();
+            }
+        }
+    }
+
+    private void dbBuildGeneratorTables() throws SQLException {
+        Connection connection = dataSource.getConnection();
+        DSLContext dsl = DSL.using(connection);
+
+        dsl.createTableIfNotExists(DBConstants.TABLENAME_GENERATORDATA_CATEGORYNUMBERCOLOR)
+                .column(DBConstants.TABLEATTR_GENERATORID, org.jooq.impl.SQLDataType.VARCHAR.length(DBConstants.DEFAULTSIZE_VARCHAR).nullable(false))
+                .column(DBConstants.TABLEATTR_FILENAME, org.jooq.impl.SQLDataType.VARCHAR.length(DBConstants.DEFAULTSIZE_VARCHAR).nullable(true))
+                .column(DBConstants.TABLEATTR_SOFA, org.jooq.impl.SQLDataType.VARCHAR.length(DBConstants.DEFAULTSIZE_VARCHAR).nullable(true))
+                .column(DBConstants.TABLEATTR_GENERATORDATA_CATEGORYNUMBERCOLOR_CATEGORY, org.jooq.impl.SQLDataType.VARCHAR.length(DBConstants.DEFAULTSIZE_VARCHAR).nullable(false))
+                .column(DBConstants.TABLEATTR_GENERATORDATA_CATEGORYNUMBERCOLOR_NUMBER, org.jooq.impl.SQLDataType.DOUBLE.nullable(false))
+                .column(DBConstants.TABLEATTR_GENERATORDATA_CATEGORYNUMBERCOLOR_COLOR, org.jooq.impl.SQLDataType.VARCHAR.length(DBConstants.DEFAULTSIZE_VARCHAR).nullable(false))
+            .execute();
+
+        connection.close();
     }
 
     private void dbBuildCustomTypes(Pipeline pipeline) {

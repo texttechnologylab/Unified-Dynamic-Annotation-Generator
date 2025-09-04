@@ -1,6 +1,12 @@
 package uni.textimager.sandbox.generators;
 
+import uni.textimager.sandbox.sources.DBAccess;
+
 public class SubstringNumberMapping extends Generator implements SubstringNumberMappingInterface {
+    public SubstringNumberMapping(String id) {
+        super(id);
+    }
+
     @Override
     public void setNumberSuffix(String numberSuffix) {
 
@@ -32,7 +38,12 @@ public class SubstringNumberMapping extends Generator implements SubstringNumber
     }
 
     @Override
-    public SubstringNumberMapping copy() {
+    public SubstringNumberMapping copy(String id) {
         return null;
+    }
+
+    @Override
+    public void saveToDB(DBAccess dbAccess) {
+
     }
 }

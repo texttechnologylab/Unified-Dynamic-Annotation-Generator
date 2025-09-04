@@ -132,6 +132,7 @@ public class Source implements SourceInterface {
         // Step 3 - Create generators using the common data
         ArrayList<Generator> combiGenerators = new ArrayList<>();
         for (PipelineNode g : generators) {
+            String generatorId = g.getConfig().get("id").toString();
             String generatorType = g.getConfig().get("type").toString();
             if (generatorType.equals("CategoryNumberColorMapping")) {
                 String featureName = generateFeatureNameCategory(configCombi, g.getConfig());
@@ -141,7 +142,7 @@ public class Source implements SourceInterface {
                 HashMap<String, Double> categoryNumberMap = dbCreateCategoryCountMap(featureName, generatorSourceFiles, categoriesWhitelist, categoriesBlacklist);
                 HashMap<String, Color> categoryColorMap = new HashMap<>(mapFeatureToCategoryColorMap.get(featureName));
                 categoryColorMap.keySet().retainAll(categoryNumberMap.keySet());
-                combiGenerators.add(new CategoryNumberColorMapping(categoryNumberMap, categoryColorMap));
+                combiGenerators.add(new CategoryNumberColorMapping(generatorId, categoryNumberMap, categoryColorMap));
             } else if (generatorType.equals("SubstringColorMapping")) {
                 String configSofaFile = generateSofaFile(configCombi, g.getConfig());
                 String configSofaID = generateSofaID(configCombi, g.getConfig());
@@ -153,7 +154,7 @@ public class Source implements SourceInterface {
                 HashMap<String, Color> categoryColorMap = mapFeatureToCategoryColorMap.get(featureName);
                 Collection<String> categoriesWhitelist = generateCategoriesWhitelist(configCombi, g.getConfig());
                 Collection<String> categoriesBlacklist = generateCategoriesBlacklist(configCombi, g.getConfig());
-                combiGenerators.add(new SubstringColorMapping(sofaString, dbCreateColoredSubstrings(featureName, sofaFile, sofaID, categoryColorMap, categoriesWhitelist, categoriesBlacklist)));
+                combiGenerators.add(new SubstringColorMapping(generatorId, sofaString, dbCreateColoredSubstrings(featureName, sofaFile, sofaID, categoryColorMap, categoriesWhitelist, categoriesBlacklist)));
             } else { // Default case: Just treat the unknown bundle generator like a normal single generator.
                 combiGenerators.add(createGenerator(g, configCombi, g.getConfig()));
             }
@@ -165,6 +166,7 @@ public class Source implements SourceInterface {
 
 
     private Generator createGenerator(PipelineNode generator, JSONView configBundle, JSONView config) throws SQLException {
+        String generatorId = generator.getConfig().get("name").toString();
         String generatorType = generator.getConfig().get("type").toString();
         Collection<String> sourceFiles = generateSourceFiles(configBundle, config);
         if (generatorType.equals("CategoryNumberMapping") || generatorType.equals("CategoryNumberColorMapping")) {
@@ -172,9 +174,9 @@ public class Source implements SourceInterface {
             Collection<String> categoriesBlacklist = generateCategoriesBlacklist(configBundle, config);
             HashMap<String, Double> categoryCountMap = dbCreateCategoryCountMap(generateFeatureNameCategory(configBundle, config), sourceFiles, categoriesWhitelist, categoriesBlacklist);
             if (generatorType.equals("CategoryNumberColorMapping")) {
-                return new CategoryNumberColorMapping(categoryCountMap);
+                return new CategoryNumberColorMapping(generatorId, categoryCountMap);
             } else {
-                return new CategoryNumberMapping(categoryCountMap);
+                return new CategoryNumberMapping(generatorId, categoryCountMap);
             }
         } else if (generatorType.equals("SubstringCategoryMapping") || generatorType.equals("SubstringColorMapping")) {
             String configSofaFile = generateSofaFile(configBundle, config);
@@ -189,9 +191,9 @@ public class Source implements SourceInterface {
             Collection<String> categoriesBlacklist = generateCategoriesBlacklist(configBundle, config);
             if (generatorType.equals("SubstringColorMapping")) {
                 HashMap<String, Color> categoryColorMap = dbCreateCategoryColorMap(featureNameCategory, sourceFiles, categoriesWhitelist, categoriesBlacklist);
-                return new SubstringColorMapping(sofaString, dbCreateColoredSubstrings(featureNameCategory, sofaFile, sofaID, categoryColorMap, categoriesWhitelist, categoriesBlacklist));
+                return new SubstringColorMapping(generatorId, sofaString, dbCreateColoredSubstrings(featureNameCategory, sofaFile, sofaID, categoryColorMap, categoriesWhitelist, categoriesBlacklist));
             } else {
-                return new SubstringCategoryMapping(sofaString, dbCreateCategorizedSubstrings(featureNameCategory, sofaFile, sofaID, categoriesWhitelist, categoriesBlacklist));
+                return new SubstringCategoryMapping(generatorId, sofaString, dbCreateCategorizedSubstrings(featureNameCategory, sofaFile, sofaID, categoriesWhitelist, categoriesBlacklist));
             }
         } else {
             throw new IllegalArgumentException("Unknown generator type: " + generator.getConfig().get("type") + " for source: " + name);
@@ -310,7 +312,7 @@ public class Source implements SourceInterface {
 
     private HashMap<String, Color> dbCreateCategoryColorMap(String featureNameCategory, Collection<String> sourceFiles, Collection<String> categoriesWhitelist, Collection<String> categoriesBlacklist) throws SQLException {
         HashMap<String, Double> categoryCountMap = dbCreateCategoryCountMap(featureNameCategory, sourceFiles, categoriesWhitelist, categoriesBlacklist);
-        return new CategoryNumberColorMapping(categoryCountMap).getCategoryColorMap(); // Dummy generator, use it to give more basic colors to more common categories
+        return new CategoryNumberColorMapping(null, categoryCountMap).getCategoryColorMap(); // Dummy generator, use it to give more basic colors to more common categories
     }
 
 

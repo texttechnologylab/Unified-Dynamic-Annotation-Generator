@@ -18,6 +18,7 @@ public class Pipeline {
     private final Map<String, PipelineNode> filteredSources;
 
     private final String name;
+    private final JSONView rootJSONView;
 
 
     public static Pipeline fromJSON(String path) throws IOException {
@@ -46,12 +47,13 @@ public class Pipeline {
         return null;
     }
 
-    private Pipeline(String name, Map<String, PipelineNode> visualizations, Map<String, PipelineNode> generators, Map<String, PipelineNode> sources, List<PipelineNode> customTypes) {
+    private Pipeline(String name, Map<String, PipelineNode> visualizations, Map<String, PipelineNode> generators, Map<String, PipelineNode> sources, List<PipelineNode> customTypes, JSONView rootJSONView) {
         this.name = name;
         this.visualizations = visualizations;
         this.generators = generators;
         this.sources = sources;
         this.customTypes = customTypes;
+        this.rootJSONView = rootJSONView;
 
         System.out.println("Filtering irrelevant pipeline nodes...");
         HashMap<String, PipelineNode> filteredSources = new HashMap<>();
@@ -117,7 +119,7 @@ public class Pipeline {
             // Step 2: Generate customTypes if defined
             List<PipelineNode> customTypes = generatePipelineCustomTypesFromJSONView(pipelineView);
 
-            return new Pipeline(name, visualizations, generators, sources, customTypes);
+            return new Pipeline(name, visualizations, generators, sources, customTypes, pipelineView);
 
         } catch (IllegalArgumentException e) {
             throw e;

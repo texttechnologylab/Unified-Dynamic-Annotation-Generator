@@ -2,8 +2,14 @@ package uni.textimager.sandbox.generators;
 
 
 import lombok.NonNull;
+import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
+import uni.textimager.sandbox.database.DBConstants;
+import uni.textimager.sandbox.sources.DBAccess;
 
 import java.awt.*;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -17,14 +23,16 @@ public class CategoryNumberMapping extends Generator implements CategoryNumberMa
     String numberSuffix;
 
 
-    public CategoryNumberMapping(HashMap<String, Double> categoryNumberMap) {
+    public CategoryNumberMapping(String id, HashMap<String, Double> categoryNumberMap) {
+        super(id);
         this.categoryNumberMap = new HashMap<>(categoryNumberMap);
         fractionModeEnabled = false;
         numberSuffix = null;
         calculateTotal();
     }
 
-    public CategoryNumberMapping(CategoryNumberMapping copyOf) {
+    public CategoryNumberMapping(String id, CategoryNumberMapping copyOf) {
+        super(id);
         this.categoryNumberMap = new HashMap<>(copyOf.categoryNumberMap);
         this.fractionModeEnabled = copyOf.fractionModeEnabled;
         this.fractionMode = copyOf.fractionMode;
@@ -101,14 +109,47 @@ public class CategoryNumberMapping extends Generator implements CategoryNumberMa
     }
 
     @Override
-    public CategoryNumberMapping copy() {
-        return new CategoryNumberMapping(this);
+    public CategoryNumberMapping copy(String id) {
+        return new CategoryNumberMapping(id, this);
+    }
+
+    @Override
+    public void saveToDB(DBAccess dbAccess) throws SQLException {
+        saveToDB(dbAccess, null);
+    }
+
+    public void saveToDB(DBAccess dbAccess, Color fixedColor) throws SQLException {
+        if (fixedColor == null) {
+            CategoryNumberColorMapping colorMapping = new CategoryNumberColorMapping(id, categoryNumberMap);
+            colorMapping.saveToDB(dbAccess);
+            return;
+        }
+
+        String color = String.format("#%02x%02x%02x", fixedColor.getRed(), fixedColor.getGreen(), fixedColor.getBlue());
+        try (Connection connection = dbAccess.getDataSource().getConnection()) {
+            DSLContext dsl = DSL.using(connection);
+
+            for (Map.Entry<String, Double> entry : categoryNumberMap.entrySet().stream()
+                    .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                    .toList()) {
+                String category = entry.getKey();
+                Double value = entry.getValue();
+                dsl.insertInto(DSL.table(DBConstants.TABLENAME_GENERATORDATA_CATEGORYNUMBERCOLOR),
+                                DSL.field(DBConstants.TABLEATTR_GENERATORID),
+                                DSL.field(DBConstants.TABLEATTR_GENERATORDATA_CATEGORYNUMBERCOLOR_CATEGORY),
+                                DSL.field(DBConstants.TABLEATTR_GENERATORDATA_CATEGORYNUMBERCOLOR_NUMBER),
+                                DSL.field(DBConstants.TABLEATTR_GENERATORDATA_CATEGORYNUMBERCOLOR_COLOR))
+                        .values(id, category, value, color)
+                        .execute();
+
+            }
+        }
     }
 
     @Override
     public String generateJSONCategoricalChart(Color fixedColor) {
         if (fixedColor == null) {
-            CategoryNumberColorMapping colorMapping = new CategoryNumberColorMapping(categoryNumberMap);
+            CategoryNumberColorMapping colorMapping = new CategoryNumberColorMapping(id, categoryNumberMap);
             return colorMapping.generateJSONCategoricalChart();
         }
 

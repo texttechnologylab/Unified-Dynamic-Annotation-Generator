@@ -10,12 +10,14 @@ public abstract class SubstringMapping extends Generator implements SubstringMap
     private final String text;
     private final List<Substring> substrings;
 
-    public SubstringMapping(String text, List<Substring> substrings) {
+    public SubstringMapping(String id, String text, List<Substring> substrings) {
+        super(id);
         this.text = text;
         this.substrings = substrings;
     }
 
-    public SubstringMapping(SubstringMapping copyOf) {
+    public SubstringMapping(String id, SubstringMapping copyOf) {
+        super(id);
         this.text = copyOf.text;
         this.substrings = new ArrayList<>();
         for (Substring fs : copyOf.substrings) {
@@ -36,8 +38,10 @@ public abstract class SubstringMapping extends Generator implements SubstringMap
         private final boolean underlined;
         private final boolean bold;
         private final boolean italic;
+        private final String segmentPrefix;
+        private final String segmentSuffix;
 
-        public Substring(int begin, int end, Map<String, String> categoryValueMap, boolean preciseColorMode, Color color, Color colorText, Color colorHighlight, Color colorUnderlined, boolean underlined, boolean bold, boolean italic) {
+        public Substring(int begin, int end, Map<String, String> categoryValueMap, boolean preciseColorMode, Color color, Color colorText, Color colorHighlight, Color colorUnderlined, boolean underlined, boolean bold, boolean italic, String segmentPrefix, String segmentSuffix) {
             if (begin < 0 || end <= begin) {
                 throw new IllegalArgumentException("Invalid range: begin=" + begin + ", end=" + end);
             }
@@ -52,6 +56,8 @@ public abstract class SubstringMapping extends Generator implements SubstringMap
             this.underlined = underlined;
             this.bold = bold;
             this.italic = italic;
+            this.segmentPrefix = segmentPrefix;
+            this.segmentSuffix = segmentSuffix;
         }
 
         public Substring(Substring copyOf) {
@@ -66,6 +72,8 @@ public abstract class SubstringMapping extends Generator implements SubstringMap
             this.underlined = copyOf.underlined;
             this.bold = copyOf.bold;
             this.italic = copyOf.italic;
+            this.segmentPrefix = copyOf.segmentPrefix;
+            this.segmentSuffix = copyOf.segmentSuffix;
         }
     }
 }
