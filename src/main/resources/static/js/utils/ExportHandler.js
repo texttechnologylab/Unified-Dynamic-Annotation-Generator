@@ -1,16 +1,17 @@
 export default class ExportHandler {
-  constructor(node, formats) {
+  constructor(node, formats, icons) {
     this.serializer = new XMLSerializer();
     this.storage = {
       json: null,
       svg: null,
     };
 
-    const icons = {
+    icons = {
       svg: "bi bi-file-earmark-code",
       png: "bi bi-image",
       csv: "bi bi-table",
       json: "bi bi-braces",
+      ...icons,
     };
 
     formats.forEach((format) => {

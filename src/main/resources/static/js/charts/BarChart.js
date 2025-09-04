@@ -1,7 +1,8 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import D3Visualization from "../D3Visualization.js";
-import { appendSlider } from "../utils/controls.js";
+import ControlsHandler from "../utils/ControlsHandler.js";
 import ExportHandler from "../utils/ExportHandler.js";
+import { maxOf, minOf } from "../utils/helper.js";
 
 export default class BarChart extends D3Visualization {
   constructor(root, endpoint, { width, height, horizontal = false }) {
@@ -12,7 +13,9 @@ export default class BarChart extends D3Visualization {
       width,
       height
     );
-    this.handler = new ExportHandler(this.root.select(".dv-dropdown"), [
+
+    this.controls = new ControlsHandler(this.root.select(".dv-sidepanel-body"));
+    this.exports = new ExportHandler(this.root.select(".dv-dropdown"), [
       "svg",
       "png",
       "csv",
@@ -22,21 +25,45 @@ export default class BarChart extends D3Visualization {
     this.horizontal = horizontal;
   }
 
+  init(data) {
+    const min = minOf(data.map((d) => d.value));
+    const max = maxOf(data.map((d) => d.value));
+
+    // Add controls
+    this.controls.appendSelectRadio(
+      "Sort by",
+      ["value", "label"],
+      ["desc", "asc"],
+      (sort, order) => {
+        this.filter.sort = sort;
+        this.filter.desc = order === "desc";
+        this.fetch().then((data) => this.render(data));
+      }
+    );
+
+    this.controls.appendInputRadio(
+      "Filter labels by",
+      ["includes", "regex"],
+      (input, type) => {
+        this.filter.filter = input;
+        this.filter.regex = type === "regex";
+        this.fetch().then((data) => this.render(data));
+      }
+    );
+
+    this.controls.appendDoubleSlider(min, max, (min, max) => {
+      this.filter.min = min;
+      this.filter.max = max;
+      this.fetch().then((data) => this.render(data));
+    });
+  }
+
   async render(data) {
     this.clear();
 
     if (!data) {
       data = await this.fetch();
-
-      // Add controls
-      const min = data[data.length - 1].value;
-      const max = data[0].value;
-
-      appendSlider(this.controls, min, max, (min, max) => {
-        this.filter.min = min;
-        this.filter.max = max;
-        this.fetch().then((data) => this.render(data));
-      });
+      this.init(data);
     }
 
     // Add x axis
@@ -87,7 +114,7 @@ export default class BarChart extends D3Visualization {
       .on("mouseleave", (event) => this.mouseleave(event.currentTarget));
 
     // Pass data to export handler
-    this.handler.update(data, this.svg.node());
+    this.exports.update(data, this.svg.node());
   }
 
   band(data) {
@@ -102,6 +129,6 @@ export default class BarChart extends D3Visualization {
     return d3
       .scaleLinear()
       .range(this.horizontal ? [0, this.width] : [this.height, 0])
-      .domain([0, data[0].value]);
+      .domain([0, maxOf(data.map((d) => d.value))]);
   }
 }

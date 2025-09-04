@@ -1,16 +1,16 @@
-<#macro toolbar config>
+<#macro toolbar id title>
   <div class="dv-toolbar">
     <button
       class="dv-btn dv-title"
       type="button"
       title="Controls"
       data-dv-toggle="sidepanel"
-      data-dv-target="#${config.id}-sidepanel"
+      data-dv-target="#${id}-sidepanel"
     >
       <i class="bi bi-sliders"></i>
     </button>
 
-    <span class="dv-title dv-bold">${config.title}</span>
+    <span class="dv-title dv-bold">${title}</span>
 
     <button
       class="dv-btn dv-title"

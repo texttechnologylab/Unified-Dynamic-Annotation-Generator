@@ -1,7 +1,7 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import D3Visualization from "../D3Visualization.js";
 import { flatData } from "../utils/helper.js";
-import { appendSwitch } from "../utils/controls.js";
+import ControlsHandler from "../utils/ControlsHandler.js";
 import ExportHandler from "../utils/ExportHandler.js";
 
 export default class LineChart extends D3Visualization {
@@ -13,7 +13,8 @@ export default class LineChart extends D3Visualization {
       width,
       height
     );
-    this.handler = new ExportHandler(this.root.select(".dv-dropdown"), [
+    this.controls = new ControlsHandler(this.root.select(".dv-sidepanel-body"));
+    this.exports = new ExportHandler(this.root.select(".dv-dropdown"), [
       "svg",
       "png",
       "csv",
@@ -24,16 +25,22 @@ export default class LineChart extends D3Visualization {
     this.dots = dots;
   }
 
+  init(data) {
+    // Add controls
+    for (const item of data) {
+      this.controls.appendSwitch(item.name, (value) => {
+        console.log(value);
+        this.fetch().then((data) => this.render(data));
+      });
+    }
+  }
+
   async render(data) {
     this.clear();
 
     if (!data) {
       data = await this.fetch();
-
-      // Add controls
-      for (const item of data) {
-        appendSwitch(this.controls, item.name, (value) => console.log(value));
-      }
+      this.init(data);
     }
 
     const coordinates = flatData(data, "coordinates");
@@ -91,6 +98,6 @@ export default class LineChart extends D3Visualization {
       .on("mouseleave", (event) => this.mouseleave(event.currentTarget));
 
     // Pass data to export handler
-    this.handler.update(coordinates, this.svg.node());
+    this.exports.update(coordinates, this.svg.node());
   }
 }

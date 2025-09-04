@@ -10,7 +10,6 @@ export default class D3Visualization {
     this.filter = {};
 
     this.tooltip = this.root.select(".dv-tooltip");
-    this.controls = this.root.select(".dv-sidepanel-body");
 
     // Add svg
     this.svg = this.root
@@ -22,6 +21,7 @@ export default class D3Visualization {
       .append("g")
       .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
+    // Show chart
     this.root.classed("dv-hidden", false);
   }
 
@@ -36,6 +36,10 @@ export default class D3Visualization {
 
   clear() {
     this.svg.select("g").selectAll("*").remove();
+  }
+
+  init() {
+    throw new Error("Method init() not implemented.");
   }
 
   render() {
