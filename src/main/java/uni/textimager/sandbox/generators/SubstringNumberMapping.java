@@ -8,11 +8,6 @@ public class SubstringNumberMapping extends Generator implements SubstringNumber
     }
 
     @Override
-    public void setNumberSuffix(String numberSuffix) {
-
-    }
-
-    @Override
     public void add(double num) {
 
     }
@@ -29,11 +24,6 @@ public class SubstringNumberMapping extends Generator implements SubstringNumber
 
     @Override
     public void divideBy(double num) {
-
-    }
-
-    @Override
-    public void round(int digits) {
 
     }
 

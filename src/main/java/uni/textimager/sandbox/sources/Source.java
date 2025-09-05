@@ -139,7 +139,7 @@ public class Source implements SourceInterface {
                 Collection<String> generatorSourceFiles = generateSourceFiles(g.getConfig(), combiSourceFiles);
                 Collection<String> categoriesWhitelist = generateCategoriesWhitelist(configCombi, g.getConfig());
                 Collection<String> categoriesBlacklist = generateCategoriesBlacklist(configCombi, g.getConfig());
-                HashMap<String, Double> categoryNumberMap = dbCreateCategoryCountMap(featureName, generatorSourceFiles, categoriesWhitelist, categoriesBlacklist);
+                HashMap<String, HashMap<String, Double>> categoryNumberMap = dbCreateCategoryCountMap(featureName, generatorSourceFiles, categoriesWhitelist, categoriesBlacklist);
                 HashMap<String, Color> categoryColorMap = new HashMap<>(mapFeatureToCategoryColorMap.get(featureName));
                 categoryColorMap.keySet().retainAll(categoryNumberMap.keySet());
                 combiGenerators.add(new CategoryNumberColorMapping(generatorId, categoryNumberMap, categoryColorMap));
@@ -172,7 +172,7 @@ public class Source implements SourceInterface {
         if (generatorType.equals("CategoryNumberMapping") || generatorType.equals("CategoryNumberColorMapping")) {
             Collection<String> categoriesWhitelist = generateCategoriesWhitelist(configBundle, config);
             Collection<String> categoriesBlacklist = generateCategoriesBlacklist(configBundle, config);
-            HashMap<String, Double> categoryCountMap = dbCreateCategoryCountMap(generateFeatureNameCategory(configBundle, config), sourceFiles, categoriesWhitelist, categoriesBlacklist);
+            HashMap<String, HashMap<String, Double>> categoryCountMap = dbCreateCategoryCountMap(generateFeatureNameCategory(configBundle, config), sourceFiles, categoriesWhitelist, categoriesBlacklist);
             if (generatorType.equals("CategoryNumberColorMapping")) {
                 return new CategoryNumberColorMapping(generatorId, categoryCountMap);
             } else {
@@ -311,12 +311,12 @@ public class Source implements SourceInterface {
 
 
     private HashMap<String, Color> dbCreateCategoryColorMap(String featureNameCategory, Collection<String> sourceFiles, Collection<String> categoriesWhitelist, Collection<String> categoriesBlacklist) throws SQLException {
-        HashMap<String, Double> categoryCountMap = dbCreateCategoryCountMap(featureNameCategory, sourceFiles, categoriesWhitelist, categoriesBlacklist);
-        return new CategoryNumberColorMapping(null, categoryCountMap).getCategoryColorMap(); // Dummy generator, use it to give more basic colors to more common categories
+        HashMap<String, HashMap<String, Double>> categoryCountMap = dbCreateCategoryCountMap(featureNameCategory, sourceFiles, categoriesWhitelist, categoriesBlacklist);
+        return CategoryNumberColorMapping.categoryColorMapFromCategoriesNumberMap(CategoryNumberMapping.calculateTotalFromCategoryCountMap(categoryCountMap));
     }
 
 
-    private HashMap<String, Double> dbCreateCategoryCountMap(String featureNameCategory, Collection<String> sourceFiles, Collection<String> categoriesWhitelist, Collection<String> categoriesBlacklist) throws SQLException {
+    private HashMap<String, HashMap<String, Double>> dbCreateCategoryCountMap(String featureNameCategory, Collection<String> sourceFiles, Collection<String> categoriesWhitelist, Collection<String> categoriesBlacklist) throws SQLException {
         if (sourceFiles == null || sourceFiles.isEmpty()) {
             if (sourceFiles != null) {
                 System.out.println("Warning: Got empty source files list when trying to build a generator for feature \"" + featureNameCategory + "\". Defaulting to source files of Source object.");
@@ -333,17 +333,28 @@ public class Source implements SourceInterface {
         Field<Integer> count = DSL.count();
 
         SelectConditionStep<? extends Record> query = q.dsl()
-                .select(category, count)
+                .select(filename, category, count)
                 .from(table)
                 .where(filename.in(sourceFiles));
         if (categoriesWhitelist != null) query = query.and(category.in(categoriesWhitelist));
         if (categoriesBlacklist != null) query = query.and(category.notIn(categoriesBlacklist));
-        Result<? extends Record> result = query.groupBy(category).fetch();
+        Result<? extends Record> result = query.groupBy(filename, category).fetch();
 
-        HashMap<String, Double> categoryCountMapping = new HashMap<>();
-        result.forEach(record -> categoryCountMapping.put(record.getValue(category).toString(), record.getValue(count).doubleValue()));
-        return categoryCountMapping;
+        HashMap<String, HashMap<String, Double>> fileCategoryCountMapping = new HashMap<>();
+
+        result.forEach(record -> {
+            String file = record.getValue(filename).toString();
+            String cat = record.getValue(category).toString();
+            Double number = record.getValue(count).doubleValue();
+
+            fileCategoryCountMapping
+                    .computeIfAbsent(file, k -> new HashMap<>())
+                    .put(cat, number);
+        });
+
+        return fileCategoryCountMapping;
     }
+
 
     private String[] dbGetSofa(String sofaFile, String sofaID) throws SQLException {
         if (sofaFile != null) sofaFile = sofaFile.trim();

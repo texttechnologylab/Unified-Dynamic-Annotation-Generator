@@ -13,7 +13,7 @@
                     "name": "MyPOS",
                     "type": "POS",
                     "settings": {
-                        "sourceFilesWhitelist": ["ID21200100.xmi"],
+                        "sourceFilesWhitelist": [],
                         "sourceFilesBlacklist": []
                     },
                     "createsGenerators": [
@@ -39,7 +39,8 @@
                                 "fixedColors": [
                                     ["noun", "FF0000"],
                                     ["verb", "FFA500"]
-                                ]
+                                ],
+                              "sofaFile": "ID21200100.xmi"
                             }
                         },{
                             "type": "CategoryNumberMapping",

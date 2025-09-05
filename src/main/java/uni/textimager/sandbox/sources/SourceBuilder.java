@@ -50,7 +50,6 @@ public class SourceBuilder implements ApplicationRunner {
             System.out.println("Generators created: " + list.size());
             try {
                 CategoryNumberMapping test = (CategoryNumberMapping) list.get(0);
-                System.out.println(test.generateJSONCategoricalChart());
                 test.saveToDB(dbAccess);
             } catch (Exception ignored) {
                 ignored.printStackTrace();
@@ -58,7 +57,6 @@ public class SourceBuilder implements ApplicationRunner {
             }
             try {
                 CategoryNumberMapping test = (CategoryNumberMapping) list.get(1);
-                System.out.println(test.generateJSONCategoricalChart());
                 test.saveToDB(dbAccess);
             } catch (Exception ignored) {
                 System.out.println("Exception2");
@@ -134,14 +132,18 @@ public class SourceBuilder implements ApplicationRunner {
         Connection connection = dataSource.getConnection();
         DSLContext dsl = DSL.using(connection);
 
-        dsl.createTableIfNotExists(DBConstants.TABLENAME_GENERATORDATA_CATEGORYNUMBERCOLOR)
+        dsl.createTableIfNotExists(DBConstants.TABLENAME_GENERATORDATA_CATEGORYNUMBER)
                 .column(DBConstants.TABLEATTR_GENERATORID, org.jooq.impl.SQLDataType.VARCHAR.length(DBConstants.DEFAULTSIZE_VARCHAR).nullable(false))
                 .column(DBConstants.TABLEATTR_FILENAME, org.jooq.impl.SQLDataType.VARCHAR.length(DBConstants.DEFAULTSIZE_VARCHAR).nullable(true))
-                .column(DBConstants.TABLEATTR_SOFA, org.jooq.impl.SQLDataType.VARCHAR.length(DBConstants.DEFAULTSIZE_VARCHAR).nullable(true))
-                .column(DBConstants.TABLEATTR_GENERATORDATA_CATEGORYNUMBERCOLOR_CATEGORY, org.jooq.impl.SQLDataType.VARCHAR.length(DBConstants.DEFAULTSIZE_VARCHAR).nullable(false))
-                .column(DBConstants.TABLEATTR_GENERATORDATA_CATEGORYNUMBERCOLOR_NUMBER, org.jooq.impl.SQLDataType.DOUBLE.nullable(false))
-                .column(DBConstants.TABLEATTR_GENERATORDATA_CATEGORYNUMBERCOLOR_COLOR, org.jooq.impl.SQLDataType.VARCHAR.length(DBConstants.DEFAULTSIZE_VARCHAR).nullable(false))
-            .execute();
+                .column(DBConstants.TABLEATTR_GENERATORDATA_CATEGORY, org.jooq.impl.SQLDataType.VARCHAR.length(DBConstants.DEFAULTSIZE_VARCHAR).nullable(false))
+                .column(DBConstants.TABLEATTR_GENERATORDATA_NUMBER, org.jooq.impl.SQLDataType.DOUBLE.nullable(false))
+                .execute();
+
+        dsl.createTableIfNotExists(DBConstants.TABLENAME_GENERATORDATA_CATEGORYCOLOR)
+                .column(DBConstants.TABLEATTR_GENERATORID, org.jooq.impl.SQLDataType.VARCHAR.length(DBConstants.DEFAULTSIZE_VARCHAR).nullable(false))
+                .column(DBConstants.TABLEATTR_GENERATORDATA_CATEGORY, org.jooq.impl.SQLDataType.VARCHAR.length(DBConstants.DEFAULTSIZE_VARCHAR).nullable(false))
+                .column(DBConstants.TABLEATTR_GENERATORDATA_COLOR, org.jooq.impl.SQLDataType.VARCHAR.length(DBConstants.DEFAULTSIZE_VARCHAR).nullable(false))
+                .execute();
 
         connection.close();
     }

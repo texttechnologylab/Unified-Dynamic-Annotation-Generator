@@ -3,6 +3,7 @@ package uni.textimager.sandbox.generators;
 import lombok.Getter;
 import lombok.NonNull;
 import org.jooq.DSLContext;
+import org.jooq.Query;
 import org.jooq.impl.DSL;
 import uni.textimager.sandbox.database.DBConstants;
 import uni.textimager.sandbox.sources.DBAccess;
@@ -18,14 +19,14 @@ public class CategoryNumberColorMapping extends CategoryNumberMapping implements
     @Getter
     HashMap<String, Color> categoryColorMap;
 
-    public CategoryNumberColorMapping(String id, HashMap<String, Double> categoryNumberMap, HashMap<String, Color> categoryColorMap) {
+    public CategoryNumberColorMapping(String id, HashMap<String, HashMap<String, Double>> categoryNumberMap, HashMap<String, Color> categoryColorMap) {
         super(id, categoryNumberMap);
         this.categoryColorMap = categoryColorMap;
     }
 
-    public CategoryNumberColorMapping(String id, HashMap<String, Double> categoryNumberMap) {
+    public CategoryNumberColorMapping(String id, HashMap<String, HashMap<String, Double>> categoryNumberMap) {
         super(id, categoryNumberMap);
-        this.categoryColorMap = categoryColorMapFromCategoriesNumberMap(categoryNumberMap);
+        this.categoryColorMap = categoryColorMapFromCategoriesNumberMap(CategoryNumberMapping.calculateTotalFromCategoryCountMap(categoryNumberMap));
     }
 
     public CategoryNumberColorMapping(String id, CategoryNumberColorMapping copyOf) {
@@ -48,57 +49,38 @@ public class CategoryNumberColorMapping extends CategoryNumberMapping implements
 
     @Override
     public void saveToDB(DBAccess dbAccess) throws SQLException {
+        saveCategoryNumberMapToDB(dbAccess);
+        saveCategoryColorMapToDB(dbAccess);
+    }
+
+
+    private void saveCategoryColorMapToDB(DBAccess dbAccess) throws SQLException {
+        if (categoryColorMap == null || categoryColorMap.isEmpty()) return;
+
         try (Connection connection = dbAccess.getDataSource().getConnection()) {
             DSLContext dsl = DSL.using(connection);
 
-            for (Map.Entry<String, Double> entry : categoryNumberMap.entrySet().stream()
-                    .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
-                    .toList()) {
+            List<Query> inserts = new ArrayList<>();
+            for (Map.Entry<String, Color> entry : categoryColorMap.entrySet()) {
                 String category = entry.getKey();
-                Double value = entry.getValue();
-                Color colorObj = categoryColorMap.get(category);
+                Color colorObj = entry.getValue();
                 String color = String.format("#%02x%02x%02x", colorObj.getRed(), colorObj.getGreen(), colorObj.getBlue());
-                dsl.insertInto(DSL.table(DBConstants.TABLENAME_GENERATORDATA_CATEGORYNUMBERCOLOR),
+
+                inserts.add(dsl.insertInto(
+                                DSL.table(DBConstants.TABLENAME_GENERATORDATA_CATEGORYCOLOR),
                                 DSL.field(DBConstants.TABLEATTR_GENERATORID),
-                                DSL.field(DBConstants.TABLEATTR_GENERATORDATA_CATEGORYNUMBERCOLOR_CATEGORY),
-                                DSL.field(DBConstants.TABLEATTR_GENERATORDATA_CATEGORYNUMBERCOLOR_NUMBER),
-                                DSL.field(DBConstants.TABLEATTR_GENERATORDATA_CATEGORYNUMBERCOLOR_COLOR))
-                        .values(id, category, value, color)
-                        .execute();
-
+                                DSL.field(DBConstants.TABLEATTR_GENERATORDATA_CATEGORY),
+                                DSL.field(DBConstants.TABLEATTR_GENERATORDATA_COLOR))
+                        .values(id, category, color));
             }
-        }
 
-    }
-
-    @Override
-    public String generateJSONCategoricalChart(Color fixedColor) {
-        if (fixedColor == null) {
-            return generateJSONCategoricalChart();
+            dsl.batch(inserts).execute();
         }
-        return super.generateJSONCategoricalChart(fixedColor);
     }
 
 
-    @Override
-    public String generateJSONCategoricalChart() {
-        StringBuilder jsonStr = new StringBuilder("[\n");
-        for (Map.Entry<String, Double> entry : categoryNumberMap.entrySet().stream()
-                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
-                .toList()) {
-            String category = entry.getKey();
-            Double value = entry.getValue();
-            Color colorObj = categoryColorMap.get(category);
-            String color = String.format("#%02x%02x%02x", colorObj.getRed(), colorObj.getGreen(), colorObj.getBlue());
-            jsonStr.append("  {\"label\": \"").append(category).append("\", \"value\": ").append(value).append(", \"color\": \"").append(color).append("\"},\n");
-        }
-        jsonStr.setLength(jsonStr.length() - 2);
-        jsonStr.append("\n]");
-        return jsonStr.toString();
-    }
 
-
-    private static HashMap<String, Color> categoryColorMapFromCategoriesNumberMap(Map<String, Double> categoryNumberMap) {
+    public static HashMap<String, Color> categoryColorMapFromCategoriesNumberMap(Map<String, Double> categoryNumberMap) {
         List<Color> distinctColors = Arrays.asList(
                 Color.RED,
                 Color.BLUE,
