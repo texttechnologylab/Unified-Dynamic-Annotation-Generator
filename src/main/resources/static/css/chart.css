@@ -9,7 +9,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: #fafafa;
+  background-color: var(--secondary);
   border-bottom: 1px solid var(--border-color);
   border-top-left-radius: inherit;
   border-top-right-radius: inherit;

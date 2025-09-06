@@ -61,7 +61,7 @@
   cursor: pointer;
 
   &:hover {
-    background-color: var(--btn-hover-color);
+    background-color: var(--hover-color);
   }
 
   &:first-of-type {

@@ -20,11 +20,11 @@
   cursor: pointer;
 
   &:hover {
-    background-color: var(--btn-hover-color);
+    background-color: var(--hover-color);
   }
 
   &:active {
-    background-color: var(--btn-active-color);
+    background-color: var(--active-color);
   }
 }
 
@@ -41,11 +41,11 @@
   cursor: pointer;
 
   &:hover {
-    background-color: var(--btn-hover-color);
+    background-color: var(--hover-color);
   }
 
   &:active {
-    background-color: var(--btn-active-color);
+    background-color: var(--active-color);
   }
 }
 
@@ -53,4 +53,5 @@
   display: flex;
   justify-content: space-evenly;
   flex-wrap: wrap;
+  background-color: var(--bg-color);
 }
