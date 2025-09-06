@@ -24,7 +24,7 @@
                                 ]
                             }
                         },{
-                            "type": "SubstringCategoryMapping",
+                            "type": "TextFormatting",
                             "name": "Textfaerbung",
                             "settings": {
                                 "categoriesBlacklist": [

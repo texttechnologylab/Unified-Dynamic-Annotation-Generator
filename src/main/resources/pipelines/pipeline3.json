@@ -14,13 +14,13 @@
               "type": "combi",
               "createsGenerators": [
                 {
-                  "type": "SubstringFormattingMapping",
+                  "type": "TextFormatting",
                   "name": "Textfaerbung",
                   "settings": {
                     "sofaFile": "ID21200300.xmi"
                   }
                 },{
-                  "type": "SubstringFormattingMapping",
+                  "type": "TextFormatting",
                   "name": "Textfaerbung",
                   "settings": {
                     "sofaFile": "ID21200300.xmi",

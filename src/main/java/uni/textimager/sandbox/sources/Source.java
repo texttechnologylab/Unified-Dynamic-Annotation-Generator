@@ -13,6 +13,7 @@ import uni.textimager.sandbox.pipeline.PipelineNodeType;
 
 
 import java.awt.*;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.List;
@@ -116,7 +117,7 @@ public class Source implements SourceInterface {
         HashMap<String, HashMap<String, Color>> mapFeatureToCategoryColorMap = new HashMap<>();
         for (PipelineNode g : generators) {
             String generatorType = g.getConfig().get("type").toString();
-            if (generatorType.equals("CategoryNumberColorMapping") || generatorType.equals("SubstringColorMapping")) {
+            if (generatorType.equals("CategoryNumberColorMapping") || generatorType.equals("TextFormatting")) {
                 mapFeatureToCategoryColorMap.put(generateFeatureNameCategory(configCombi, g.getConfig()), null);
             }
         }
@@ -132,7 +133,7 @@ public class Source implements SourceInterface {
         // Step 3 - Create generators using the common data
         ArrayList<Generator> combiGenerators = new ArrayList<>();
         for (PipelineNode g : generators) {
-            String generatorId = g.getConfig().get("id").toString();
+            String generatorID = g.getConfig().get("id").toString();
             String generatorType = g.getConfig().get("type").toString();
             if (generatorType.equals("CategoryNumberColorMapping")) {
                 String featureName = generateFeatureNameCategory(configCombi, g.getConfig());
@@ -142,8 +143,8 @@ public class Source implements SourceInterface {
                 HashMap<String, HashMap<String, Double>> categoryNumberMap = dbCreateCategoryCountMap(featureName, generatorSourceFiles, categoriesWhitelist, categoriesBlacklist);
                 HashMap<String, Color> categoryColorMap = new HashMap<>(mapFeatureToCategoryColorMap.get(featureName));
                 categoryColorMap.keySet().retainAll(categoryNumberMap.keySet());
-                combiGenerators.add(new CategoryNumberColorMapping(generatorId, categoryNumberMap, categoryColorMap));
-            } else if (generatorType.equals("SubstringColorMapping")) {
+                combiGenerators.add(new CategoryNumberColorMapping(generatorID, categoryNumberMap, categoryColorMap));
+            } else if (generatorType.equals("TextFormatting")) {
                 String configSofaFile = generateSofaFile(configCombi, g.getConfig());
                 String configSofaID = generateSofaID(configCombi, g.getConfig());
                 String[] sofa = dbGetSofa(configSofaFile, configSofaID);
@@ -154,7 +155,7 @@ public class Source implements SourceInterface {
                 HashMap<String, Color> categoryColorMap = mapFeatureToCategoryColorMap.get(featureName);
                 Collection<String> categoriesWhitelist = generateCategoriesWhitelist(configCombi, g.getConfig());
                 Collection<String> categoriesBlacklist = generateCategoriesBlacklist(configCombi, g.getConfig());
-                combiGenerators.add(new SubstringColorMapping(generatorId, sofaString, dbCreateColoredSubstrings(featureName, sofaFile, sofaID, categoryColorMap, categoriesWhitelist, categoriesBlacklist)));
+                combiGenerators.add(dbBuildTextFormatting(featureName, sofaFile, sofaID, categoriesWhitelist, categoriesBlacklist, categoryColorMap, sofaString, generatorID));
             } else { // Default case: Just treat the unknown bundle generator like a normal single generator.
                 combiGenerators.add(createGenerator(g, configCombi, g.getConfig()));
             }
@@ -166,7 +167,7 @@ public class Source implements SourceInterface {
 
 
     private Generator createGenerator(PipelineNode generator, JSONView configBundle, JSONView config) throws SQLException {
-        String generatorId = generator.getConfig().get("name").toString();
+        String generatorID = generator.getConfig().get("name").toString();
         String generatorType = generator.getConfig().get("type").toString();
         Collection<String> sourceFiles = generateSourceFiles(configBundle, config);
         if (generatorType.equals("CategoryNumberMapping") || generatorType.equals("CategoryNumberColorMapping")) {
@@ -174,11 +175,11 @@ public class Source implements SourceInterface {
             Collection<String> categoriesBlacklist = generateCategoriesBlacklist(configBundle, config);
             HashMap<String, HashMap<String, Double>> categoryCountMap = dbCreateCategoryCountMap(generateFeatureNameCategory(configBundle, config), sourceFiles, categoriesWhitelist, categoriesBlacklist);
             if (generatorType.equals("CategoryNumberColorMapping")) {
-                return new CategoryNumberColorMapping(generatorId, categoryCountMap);
+                return new CategoryNumberColorMapping(generatorID, categoryCountMap);
             } else {
-                return new CategoryNumberMapping(generatorId, categoryCountMap);
+                return new CategoryNumberMapping(generatorID, categoryCountMap);
             }
-        } else if (generatorType.equals("SubstringCategoryMapping") || generatorType.equals("SubstringColorMapping")) {
+        } else if (generatorType.equals("TextFormatting")) {
             String configSofaFile = generateSofaFile(configBundle, config);
             String configSofaID = generateSofaID(configBundle, config);
             String[] sofa = dbGetSofa(configSofaFile, configSofaID);
@@ -186,15 +187,11 @@ public class Source implements SourceInterface {
             String sofaID = sofa[1];
             String sofaString = sofa[2];
 
-            String featureNameCategory = generateFeatureNameCategory(configBundle, config);
+            String featureName = generateFeatureNameCategory(configBundle, config);
             Collection<String> categoriesWhitelist = generateCategoriesWhitelist(configBundle, config);
             Collection<String> categoriesBlacklist = generateCategoriesBlacklist(configBundle, config);
-            if (generatorType.equals("SubstringColorMapping")) {
-                HashMap<String, Color> categoryColorMap = dbCreateCategoryColorMap(featureNameCategory, sourceFiles, categoriesWhitelist, categoriesBlacklist);
-                return new SubstringColorMapping(generatorId, sofaString, dbCreateColoredSubstrings(featureNameCategory, sofaFile, sofaID, categoryColorMap, categoriesWhitelist, categoriesBlacklist));
-            } else {
-                return new SubstringCategoryMapping(generatorId, sofaString, dbCreateCategorizedSubstrings(featureNameCategory, sofaFile, sofaID, categoriesWhitelist, categoriesBlacklist));
-            }
+            HashMap<String, Color> categoryColorMap = dbCreateCategoryColorMap(featureName, sourceFiles, categoriesWhitelist, categoriesBlacklist);
+            return dbBuildTextFormatting(featureName, sofaFile, sofaID, categoriesWhitelist, categoriesBlacklist, categoryColorMap, sofaString, generatorID);
         } else {
             throw new IllegalArgumentException("Unknown generator type: " + generator.getConfig().get("type") + " for source: " + name);
         }
@@ -269,57 +266,58 @@ public class Source implements SourceInterface {
     }
 
 
-    private ArrayList<SubstringColorMapping.ColoredSubstring> dbCreateColoredSubstrings(String featureNameCategory, String sofaFile, String sofaID, HashMap<String, Color> categoryColorMap, Collection<String> categoriesWhitelist, Collection<String> categoriesBlacklist) throws SQLException {
-        ArrayList<SubstringCategoryMapping.CategorizedSubstring> categorizedSubstrings = dbCreateCategorizedSubstrings(featureNameCategory, sofaFile, sofaID, categoriesWhitelist, categoriesBlacklist);
-        ArrayList<SubstringColorMapping.ColoredSubstring> coloredSubstrings = new ArrayList<>();
-        for (SubstringCategoryMapping.CategorizedSubstring s : categorizedSubstrings) {
-            coloredSubstrings.add(new SubstringColorMapping.ColoredSubstring(s.getBegin(), s.getEnd(), categoryColorMap.get(s.getCategory()), s.getCategoryValueMap()));
-        }
-        return coloredSubstrings;
+    private TextFormatting dbBuildTextFormatting(String featureName, String sofaFile, String sofaID, Collection<String> categoriesWhitelist, Collection<String> categoriesBlacklist, HashMap<String, Color> categoryColorMap, String generatorID, String text, String style) throws SQLException {
+        ArrayList<TextFormatting.Dataset.Segment> segments = dbCreateTextFormattingSegments(featureName, sofaFile, sofaID, categoriesWhitelist, categoriesBlacklist);
+        TextFormatting.Dataset ds = new TextFormatting.Dataset(featureName, style, categoryColorMap, segments);
+        return new TextFormatting(generatorID, sofaFile, sofaID, text, new ArrayList<>(List.of(ds)));
+    }
+    private TextFormatting dbBuildTextFormatting(String featureName, String sofaFile, String sofaID, Collection<String> categoriesWhitelist, Collection<String> categoriesBlacklist, HashMap<String, Color> categoryColorMap, String text, String generatorID) throws SQLException {
+        return dbBuildTextFormatting(featureName, sofaFile, sofaID, categoriesWhitelist, categoriesBlacklist, categoryColorMap, generatorID, text, TextFormatting.DEFAULT_STYLE);
     }
 
-    private ArrayList<SubstringCategoryMapping.CategorizedSubstring> dbCreateCategorizedSubstrings(String featureNameCategory, String sofaFile, String sofaID, Collection<String> categoriesWhitelist, Collection<String> categoriesBlacklist) throws SQLException {
-        DSLContext dslContext = DSL.using(dbAccess.getDataSource().getConnection());
-        QueryHelper q = new QueryHelper(dslContext);
+    private ArrayList<TextFormatting.Dataset.Segment> dbCreateTextFormattingSegments (String featureName, String sofaFile, String sofaID, Collection<String> categoriesWhitelist, Collection<String> categoriesBlacklist) throws SQLException {
+        ArrayList<TextFormatting.Dataset.Segment> segments = new ArrayList<>();
 
-        Table<?> table            = q.table(annotationTypeName);
-        Field<Object> category    = q.field(annotationTypeName, featureNameCategory);
-        Field<Object> begin       = q.field(annotationTypeName, featureNames.get("begin"));
-        Field<Object> end         = q.field(annotationTypeName, featureNames.get("end"));
-        Field<Object> filename    = q.field(annotationTypeName, "filename");
-        Field<Object> sofa        = q.field(annotationTypeName, featureNames.get("sofa"));
+        try (Connection connection = dbAccess.getDataSource().getConnection()) {
+            DSLContext dsl = DSL.using(connection);
+            QueryHelper q = new QueryHelper(dsl);
 
-        SelectConditionStep<? extends Record> query = q.dsl()
-                .select(category, begin, end)
-                .from(table)
-                .where(filename.equalIgnoreCase(sofaFile).and(sofa.eq(sofaID)));
-        if (categoriesWhitelist != null) query = query.and(category.in(categoriesWhitelist));
-        if (categoriesBlacklist != null) query = query.and(category.notIn(categoriesBlacklist));
-        Result<? extends Record> result = query.fetch();
+            Table<?> table            = q.table(annotationTypeName);
+            Field<Object> category    = q.field(annotationTypeName, featureName);
+            Field<Object> begin       = q.field(annotationTypeName, featureNames.get("begin"));
+            Field<Object> end         = q.field(annotationTypeName, featureNames.get("end"));
+            Field<Object> filename    = q.field(annotationTypeName, "filename");
+            Field<Object> sofa        = q.field(annotationTypeName, featureNames.get("sofa"));
 
-        ArrayList<SubstringCategoryMapping.CategorizedSubstring> categorizedSubstrings = new ArrayList<>();
-        for (Record record : result) {
-            int substringBegin = record.get(begin, Integer.class);
-            int substringEnd = record.get(end, Integer.class);
-            String substringCategory = record.get(category, String.class);
+            SelectConditionStep<? extends Record> query = q.dsl()
+                    .select(category, begin, end)
+                    .from(table)
+                    .where(filename.equalIgnoreCase(sofaFile).and(sofa.eq(sofaID)));
+            if (categoriesWhitelist != null) query = query.and(category.in(categoriesWhitelist));
+            if (categoriesBlacklist != null) query = query.and(category.notIn(categoriesBlacklist));
+            Result<? extends Record> result = query.fetch();
 
-            categorizedSubstrings.add(new SubstringCategoryMapping.CategorizedSubstring(substringBegin, substringEnd, featureNameCategory, substringCategory));
+            for (Record record : result) {
+                int substringBegin = record.get(begin, Integer.class);
+                int substringEnd = record.get(end, Integer.class);
+                String substringCategory = record.get(category, String.class);
+
+                segments.add(new TextFormatting.Dataset.Segment(substringBegin, substringEnd, substringCategory));
+            }
         }
 
-        return categorizedSubstrings;
+        return segments;
     }
 
-
-    private HashMap<String, Color> dbCreateCategoryColorMap(String featureNameCategory, Collection<String> sourceFiles, Collection<String> categoriesWhitelist, Collection<String> categoriesBlacklist) throws SQLException {
-        HashMap<String, HashMap<String, Double>> categoryCountMap = dbCreateCategoryCountMap(featureNameCategory, sourceFiles, categoriesWhitelist, categoriesBlacklist);
+    private HashMap<String, Color> dbCreateCategoryColorMap(String featureName, Collection<String> sourceFiles, Collection<String> categoriesWhitelist, Collection<String> categoriesBlacklist) throws SQLException {
+        HashMap<String, HashMap<String, Double>> categoryCountMap = dbCreateCategoryCountMap(featureName, sourceFiles, categoriesWhitelist, categoriesBlacklist);
         return CategoryNumberColorMapping.categoryColorMapFromCategoriesNumberMap(CategoryNumberMapping.calculateTotalFromCategoryCountMap(categoryCountMap));
     }
 
-
-    private HashMap<String, HashMap<String, Double>> dbCreateCategoryCountMap(String featureNameCategory, Collection<String> sourceFiles, Collection<String> categoriesWhitelist, Collection<String> categoriesBlacklist) throws SQLException {
+    private HashMap<String, HashMap<String, Double>> dbCreateCategoryCountMap(String featureName, Collection<String> sourceFiles, Collection<String> categoriesWhitelist, Collection<String> categoriesBlacklist) throws SQLException {
         if (sourceFiles == null || sourceFiles.isEmpty()) {
             if (sourceFiles != null) {
-                System.out.println("Warning: Got empty source files list when trying to build a generator for feature \"" + featureNameCategory + "\". Defaulting to source files of Source object.");
+                System.out.println("Warning: Got empty source files list when trying to build a generator for feature \"" + featureName + "\". Defaulting to source files of Source object.");
             }
             sourceFiles = this.sourceFiles;
         }
@@ -328,7 +326,7 @@ public class Source implements SourceInterface {
         QueryHelper q = new QueryHelper(dslContext);
 
         Table<?> table = q.table(annotationTypeName);
-        Field<Object> category = q.field(annotationTypeName, featureNameCategory);
+        Field<Object> category = q.field(annotationTypeName, featureName);
         Field<Object> filename = q.field(annotationTypeName, "filename");
         Field<Integer> count = DSL.count();
 

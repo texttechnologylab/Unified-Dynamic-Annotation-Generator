@@ -15,7 +15,7 @@
               "type": "combi",
               "createsGenerators": [
                 {
-                  "type": "SubstringColorMapping",
+                  "type": "TextFormatting",
                   "name": "Textfaerbung",
                   "settings": {
                     "sofaFile": "ID21200300.xmi"

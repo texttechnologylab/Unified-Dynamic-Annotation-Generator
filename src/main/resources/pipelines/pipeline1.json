@@ -16,7 +16,7 @@
                             "type": "combi",
                             "createsGenerators": [
                                 {
-                                    "type": "SubstringColorMapping",
+                                    "type": "TextFormatting",
                                     "name": "Textfaerbung_Rede1",
                                     "settings": {
                                         "categoriesBlacklist": [
@@ -27,7 +27,7 @@
                                     }
                                 },
                                 {
-                                    "type": "SubstringColorMapping",
+                                    "type": "TextFormatting",
                                     "name": "Textfaerbung_Rede2",
                                     "settings": {
                                         "categoriesBlacklist": [
@@ -74,7 +74,7 @@
                             "type": "combi",
                             "createsGenerators": [
                                 {
-                                    "type": "SubstringColorizationMapping",
+                                    "type": "TextFormatting",
                                     "name": "SubstringColorizationMapping_1",
                                     "settings": {
                                         "categoriesBlacklist": [
@@ -105,7 +105,7 @@
                             }
                         },
                         {
-                            "type": "SubstringCategorizationMapping",
+                            "type": "TextFormatting",
                             "name": "SubstringCategorizationMapping_1",
                             "settings": {
                                 "categoriesWhitelist": [
@@ -211,7 +211,7 @@
                         },
                         {
                             "name": "My Formatted Text",
-                            "type": "TextFormatting",
+                            "type": "FormattedText",
                             "active": true,
                             "visible": false,
                             "generator": {
