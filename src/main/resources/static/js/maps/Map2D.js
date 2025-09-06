@@ -90,7 +90,7 @@ export default class Map2D extends D3Visualization {
         .on("mouseleave", (event) => this.mouseleave(event.currentTarget));
 
       // Pass data to export handler
-      this.handler.update(data, this.svg.node());
+      this.handler.update(this.filter, data, this.svg.node());
     });
   }
 }
