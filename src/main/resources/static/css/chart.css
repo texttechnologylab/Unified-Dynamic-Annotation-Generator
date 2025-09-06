@@ -9,7 +9,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: #fafafa;
+  background-color: var(--secondary);
   border-bottom: 1px solid var(--border-color);
   border-top-left-radius: inherit;
   border-top-right-radius: inherit;
@@ -63,22 +63,6 @@
   pointer-events: none;
   box-shadow: var(--shadow-sm);
   z-index: 100;
-}
-
-.dv-slider-double {
-  position: absolute;
-  pointer-events: none;
-}
-
-.dv-slider-double:last-of-type::-webkit-slider-runnable-track,
-.dv-slider-double:last-of-type::-moz-range-track {
-  opacity: 0;
-}
-
-.dv-slider-double::-webkit-slider-thumb,
-.dv-slider-double::-moz-range-thumb {
-  pointer-events: auto;
-  cursor: ew-resize;
 }
 
 .dropdown-menu {

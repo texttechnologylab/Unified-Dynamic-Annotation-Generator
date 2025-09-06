@@ -66,7 +66,7 @@ export default class HighlightText extends D3Visualization {
       .on("mouseleave", (event) => this.mouseleave(event.currentTarget));
 
     // Pass data to export handler
-    this.exports.update(spans, null);
+    this.exports.update(this.filter, spans, null);
   }
 
   generateSpans({ text, datasets }) {

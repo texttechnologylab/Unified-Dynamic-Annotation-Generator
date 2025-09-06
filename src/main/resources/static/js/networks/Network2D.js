@@ -86,6 +86,6 @@ export default class Network2D extends D3Visualization {
       .on("tick", onTick);
 
     // Pass data to export handler
-    this.handler.update(data, this.svg.node());
+    this.handler.update(this.filter, data, this.svg.node());
   }
 }

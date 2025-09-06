@@ -2,10 +2,12 @@ export default class ExportHandler {
   constructor(node, formats, icons) {
     this.serializer = new XMLSerializer();
     this.storage = {
+      metadata: null,
       json: null,
       svg: null,
     };
 
+    this.filename = "chart";
     icons = {
       svg: "bi bi-file-earmark-code",
       png: "bi bi-image",
@@ -26,7 +28,8 @@ export default class ExportHandler {
     });
   }
 
-  update(json, svg) {
+  update(metadata, json, svg) {
+    this.storage.metadata = metadata;
     this.storage.json = json;
     this.storage.svg = svg;
   }
@@ -49,11 +52,23 @@ export default class ExportHandler {
   }
 
   exportSVG() {
+    const namespace = "http://www.w3.org/2000/svg";
+    const metadata = document.createElementNS(namespace, "metadata");
+    const entries = Object.entries(this.storage.metadata);
+
+    for (const [key, value] of entries) {
+      const node = document.createElementNS(namespace, key);
+      node.textContent = value;
+      metadata.appendChild(node);
+    }
+    const svg = this.storage.svg.cloneNode(true);
+    svg.prepend(metadata);
+
     const header = '<?xml version="1.0" standalone="no"?>\r\n';
-    const str = this.serializer.serializeToString(this.storage.svg);
+    const str = this.serializer.serializeToString(svg);
     const url = this.createURL(header + str, "image/svg+xml");
 
-    this.downloadURL(url, "chart.svg");
+    this.downloadURL(url, `${this.filename}.svg`);
   }
 
   exportPNG() {
@@ -71,7 +86,7 @@ export default class ExportHandler {
       const context = canvas.getContext("2d");
       context.drawImage(img, 0, 0, bbox.width, bbox.height);
 
-      this.downloadURL(canvas.toDataURL(), "chart.png");
+      this.downloadURL(canvas.toDataURL(), `${this.filename}.png`);
     };
     img.src = url;
   }
@@ -79,26 +94,32 @@ export default class ExportHandler {
   exportCSV() {
     const json = this.storage.json;
     const keys = Object.keys(json[0]);
+    const entries = Object.entries(this.storage.metadata);
 
     const escape = (value) => {
       const str = String(value);
       return /[",\n]/.test(str) ? '"' + str.replace(/"/g, '""') + '"' : str;
     };
 
+    const metadata = entries.map(([k, v]) => `# ${k}: ${v}`);
     const header = keys.join(",");
     const rows = json.map((o) => keys.map((k) => escape(o[k])).join(","));
 
-    const str = [header, ...rows].join("\r\n");
+    const str = [...metadata, header, ...rows].join("\r\n");
     const url = this.createURL(str, "text/csv");
 
-    this.downloadURL(url, "data.csv");
+    this.downloadURL(url, `${this.filename}.csv`);
   }
 
   exportJSON() {
-    const str = JSON.stringify(this.storage.json, null, 2);
+    const json = {
+      metadata: this.storage.metadata,
+      data: this.storage.json,
+    };
+    const str = JSON.stringify(json, null, 2);
     const url = this.createURL(str, "application/json");
 
-    this.downloadURL(url, "data.json");
+    this.downloadURL(url, `${this.filename}.json`);
   }
 
   createURL(str, type) {

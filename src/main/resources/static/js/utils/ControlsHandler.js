@@ -16,18 +16,16 @@ export default class ControlsHandler {
     const values = ["", radios[0]];
     const name = randomId(radios.join("-"));
 
-    this.node.append("label").attr("class", "form-label").text(title);
+    this.node.append("label").attr("class", "dv-label").text(title);
 
-    const group = this.node
-      .append("div")
-      .attr("class", "input-group input-group-sm mb-3");
+    const group = this.node.append("div").attr("class", "dv-input-group");
 
     // Append text input
     group
       .append("input")
-      .attr("class", "form-control")
+      .attr("class", "dv-text-input")
       .attr("type", "text")
-      .attr("placeholder", "type something")
+      .attr("placeholder", "Press Enter to apply")
       .on("change", (event) => {
         const input = event.target.value.trim();
         if (input !== "") {
@@ -36,13 +34,15 @@ export default class ControlsHandler {
         }
       });
 
+    const segments = group.append("div").attr("class", "dv-segments");
+
     // Append radio buttons
     radios.forEach((radio, index) => {
-      group
+      segments
         .append("input")
         .attr("type", "radio")
         .attr("id", name + index)
-        .attr("class", "btn-check")
+        .attr("class", "dv-segment-input")
         .attr("name", name)
         .property("checked", index === 0)
         .on("change", () => {
@@ -50,11 +50,11 @@ export default class ControlsHandler {
           onchange(...values);
         });
       // Append icon
-      group
+      segments
         .append("label")
         .attr("for", name + index)
         .attr("title", radio)
-        .attr("class", "btn btn-outline-primary")
+        .attr("class", "dv-segment-label")
         .append("i")
         .attr("class", this.icons[radio]);
     });
@@ -64,29 +64,29 @@ export default class ControlsHandler {
     const values = [options[0], radios[0]];
     const name = randomId(radios.join("-"));
 
-    this.node.append("label").attr("class", "form-label").text(title);
+    this.node.append("label").attr("class", "dv-label").text(title);
 
-    const group = this.node
-      .append("div")
-      .attr("class", "input-group input-group-sm mb-3");
+    const group = this.node.append("div").attr("class", "dv-input-group");
 
     // Append select
     const select = group
       .append("select")
-      .attr("class", "form-select")
+      .attr("class", "dv-select")
       .on("change", (event) => {
         values[0] = event.target.value;
         onchange(...values);
       });
     options.forEach((option) => select.append("option").text(option));
 
+    const segments = group.append("div").attr("class", "dv-segments");
+
     // Append radio buttons
     radios.forEach((radio, index) => {
-      group
+      segments
         .append("input")
         .attr("type", "radio")
         .attr("id", name + index)
-        .attr("class", "btn-check")
+        .attr("class", "dv-segment-input")
         .attr("name", name)
         .property("checked", index === 0)
         .on("change", () => {
@@ -94,11 +94,11 @@ export default class ControlsHandler {
           onchange(...values);
         });
       // Append icon
-      group
+      segments
         .append("label")
         .attr("for", name + index)
         .attr("title", radio)
-        .attr("class", "btn btn-outline-primary")
+        .attr("class", "dv-segment-label")
         .append("i")
         .attr("class", this.icons[radio]);
     });
@@ -122,38 +122,40 @@ export default class ControlsHandler {
   appendDoubleSlider(min, max, onchange) {
     const values = [min, max];
 
-    const label = this.node.append("label").attr("class", "form-label w-100");
+    const label = this.node
+      .append("label")
+      .attr("class", "dv-label")
+      .text(`Range: ${min} - ${max}`);
 
-    const span = label.append("span").text(`Range: ${min} - ${max}`);
-    const container = label.append("div").attr("class", "position-relative");
+    const group = this.node.append("div").attr("class", "dv-input-group");
 
     // Append first slider
-    container
+    group
       .append("input")
       .attr("type", "range")
-      .attr("class", "form-range dv-slider-double")
+      .attr("class", "dv-slider-double")
       .attr("min", min)
       .attr("max", max)
       .attr("value", max)
       .on("input", (event) => {
         values[1] = parseInt(event.target.value);
-        span.text(`Range: ${minOf(values)} - ${maxOf(values)}`);
+        label.text(`Range: ${minOf(values)} - ${maxOf(values)}`);
       })
       .on("change", () => {
         onchange(minOf(values), maxOf(values));
       });
 
     // Append second slider
-    container
+    group
       .append("input")
       .attr("type", "range")
-      .attr("class", "form-range dv-slider-double")
+      .attr("class", "dv-slider-double")
       .attr("min", min)
       .attr("max", max)
       .attr("value", min)
       .on("input", (event) => {
         values[0] = parseInt(event.target.value);
-        span.text(`Range: ${minOf(values)} - ${maxOf(values)}`);
+        label.text(`Range: ${minOf(values)} - ${maxOf(values)}`);
       })
       .on("change", () => {
         onchange(minOf(values), maxOf(values));

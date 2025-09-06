@@ -98,6 +98,6 @@ export default class LineChart extends D3Visualization {
       .on("mouseleave", (event) => this.mouseleave(event.currentTarget));
 
     // Pass data to export handler
-    this.exports.update(coordinates, this.svg.node());
+    this.exports.update(this.filter, coordinates, this.svg.node());
   }
 }

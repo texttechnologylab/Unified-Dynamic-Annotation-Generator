@@ -1,0 +1,112 @@
+.dv-label {
+  margin-bottom: 0.5rem;
+}
+
+.dv-input-group {
+  position: relative;
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.dv-select {
+  appearance: none;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 0.25rem 2.25rem 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  background-color: var(--bg-color);
+  background-image: url("../img/chevron.svg");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 10px;
+  flex-grow: 1;
+
+  &:focus {
+    outline: 1px solid var(--primary);
+  }
+}
+
+.dv-text-input {
+  appearance: none;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background-color: var(--bg-color);
+  padding: 0.25rem 0.5rem 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  width: 2rem;
+  flex-grow: 1;
+
+  &:focus {
+    outline: 1px solid var(--primary);
+  }
+}
+
+.dv-segment-input {
+  display: none;
+
+  &:checked + label {
+    color: var(--primary);
+    border-color: var(--primary);
+    background-color: color-mix(in srgb, var(--primary), transparent 90%);
+  }
+}
+
+.dv-segment-label {
+  border: 1px solid var(--border-color);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--hover-color);
+  }
+
+  &:first-of-type {
+    border-top-left-radius: var(--border-radius);
+    border-bottom-left-radius: var(--border-radius);
+  }
+
+  &:last-of-type {
+    border-top-right-radius: var(--border-radius);
+    border-bottom-right-radius: var(--border-radius);
+  }
+}
+
+.dv-slider-double {
+  appearance: none;
+  position: absolute;
+  pointer-events: none;
+  background-color: transparent;
+  width: 100%;
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  &::-webkit-slider-thumb,
+  &::-moz-range-thumb {
+    width: 0.8rem;
+    height: 0.8rem;
+    border: 0;
+    border-radius: 50%;
+    background-color: var(--primary);
+    pointer-events: auto;
+  }
+
+  &::-webkit-slider-runnable-track,
+  &::-moz-range-track {
+    height: 0.3rem;
+    background-color: var(--secondary);
+    border-radius: 0.6rem;
+    border-color: transparent;
+  }
+
+  &:last-of-type::-webkit-slider-runnable-track,
+  &:last-of-type::-moz-range-track {
+    background-color: transparent;
+  }
+}

@@ -99,6 +99,6 @@ export default class PieChart extends D3Visualization {
       .on("mouseleave", (event) => this.mouseleave(event.currentTarget));
 
     // Pass data to export handler
-    this.exports.update(data, this.svg.node());
+    this.exports.update(this.filter, data, this.svg.node());
   }
 }
