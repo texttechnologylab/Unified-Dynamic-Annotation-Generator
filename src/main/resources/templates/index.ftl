@@ -5,17 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>${title}</title>
 
-    <link href="/css/variables.css" rel="stylesheet" />
-    <link href="/css/index.css" rel="stylesheet" />
-    <link href="/css/chart.css" rel="stylesheet" />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
-    />
+    <link rel="stylesheet" href="/css/variables.css">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/chart.css">
+    <link rel="stylesheet" href="/css/controls.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
   </head>
 
   <#include "/components/toolbar.ftl">
@@ -25,12 +20,12 @@
     <div class="dv-flex-container">
       <#list configs?eval_json as config>
         <div class="dv-chart dv-hidden" data-chart-id="${config.id}">
-            <@toolbar id=config.id title=config.title />
+          <@toolbar id=config.id title=config.title />
 
           <div class="dv-chart-area">
-              <@sidepanel id=config.id title="Controls" />
+            <@sidepanel id=config.id title="Controls" />
           </div>
-
+          
           <div class="dv-tooltip"></div>
         </div>
       </#list>
@@ -51,6 +46,7 @@
 
         new ChartClass(node, endpoint, config.options).render();
       });
+
       components.init();
     </script>
   </body>

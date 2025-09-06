@@ -65,22 +65,6 @@
   z-index: 100;
 }
 
-.dv-slider-double {
-  position: absolute;
-  pointer-events: none;
-}
-
-.dv-slider-double:last-of-type::-webkit-slider-runnable-track,
-.dv-slider-double:last-of-type::-moz-range-track {
-  opacity: 0;
-}
-
-.dv-slider-double::-webkit-slider-thumb,
-.dv-slider-double::-moz-range-thumb {
-  pointer-events: auto;
-  cursor: ew-resize;
-}
-
 .dropdown-menu {
   border: unset !important;
   padding: unset !important;
