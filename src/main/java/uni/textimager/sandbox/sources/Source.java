@@ -322,35 +322,37 @@ public class Source implements SourceInterface {
             sourceFiles = this.sourceFiles;
         }
 
-        DSLContext dslContext = DSL.using(dbAccess.getDataSource().getConnection());
-        QueryHelper q = new QueryHelper(dslContext);
+        try (Connection connection = dbAccess.getDataSource().getConnection()) {
+            DSLContext dsl = DSL.using(connection);
+            QueryHelper q = new QueryHelper(dsl);
 
-        Table<?> table = q.table(annotationTypeName);
-        Field<Object> category = q.field(annotationTypeName, featureName);
-        Field<Object> filename = q.field(annotationTypeName, "filename");
-        Field<Integer> count = DSL.count();
+            Table<?> table = q.table(annotationTypeName);
+            Field<Object> category = q.field(annotationTypeName, featureName);
+            Field<Object> filename = q.field(annotationTypeName, "filename");
+            Field<Integer> count = DSL.count();
 
-        SelectConditionStep<? extends Record> query = q.dsl()
-                .select(filename, category, count)
-                .from(table)
-                .where(filename.in(sourceFiles));
-        if (categoriesWhitelist != null) query = query.and(category.in(categoriesWhitelist));
-        if (categoriesBlacklist != null) query = query.and(category.notIn(categoriesBlacklist));
-        Result<? extends Record> result = query.groupBy(filename, category).fetch();
+            SelectConditionStep<? extends Record> query = q.dsl()
+                    .select(filename, category, count)
+                    .from(table)
+                    .where(filename.in(sourceFiles));
+            if (categoriesWhitelist != null) query = query.and(category.in(categoriesWhitelist));
+            if (categoriesBlacklist != null) query = query.and(category.notIn(categoriesBlacklist));
+            Result<? extends Record> result = query.groupBy(filename, category).fetch();
 
-        HashMap<String, HashMap<String, Double>> fileCategoryCountMapping = new HashMap<>();
+            HashMap<String, HashMap<String, Double>> fileCategoryCountMapping = new HashMap<>();
 
-        result.forEach(record -> {
-            String file = record.getValue(filename).toString();
-            String cat = record.getValue(category).toString();
-            Double number = record.getValue(count).doubleValue();
+            result.forEach(record -> {
+                String file = record.getValue(filename).toString();
+                String cat = record.getValue(category).toString();
+                Double number = record.getValue(count).doubleValue();
 
-            fileCategoryCountMapping
-                    .computeIfAbsent(file, k -> new HashMap<>())
-                    .put(cat, number);
-        });
+                fileCategoryCountMapping
+                        .computeIfAbsent(file, k -> new HashMap<>())
+                        .put(cat, number);
+            });
 
-        return fileCategoryCountMapping;
+            return fileCategoryCountMapping;
+        }
     }
 
 
@@ -372,29 +374,30 @@ public class Source implements SourceInterface {
             }
         }
         // From here we have a sourceFile for our SOFA.
-        DSLContext dslContext = DSL.using(dbAccess.getDataSource().getConnection());
-        QueryHelper q = new QueryHelper(dslContext);
+        try (Connection connection = dbAccess.getDataSource().getConnection()) {
+            DSLContext dsl = DSL.using(connection);
+            QueryHelper q = new QueryHelper(dsl);
 
-        Table<?> table = q.table("SOFA");
-        Field<Object> sofastring = q.field("SOFA", "sofastring");
-        Field<Object> filename = q.field("SOFA", "filename");
+            Table<?> table = q.table("SOFA");
+            Field<Object> sofastring = q.field("SOFA", "sofastring");
+            Field<Object> filename = q.field("SOFA", "filename");
 
-        List<Object> sofastringList = q.dsl()
-                .select(sofastring)
-                .from(table)
-                .where(filename.equalIgnoreCase(sourceFile))
-                .fetch(sofastring);
+            List<Object> sofastringList = q.dsl()
+                    .select(sofastring)
+                    .from(table)
+                    .where(filename.equalIgnoreCase(sourceFile))
+                    .fetch(sofastring);
 
-        String sofaString = null;
-        if (sofastringList.isEmpty()) {
-            throw new IllegalArgumentException("No SOFA found in database for file " + sourceFile);
-        } else if (sofastringList.size() == 1) {
-            sofaString = (String) sofastringList.iterator().next();
-        } else {
-            // TODO: Handle multiple SOFAs in one file if sofaID is set
+            String sofaString = null;
+            if (sofastringList.isEmpty()) {
+                throw new IllegalArgumentException("No SOFA found in database for file " + sourceFile);
+            } else if (sofastringList.size() == 1) {
+                sofaString = (String) sofastringList.iterator().next();
+            } else {
+                // TODO: Handle multiple SOFAs in one file if sofaID is set
+            }
+            return new String[] {sourceFile, "2", sofaString}; // TODO: don't hardcode sofaID, but use the one from the config if it exists (or find it if there is only one)
         }
-
-        return new String[] {sourceFile, "2", sofaString}; // TODO: don't hardcode sofaID, but use the one from the config if it exists (or find it if there is only one)
     }
 
     private boolean containsOnlyGenerators(Collection<PipelineNode> nodes) {

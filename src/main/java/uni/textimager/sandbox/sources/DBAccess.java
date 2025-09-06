@@ -10,6 +10,7 @@ import org.jooq.impl.DSL;
 import uni.textimager.sandbox.database.QueryHelper;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,26 +30,27 @@ public class DBAccess {
 
     public Set<String> getSourceFiles() throws SQLException {
         if (sourceFiles == null) {
-            DSLContext dslContext = DSL.using(dataSource.getConnection());
-            QueryHelper q = new QueryHelper(dslContext);
+            try (Connection connection = dataSource.getConnection()) {
+                DSLContext dsl = DSL.using(connection);
+                QueryHelper q = new QueryHelper(dsl);
 
-            Table<?> nullTable = q.table("cas");
-            Field<Object> file = q.field("cas", "filename");
+                Table<?> nullTable = q.table("cas");
+                Field<Object> file = q.field("cas", "filename");
 
-            Result<? extends org.jooq.Record> result = q.dsl()
-                    .selectDistinct(file)
-                    .from(nullTable)
-                    .fetch();
+                Result<? extends org.jooq.Record> result = q.dsl()
+                        .selectDistinct(file)
+                        .from(nullTable)
+                        .fetch();
 
-            sourceFiles = new ArrayList<>();
-            for (Record record : result) {
-                Object value = record.getValue(file);
-                if (value != null) {
-                    sourceFiles.add(value.toString());
+                sourceFiles = new ArrayList<>();
+                for (Record record : result) {
+                    Object value = record.getValue(file);
+                    if (value != null) {
+                        sourceFiles.add(value.toString());
+                    }
                 }
             }
         }
-
         return new HashSet<>(sourceFiles);
     }
 }

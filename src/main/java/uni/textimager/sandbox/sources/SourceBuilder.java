@@ -129,23 +129,22 @@ public class SourceBuilder implements ApplicationRunner {
     }
 
     private void dbBuildGeneratorTables() throws SQLException {
-        Connection connection = dataSource.getConnection();
-        DSLContext dsl = DSL.using(connection);
+        try (Connection connection = dataSource.getConnection()) {
+            DSLContext dsl = DSL.using(connection);
 
-        dsl.createTableIfNotExists(DBConstants.TABLENAME_GENERATORDATA_CATEGORYNUMBER)
-                .column(DBConstants.TABLEATTR_GENERATORID, org.jooq.impl.SQLDataType.VARCHAR.length(DBConstants.DEFAULTSIZE_VARCHAR).nullable(false))
-                .column(DBConstants.TABLEATTR_FILENAME, org.jooq.impl.SQLDataType.VARCHAR.length(DBConstants.DEFAULTSIZE_VARCHAR).nullable(true))
-                .column(DBConstants.TABLEATTR_GENERATORDATA_CATEGORY, org.jooq.impl.SQLDataType.VARCHAR.length(DBConstants.DEFAULTSIZE_VARCHAR).nullable(false))
-                .column(DBConstants.TABLEATTR_GENERATORDATA_NUMBER, org.jooq.impl.SQLDataType.DOUBLE.nullable(false))
-                .execute();
+            dsl.createTableIfNotExists(DBConstants.TABLENAME_GENERATORDATA_CATEGORYNUMBER)
+                    .column(DBConstants.TABLEATTR_GENERATORID, org.jooq.impl.SQLDataType.VARCHAR.length(DBConstants.DEFAULTSIZE_VARCHAR).nullable(false))
+                    .column(DBConstants.TABLEATTR_FILENAME, org.jooq.impl.SQLDataType.VARCHAR.length(DBConstants.DEFAULTSIZE_VARCHAR).nullable(true))
+                    .column(DBConstants.TABLEATTR_GENERATORDATA_CATEGORY, org.jooq.impl.SQLDataType.VARCHAR.length(DBConstants.DEFAULTSIZE_VARCHAR).nullable(false))
+                    .column(DBConstants.TABLEATTR_GENERATORDATA_NUMBER, org.jooq.impl.SQLDataType.DOUBLE.nullable(false))
+                    .execute();
 
-        dsl.createTableIfNotExists(DBConstants.TABLENAME_GENERATORDATA_CATEGORYCOLOR)
-                .column(DBConstants.TABLEATTR_GENERATORID, org.jooq.impl.SQLDataType.VARCHAR.length(DBConstants.DEFAULTSIZE_VARCHAR).nullable(false))
-                .column(DBConstants.TABLEATTR_GENERATORDATA_CATEGORY, org.jooq.impl.SQLDataType.VARCHAR.length(DBConstants.DEFAULTSIZE_VARCHAR).nullable(false))
-                .column(DBConstants.TABLEATTR_GENERATORDATA_COLOR, org.jooq.impl.SQLDataType.VARCHAR.length(DBConstants.DEFAULTSIZE_VARCHAR).nullable(false))
-                .execute();
-
-        connection.close();
+            dsl.createTableIfNotExists(DBConstants.TABLENAME_GENERATORDATA_CATEGORYCOLOR)
+                    .column(DBConstants.TABLEATTR_GENERATORID, org.jooq.impl.SQLDataType.VARCHAR.length(DBConstants.DEFAULTSIZE_VARCHAR).nullable(false))
+                    .column(DBConstants.TABLEATTR_GENERATORDATA_CATEGORY, org.jooq.impl.SQLDataType.VARCHAR.length(DBConstants.DEFAULTSIZE_VARCHAR).nullable(false))
+                    .column(DBConstants.TABLEATTR_GENERATORDATA_COLOR, org.jooq.impl.SQLDataType.VARCHAR.length(DBConstants.DEFAULTSIZE_VARCHAR).nullable(false))
+                    .execute();
+        }
     }
 
     private void dbBuildCustomTypes(Pipeline pipeline) {
@@ -181,7 +180,8 @@ public class SourceBuilder implements ApplicationRunner {
             if (!subtypesView.isList()) {
                 throw new IllegalArgumentException("\"contains\" must be a list of strings.");
             }
-            DSLContext dslContext = DSL.using(dataSource.getConnection());
+            Connection connection = dataSource.getConnection();
+            DSLContext dslContext = DSL.using(connection);
             ArrayList<String> subtypes = new ArrayList<>();
             Collection<Table<?>> dbTables = dslContext.meta().getTables();
             for (JSONView elementView : subtypesView) {
@@ -213,7 +213,7 @@ public class SourceBuilder implements ApplicationRunner {
 //            }
 
             if (joinPreset.equalsIgnoreCase("begin&End")) {
-                dbBuildCustomType_customJoinFields(customTypeNode, subtypes, List.of("FILENAME", "SOFA", "BEGIN", "END"));
+                dbBuildCustomType_customJoinFields(customTypeNode, subtypes, List.of("FILENAME", "SOFA", "BEGIN", "END"), connection);
 
             } else if (joinPreset.equalsIgnoreCase("manual")) {
                 if (joinCols == null) {
@@ -221,16 +221,16 @@ public class SourceBuilder implements ApplicationRunner {
                 }
                 if (!joinCols.contains("FILENAME")) { joinCols.add("FILENAME"); }
                 if (!joinCols.contains("SOFA")) { joinCols.add("SOFA"); }
-                dbBuildCustomType_customJoinFields(customTypeNode, subtypes, joinCols);
+                dbBuildCustomType_customJoinFields(customTypeNode, subtypes, joinCols, connection);
             }
 
+            connection.close();
         } catch (Exception e) {
             System.out.println("There was an error creating the custom type: " + customTypeNode.toString());
         }
     }
 
-    private void dbBuildCustomType_customJoinFields(PipelineNode customTypeNode, List<String> subtypes, List<String> joinFieldNames) throws SQLException {
-        Connection connection = dataSource.getConnection();
+    private void dbBuildCustomType_customJoinFields(PipelineNode customTypeNode, List<String> subtypes, List<String> joinFieldNames, Connection connection) throws SQLException {
         DSLContext dsl = DSL.using(connection);
         QueryHelper q = new QueryHelper(dsl);
 
@@ -349,7 +349,5 @@ public class SourceBuilder implements ApplicationRunner {
             tx.dropTableIfExists(DSL.name(newTableName)).execute();
             tx.createTable(DSL.name(newTableName)).as(tx.select(selectFields).from(t)).execute();
         });
-
-        connection.close();
     }
 }
