@@ -49,7 +49,29 @@
   }
 }
 
-.dv-flex-container {
+.dv-layout {
+  display: grid;
+  grid-template-areas: "sidebar main";
+  grid-template-columns: 20rem auto;
+}
+
+.dv-sidebar {
+  grid-area: sidebar;
+  position: fixed;
+  width: 20rem;
+  height: 100%;
+  padding: 1rem;
+  background-color: var(--secondary);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-color);
+}
+
+.dv-sidebar-header {
+  margin-bottom: 1rem;
+}
+
+.dv-main {
+  grid-area: main;
   display: flex;
   justify-content: space-evenly;
   flex-wrap: wrap;

@@ -10,14 +10,12 @@
     }
   },
   {
-    "id": "line-chart",
-    "type": "LineChart",
-    "title": "LineChart",
+    "id": "text",
+    "type": "HighlightText",
+    "title": "HighlightText",
     "options": {
-      "width": 800,
-      "height": 600,
-      "line": true,
-      "dots": true
+      "width": 600,
+      "height": 600
     }
   },
   {
@@ -30,12 +28,14 @@
     }
   },
   {
-    "id": "text",
-    "type": "HighlightText",
-    "title": "HighlightText",
+    "id": "line-chart",
+    "type": "LineChart",
+    "title": "LineChart",
     "options": {
-      "width": 600,
-      "height": 600
+      "width": 800,
+      "height": 600,
+      "line": true,
+      "dots": true
     }
   },
   {
@@ -43,7 +43,7 @@
     "type": "Map2D",
     "title": "Map2D",
     "options": {
-      "width": 800,
+      "width": 1400,
       "height": 600
     }
   },
