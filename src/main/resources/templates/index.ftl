@@ -13,22 +13,27 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
   </head>
 
-  <#include "/components/toolbar.ftl">
-  <#include "/components/sidepanel.ftl">
+  <#include "/components/sidebar.ftl">
+  <#include "/components/chart/toolbar.ftl">
+  <#include "/components/chart/sidepanel.ftl">
   
   <body>
-    <div class="dv-flex-container">
-      <#list configs?eval_json as config>
-        <div class="dv-chart dv-hidden" data-chart-id="${config.id}">
-          <@toolbar id=config.id title=config.title />
+    <div class="dv-layout">
+      <@sidebar />
+      
+      <main class="dv-main">
+        <#list configs?eval_json as config>
+          <div class="dv-chart dv-hidden" data-chart-id="${config.id}">
+            <@toolbar id=config.id title=config.title />
 
-          <div class="dv-chart-area">
-            <@sidepanel id=config.id title="Controls" />
+            <div class="dv-chart-area">
+              <@sidepanel id=config.id title="Controls" />
+            </div>
+      
+            <div class="dv-tooltip"></div>
           </div>
-          
-          <div class="dv-tooltip"></div>
-        </div>
-      </#list>
+        </#list>
+      </main>
     </div>
 
     <script type="module">
