@@ -4,6 +4,7 @@ public final class DBConstants {
     private DBConstants() {}
 
     public static final String TABLENAME_VISUALIZATIONJSONS = "VISUALIZATIONJSONS";
+    public static final String TABLENAME_GENERATORTYPE = "GENERATORTYPE";
 
     // Generator: CategoryNumber(Color)Mapping
     public static final String TABLENAME_GENERATORDATA_CATEGORYNUMBER = "GENERATORDATA_CATEGORYNUMBER";
