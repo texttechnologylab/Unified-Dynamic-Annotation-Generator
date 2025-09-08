@@ -1,10 +1,10 @@
 {
   "pipelines": [
     {
-      "name": "main",
+      "id": "main",
       "sources": [
         {
-          "name": "TEST_1",
+          "id": "TEST_1",
           "type": "POS",
           "annotationTypeName": "POS",
           "settings": {
@@ -16,14 +16,14 @@
               "createsGenerators": [
                 {
                   "type": "TextFormatting",
-                  "name": "Textfaerbung",
+                  "id": "Textfaerbung",
                   "settings": {
                     "sofaFile": "ID21200300.xmi"
                   }
                 },
                 {
                   "type": "CategoryNumberColorMapping",
-                  "name": "CategoryNumberColorMapping_1"
+                  "id": "CategoryNumberColorMapping_1"
                 }
               ],
               "settings": {
@@ -35,10 +35,10 @@
       ],
       "visualizations": [
         {
-          "name": "My CakeDiagram",
+          "id": "My CakeDiagram",
           "type": "PieChart",
           "generator": {
-            "name": "CategoryNumberColorMapping_1"
+            "id": "CategoryNumberColorMapping_1"
           },
           "settings": {
             "fontsizeLabels": "12",
@@ -48,11 +48,11 @@
           }
         },
         {
-          "name": "My Colored Text",
+          "id": "My Colored Text",
           "type": "TextColorization",
           "visible": true,
           "generator": {
-            "name": "Textfaerbung"
+            "id": "Textfaerbung"
           }
         }
       ]

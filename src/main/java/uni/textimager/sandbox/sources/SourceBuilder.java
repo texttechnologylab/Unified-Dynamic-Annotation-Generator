@@ -37,7 +37,7 @@ public class SourceBuilder implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) throws SQLException, IOException {
         Pipeline pipeline = Pipeline.fromJSON("pipelines/pipeline3_customTypes.json");
-        System.out.println("Pipeline loaded: " + pipeline.getName());
+        System.out.println("Pipeline loaded: " + pipeline.getId());
         dbSavePipelinesVisualizationsJSONs(List.of(pipeline));
         dbBuildCustomTypes(pipeline);
         dbBuildGeneratorTables();
@@ -59,7 +59,7 @@ public class SourceBuilder implements ApplicationRunner {
                     .execute();
 
             for (Pipeline p : pipelines) {
-                String pipelineID = p.getName();
+                String pipelineID = p.getId();
                 String visualizationsJSON = p.getRootJSONView().get("visualizations").toJson(false);
 
                 dsl.insertInto(DSL.table(DBConstants.TABLENAME_VISUALIZATIONJSONS),
@@ -128,7 +128,7 @@ public class SourceBuilder implements ApplicationRunner {
                     for (JSONView col : joinColsView) {
                         String colStr = col.toString().toUpperCase().trim();
                         if (foundJoinCols.contains(colStr)) {
-                            System.out.println("Warning: Join column " + colStr + " defined more than once in \"joinCols\" list of customType " + customTypeNode.getConfig().get("name") + " definition.");
+                            System.out.println("Warning: Join column " + colStr + " defined more than once in \"joinCols\" list of customType " + customTypeNode.getConfig().get("id") + " definition.");
                             continue;
                         }
                         foundJoinCols.add(colStr);
@@ -154,11 +154,11 @@ public class SourceBuilder implements ApplicationRunner {
                 for (JSONView elementView : subtypesView) {
                     String subtype = elementView.toString().toUpperCase().trim();
                     if (subtypes.contains(subtype)) {
-                        System.out.println("Warning: Subtype " + subtype + " defined more than once in \"contains\" list of customType " + customTypeNode.getConfig().get("name") + " definition.");
+                        System.out.println("Warning: Subtype " + subtype + " defined more than once in \"contains\" list of customType " + customTypeNode.getConfig().get("id") + " definition.");
                         continue;
                     }
                     if (dbTables.stream().noneMatch(t -> t.getName().equalsIgnoreCase(subtype))) {
-                        System.out.println("Warning: Subtype " + subtype + " defined in \"contains\" list of customType " + customTypeNode.getConfig().get("name") + " doesn't exist in database.");
+                        System.out.println("Warning: Subtype " + subtype + " defined in \"contains\" list of customType " + customTypeNode.getConfig().get("id") + " doesn't exist in database.");
                         continue;
                     }
                     subtypes.add(subtype);
@@ -169,7 +169,7 @@ public class SourceBuilder implements ApplicationRunner {
 
                 } else if (joinPreset.equalsIgnoreCase("manual")) {
                     if (joinCols == null) {
-                        throw new IllegalArgumentException("Error: No joinCols defined for manual-join customType " + customTypeNode.getConfig().get("name"));
+                        throw new IllegalArgumentException("Error: No joinCols defined for manual-join customType " + customTypeNode.getConfig().get("id"));
                     }
                     if (!joinCols.contains("FILENAME")) { joinCols.add("FILENAME"); }
                     if (!joinCols.contains("SOFA")) { joinCols.add("SOFA"); }
@@ -184,7 +184,7 @@ public class SourceBuilder implements ApplicationRunner {
     private void dbBuildCustomType_customJoinFields(PipelineNode customTypeNode, List<String> subtypes, List<String> joinFieldNames, DSLContext dsl) throws SQLException {
         QueryHelper q = new QueryHelper(dsl);
 
-        String finalTableName = customTypeNode.getConfig().get("name").toString().toUpperCase();
+        String finalTableName = customTypeNode.getConfig().get("id").toString().toUpperCase();
         String outName =  finalTableName + "_RAW";
 
         // Load tables and join‐fields

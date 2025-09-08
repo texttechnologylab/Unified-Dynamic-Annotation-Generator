@@ -18,7 +18,7 @@ public class PipelineNode {
         this.config = config;
         this.children = new HashMap<>();
         for (PipelineNode dependency : dependencies.values()) {
-            dependency.children.put(config.get("name").toString(), this);
+            dependency.children.put(config.get("id").toString(), this);
         }
     }
 }

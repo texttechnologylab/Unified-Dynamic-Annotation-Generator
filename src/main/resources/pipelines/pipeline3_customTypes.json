@@ -1,96 +1,130 @@
 {
-    "pipelines": [
+  "pipelines": [
+    {
+      "id": "main",
+      "customTypes": [
         {
-            "name": "main",
-            "customTypes": [
-                {
-                    "name": "CUSTOM1",
-                    "contains": ["POS", "MORPHOLOGICALFEATURES", "LEMMA"]
-                }
-            ],
-            "sources": [
-                {
-                    "name": "MyPOS",
-                    "type": "POS",
-                    "settings": {
-                        "sourceFilesWhitelist": [],
-                        "sourceFilesBlacklist": []
-                    },
-                    "createsGenerators": [
-                        {
-                            "type": "CategoryNumberColorMapping",
-                            "name": "Gesamtverteilung",
-                            "settings": {
-                                "categoriesBlacklist": [
-                                    "article"
-                                ],
-                                "fixedColors": [
-                                    ["noun", "FF0000"],
-                                    ["verb", "FFA500"]
-                                ]
-                            }
-                        },{
-                            "type": "TextFormatting",
-                            "name": "Textfaerbung",
-                            "settings": {
-                                "categoriesBlacklist": [
-                                    "article"
-                                ],
-                                "fixedColors": [
-                                    ["noun", "FF0000"],
-                                    ["verb", "FFA500"]
-                                ],
-                              "sofaFile": "ID21200100.xmi"
-                            }
-                        },{
-                            "type": "CategoryNumberMapping",
-                            "name": "Gesamtverteilung2",
-                            "settings": {
-                                "categoriesBlacklist": [
-                                    "article"
-                                ],
-                                "fixedColors": [
-                                    ["noun", "FF0000"],
-                                    ["verb", "FFA500"]
-                                ]
-                            }
-                        }
-
-                    ]
-                }
-            ],
-            "derivedGenerators": [
-               {
-
-               }
-            ],
-            "visualizations": [
-                {
-                    "name": "My CakeDiagram 2",
-                    "type": "CategoricalChart.PieChart",
-                    "generator": {
-                        "name": "Textfaerbung"
-                    },
-                    "settings": {
-                        "fontsizeLabels": "12",
-                        "fontsizeValues": "20",
-                        "diagramWidth": "500",
-                        "diagramHeight": "500"
-                    }
-                },{
-                    "name": "My CakeDiagram",
-                    "type": "CategoricalChart.PieChart",
-                    "generator": {
-                        "name": "Gesamtverteilung"
-                    },
-                    "settings": {
-                        "fontsizeLabels": "12",
-                        "fontsizeValues": "20",
-                        "diagramWidth": "500",
-                        "diagramHeight": "500"
-                    }
-                }
-            ]
+          "id": "CUSTOM1",
+          "contains": [
+            "POS",
+            "MORPHOLOGICALFEATURES",
+            "LEMMA"
+          ]
         }
-    ]
+      ],
+      "sources": [
+        {
+          "id": "MyPOS",
+          "type": "POS",
+          "settings": {
+            "sourceFilesWhitelist": [],
+            "sourceFilesBlacklist": []
+          },
+          "createsGenerators": [
+            {
+              "type": "CategoryNumberColorMapping",
+              "id": "Gesamtverteilung",
+              "settings": {
+                "categoriesBlacklist": [
+                  "article"
+                ],
+                "fixedColors": [
+                  [
+                    "noun",
+                    "FF0000"
+                  ],
+                  [
+                    "verb",
+                    "FFA500"
+                  ]
+                ]
+              }
+            },
+            {
+              "type": "TextFormatting",
+              "id": "Textfaerbung",
+              "settings": {
+                "categoriesBlacklist": [
+                  "article"
+                ],
+                "fixedColors": [
+                  [
+                    "noun",
+                    "FF0000"
+                  ],
+                  [
+                    "verb",
+                    "FFA500"
+                  ]
+                ],
+                "sofaFile": "ID21200100.xmi"
+              }
+            },
+            {
+              "type": "CategoryNumberMapping",
+              "id": "Gesamtverteilung2",
+              "settings": {
+                "categoriesBlacklist": [
+                  "article"
+                ],
+                "fixedColors": [
+                  [
+                    "noun",
+                    "FF0000"
+                  ],
+                  [
+                    "verb",
+                    "FFA500"
+                  ]
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "derivedGenerators": [
+        {
+        }
+      ],
+      "visualizations": [
+        {
+          "id": "bar-chart",
+          "type": "BarChart",
+          "title": "BarChart",
+          "generator": {
+            "id": "Gesamtverteilung"
+          },
+          "options": {
+            "width": 800,
+            "height": 600,
+            "horizontal": false
+          }
+        },
+        {
+          "id": "text",
+          "type": "HighlightText",
+          "title": "HighlightText",
+          "generator": {
+            "id": "Textfaerbung"
+          },
+          "options": {
+            "width": 600,
+            "height": 600
+          }
+        },
+        {
+          "id": "pie-chart",
+          "type": "PieChart",
+          "title": "PieChart",
+          "generator": {
+            "id": "Gesamtverteilung"
+          },
+          "options": {
+            "radius": 300,
+            "hole": 0
+          }
+        }
+      ]
+    }
+  ]
 }

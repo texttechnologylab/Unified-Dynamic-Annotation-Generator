@@ -1,10 +1,10 @@
 {
     "pipelines": [
         {
-            "name": "main",
+            "id": "main",
             "sources": [
                 {
-                    "name": "MyPOS",
+                    "id": "MyPOS",
                     "type": "POS",
                     "settings": {
                         "annotationTypeName": "POSannotation",
@@ -17,7 +17,7 @@
                             "createsGenerators": [
                                 {
                                     "type": "TextFormatting",
-                                    "name": "Textfaerbung_Rede1",
+                                    "id": "Textfaerbung_Rede1",
                                     "settings": {
                                         "categoriesBlacklist": [
                                             "article"
@@ -28,7 +28,7 @@
                                 },
                                 {
                                     "type": "TextFormatting",
-                                    "name": "Textfaerbung_Rede2",
+                                    "id": "Textfaerbung_Rede2",
                                     "settings": {
                                         "categoriesBlacklist": [
                                             "article"
@@ -39,7 +39,7 @@
                                 },
                                 {
                                     "type": "CategoryNumberColorMapping",
-                                    "name": "Gesamtverteilung",
+                                    "id": "Gesamtverteilung",
                                     "settings": {
                                         "numberType": "percentage"
                                     }
@@ -67,7 +67,7 @@
                         "xmi:id": "xmi_id"
                     }
                 },{
-                    "name": "MySentences",
+                    "id": "MySentences",
                     "type": "Sentence",
                     "createsGenerators": [
                         {
@@ -75,7 +75,7 @@
                             "createsGenerators": [
                                 {
                                     "type": "TextFormatting",
-                                    "name": "SubstringColorizationMapping_1",
+                                    "id": "SubstringColorizationMapping_1",
                                     "settings": {
                                         "categoriesBlacklist": [
                                             "article"
@@ -84,7 +84,7 @@
                                 },
                                 {
                                     "type": "CategoryColorNumberMapping",
-                                    "name": "CategoryColorNumberMapping_1",
+                                    "id": "CategoryColorNumberMapping_1",
                                     "settings": {
                                         "numberType": "percentage"
                                     }
@@ -106,7 +106,7 @@
                         },
                         {
                             "type": "TextFormatting",
-                            "name": "SubstringCategorizationMapping_1",
+                            "id": "SubstringCategorizationMapping_1",
                             "settings": {
                                 "categoriesWhitelist": [
                                     "article"
@@ -123,7 +123,7 @@
                     "settings": {
                     }
                 },{
-                    "name": "TextPOS_2",
+                    "id": "TextPOS_2",
                     "type": "TextAnnotations",
                     "createsGenerators": [
                         {
@@ -131,7 +131,7 @@
                             "createsGenerators": [
                                 {
                                     "type": "Blub",
-                                    "name": "Blub",
+                                    "id": "Blub",
                                     "settings": {
                                         "categoriesBlacklist": [
                                             "article"
@@ -140,7 +140,7 @@
                                 },
                                 {
                                     "type": "Test",
-                                    "name": "Test",
+                                    "id": "Test",
                                     "settings": {
                                         "numberType": "percentage"
                                     }
@@ -162,7 +162,7 @@
                         },
                         {
                             "type": "ABC",
-                            "name": "ABC",
+                            "id": "ABC",
                             "settings": {
                                 "categoriesWhitelist": [
                                     "article"
@@ -179,10 +179,10 @@
             ],
             "visualizations": [
                 {
-                    "name": "My CakeDiagram",
+                    "id": "My CakeDiagram",
                     "type": "CategoricalChart.PieChart",
                     "generator": {
-                        "name": "Gesamtverteilung"
+                        "id": "Gesamtverteilung"
                     },
                     "settings": {
                         "fontsizeLabels": "12",
@@ -192,30 +192,30 @@
                     }
                 },
                 {
-                    "name": "My Colored and Formatted Text",
+                    "id": "My Colored and Formatted Text",
                     "type": "combi",
                     "active": true,
                     "visible": true,
                     "visualizations": [
                         {
-                            "name": "My Colored Text",
+                            "id": "My Colored Text",
                             "type": "TextColorization",
                             "active": true,
                             "visible": false,
                             "generator": {
-                                "name": "SubstringColorizationMapping_1"
+                                "id": "SubstringColorizationMapping_1"
                             },
                             "settings": {
                                 "mode": "highlight"
                             }
                         },
                         {
-                            "name": "My Formatted Text",
+                            "id": "My Formatted Text",
                             "type": "FormattedText",
                             "active": true,
                             "visible": false,
                             "generator": {
-                                "name": "SubstringCategorizationMapping_1",
+                                "id": "SubstringCategorizationMapping_1",
 
                                 "mappings": [["article", "bold"]]
                             }

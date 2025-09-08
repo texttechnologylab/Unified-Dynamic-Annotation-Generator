@@ -29,7 +29,7 @@ public class Source implements SourceInterface {
     private final JSONView config;
     private final Map<String, PipelineNode> relevantGenerators;
     private final Map<String, PipelineNode> generatorsToBuild;
-    private final String name;
+    private final String id;
     private final String type;
     private final String annotationTypeName;
     private final Map<String, String> featureNames;
@@ -44,7 +44,7 @@ public class Source implements SourceInterface {
         this.relevantGenerators = relevantGenerators;
         this.generatorsToBuild = generatorsToBuild;
 
-        this.name = config.get("name").toString();
+        this.id = config.get("id").toString();
 
         // Set Type and Annotation Type Name (they are the same by default)
         this.type = config.get("type").toString();
@@ -78,31 +78,31 @@ public class Source implements SourceInterface {
                 ArrayList<PipelineNode> subGeneratorNodes = new ArrayList<>();
                 boolean combiNeeded = false;
                 for (JSONView subGeneratorEntry : generatorEntry.get("createsGenerators")) {
-                    if (relevantGenerators.containsKey(subGeneratorEntry.get("name").toString())) combiNeeded = true;
-                    subGeneratorNodes.add(generatorsToBuild.get(subGeneratorEntry.get("name").toString()));
+                    if (relevantGenerators.containsKey(subGeneratorEntry.get("id").toString())) combiNeeded = true;
+                    subGeneratorNodes.add(generatorsToBuild.get(subGeneratorEntry.get("id").toString()));
                 }
                 if (!combiNeeded) {
                     String combiName = "unnamed combi";
-                    try { combiName = generatorEntry.get("name").toString(); } catch (Exception ignored) {}
+                    try { combiName = generatorEntry.get("id").toString(); } catch (Exception ignored) {}
                     System.out.println("Skipping irrelevant combi-generator \"" + combiName + "\".");
                     continue;
                 }
                 generators.addAll(createGeneratorsCombi(subGeneratorNodes, generatorEntry));
             } else if (generatorType.equals("bundle")) {
                 for (JSONView subGeneratorEntry : generatorEntry.get("createsGenerators")) {
-                    if (!relevantGenerators.containsKey(subGeneratorEntry.get("name").toString())) {
-                        System.out.println("Skipping irrelevant bundle-part generator \"" + subGeneratorEntry.get("name") + "\".");
+                    if (!relevantGenerators.containsKey(subGeneratorEntry.get("id").toString())) {
+                        System.out.println("Skipping irrelevant bundle-part generator \"" + subGeneratorEntry.get("id") + "\".");
                         continue;
                     }
-                    PipelineNode generatorNode = generatorsToBuild.get(subGeneratorEntry.get("name").toString());
+                    PipelineNode generatorNode = generatorsToBuild.get(subGeneratorEntry.get("id").toString());
                     generators.add(createGenerator(generatorNode, generatorEntry, subGeneratorEntry));
                 }
             } else {
-                if (!relevantGenerators.containsKey(generatorEntry.get("name").toString())) {
-                    System.out.println("Skipping irrelevant generator \"" + generatorEntry.get("name") + "\".");
+                if (!relevantGenerators.containsKey(generatorEntry.get("id").toString())) {
+                    System.out.println("Skipping irrelevant generator \"" + generatorEntry.get("id") + "\".");
                     continue;
                 }
-                PipelineNode generatorNode = generatorsToBuild.get(generatorEntry.get("name").toString());
+                PipelineNode generatorNode = generatorsToBuild.get(generatorEntry.get("id").toString());
                 generators.add(createGenerator(generatorNode, null, generatorEntry));
             }
 
@@ -167,7 +167,7 @@ public class Source implements SourceInterface {
 
 
     private Generator createGenerator(PipelineNode generator, JSONView configBundle, JSONView config) throws SQLException {
-        String generatorID = generator.getConfig().get("name").toString();
+        String generatorID = generator.getConfig().get("id").toString();
         String generatorType = generator.getConfig().get("type").toString();
         Collection<String> sourceFiles = generateSourceFiles(configBundle, config);
         if (generatorType.equals("CategoryNumberMapping") || generatorType.equals("CategoryNumberColorMapping")) {
@@ -193,7 +193,7 @@ public class Source implements SourceInterface {
             HashMap<String, Color> categoryColorMap = dbCreateCategoryColorMap(featureName, sourceFiles, categoriesWhitelist, categoriesBlacklist);
             return dbBuildTextFormatting(featureName, sofaFile, sofaID, categoriesWhitelist, categoriesBlacklist, categoryColorMap, sofaString, generatorID);
         } else {
-            throw new IllegalArgumentException("Unknown generator type: " + generator.getConfig().get("type") + " for source: " + name);
+            throw new IllegalArgumentException("Unknown generator type: " + generator.getConfig().get("type") + " for source: " + id);
         }
     }
 

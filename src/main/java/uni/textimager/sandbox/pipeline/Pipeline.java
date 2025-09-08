@@ -21,7 +21,7 @@ public class Pipeline {
     private final Map<String, PipelineNode> filteredGenerators;
     private final Map<String, PipelineNode> filteredSources;
 
-    private final String name;
+    private final String id;
     private final JSONView rootJSONView;
 
 
@@ -61,17 +61,17 @@ public class Pipeline {
         ArrayList<Generator> generatedGenerators = new ArrayList<>();
         for (PipelineNode sourceNode : sourceNodes.values()) {
             Source s = new Source(dbAccess, sourceNode.getConfig(), generatorNodes, sourceNode.getChildren());
-            System.out.println("Source created: " + s.getConfig().get("name"));
+            System.out.println("Source created: " + s.getConfig().get("id"));
             List<Generator> sourceGenerators = s.createGenerators();
             generatedGenerators.addAll(sourceGenerators);
-            System.out.println(sourceGenerators.size() + " Generators created for source " + s.getName());
+            System.out.println(sourceGenerators.size() + " Generators created for source " + s.getId());
         }
         return generatedGenerators;
     }
 
 
-    private Pipeline(String name, Map<String, PipelineNode> visualizations, Map<String, PipelineNode> generators, Map<String, PipelineNode> sources, List<PipelineNode> customTypes, JSONView rootJSONView) {
-        this.name = name;
+    private Pipeline(String id, Map<String, PipelineNode> visualizations, Map<String, PipelineNode> generators, Map<String, PipelineNode> sources, List<PipelineNode> customTypes, JSONView rootJSONView) {
+        this.id = id;
         this.visualizations = visualizations;
         this.generators = generators;
         this.sources = sources;
@@ -110,29 +110,29 @@ public class Pipeline {
     private static Pipeline generatePipelineFromJSONView(JSONView pipelineView) throws IllegalArgumentException {
         try {
             // Step 1: Generate all pipeline nodes from JSON
-            String name = pipelineView.get("name").toString();
+            String id = pipelineView.get("id").toString();
             JSONView sourcesView = pipelineView.get("sources");
             HashMap<String, PipelineNode> sources = new HashMap<>();
             HashMap<String, PipelineNode> generators = new HashMap<>();
             for (JSONView sourcesEntry : sourcesView) {
                 PipelineNode current = new PipelineNode(PipelineNodeType.SOURCE, new HashMap<>(), sourcesEntry);
-                String sourceName = sourcesEntry.get("name").toString();
-                sources.put(sourceName, current);
+                String sourceID = sourcesEntry.get("id").toString();
+                sources.put(sourceID, current);
                 JSONView createsGenerators = sourcesEntry.get("createsGenerators");
                 for (JSONView generatorEntry : createsGenerators) {
                     if (generatorEntry.get("type").toString().equals("combi")) {
                         JSONView createsSubGenerators = generatorEntry.get("createsGenerators");
                         for (JSONView subGeneratorEntry : createsSubGenerators) {
                             HashMap<String, PipelineNode> generatorDependencies = new HashMap<>();
-                            generatorDependencies.put(sourceName, current);
+                            generatorDependencies.put(sourceID, current);
                             PipelineNode generator = new PipelineNode(PipelineNodeType.GENERATOR, generatorDependencies, subGeneratorEntry);
-                            generators.put(subGeneratorEntry.get("name").toString(), generator);
+                            generators.put(subGeneratorEntry.get("id").toString(), generator);
                         }
                     } else {
                         HashMap<String, PipelineNode> generatorDependencies = new HashMap<>();
-                        generatorDependencies.put(sourceName, current);
+                        generatorDependencies.put(sourceID, current);
                         PipelineNode generator = new PipelineNode(PipelineNodeType.GENERATOR, generatorDependencies, generatorEntry);
-                        generators.put(generatorEntry.get("name").toString(), generator);
+                        generators.put(generatorEntry.get("id").toString(), generator);
                     }
                 }
             }
@@ -142,7 +142,7 @@ public class Pipeline {
             // Step 2: Generate customTypes if defined
             List<PipelineNode> customTypes = generatePipelineCustomTypesFromJSONView(pipelineView);
 
-            return new Pipeline(name, visualizations, generators, sources, customTypes, pipelineView);
+            return new Pipeline(id, visualizations, generators, sources, customTypes, pipelineView);
 
         } catch (IllegalArgumentException e) {
             throw e;
@@ -179,11 +179,11 @@ public class Pipeline {
                     visualizations.putAll(dependencies);
                 } else {
                     dependencies = new HashMap<>();
-                    String generatorName = visualizationEntry.get("generator").get("name").toString();
-                    dependencies.put(generatorName, generators.get(generatorName));
+                    String generatorID = visualizationEntry.get("generator").get("id").toString();
+                    dependencies.put(generatorID, generators.get(generatorID));
                 }
                 PipelineNode current = new PipelineNode(PipelineNodeType.VISUALIZATION, dependencies, visualizationEntry);
-                visualizations.put(visualizationEntry.get("name").toString(), current);
+                visualizations.put(visualizationEntry.get("id").toString(), current);
             }
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid pipeline JSON.");
@@ -193,9 +193,9 @@ public class Pipeline {
 
     private static void filterPipeline(PipelineNode current, Map<String, PipelineNode> filteredSources, Map<String, PipelineNode> filteredGenerators) {
         if (current.getType() == PipelineNodeType.SOURCE) {
-            filteredSources.put(current.getConfig().get("name").toString(), current);
+            filteredSources.put(current.getConfig().get("id").toString(), current);
         } else if (current.getType() == PipelineNodeType.GENERATOR) {
-            filteredGenerators.put(current.getConfig().get("name").toString(), current);
+            filteredGenerators.put(current.getConfig().get("id").toString(), current);
         }
         for (PipelineNode dependency : current.getDependencies().values()) {
             filterPipeline(dependency, filteredSources, filteredGenerators);
