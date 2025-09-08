@@ -1,21 +1,26 @@
-package uni.textimager.sandbox.controller;
+package uni.textimager.sandbox.api.Controller;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import uni.textimager.sandbox.api.Handler.DataQueryHandler;
 
-import uni.textimager.sandbox.api.DataQueryHandler;
-
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api")
-public class APIController {
+public class DataController {
 
     private final DataQueryHandler handler;
 
-    public APIController(DataQueryHandler handler) {
+    public DataController(DataQueryHandler handler) {
         this.handler = handler;
     }
 
