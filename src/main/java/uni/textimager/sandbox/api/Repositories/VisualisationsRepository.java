@@ -30,10 +30,6 @@ public class VisualisationsRepository {
                 .fetchOptional(JSONSTR);
     }
 
-    public boolean exists(String pipelineId) {
-        return dsl.fetchExists(dsl.selectOne().from(V).where(PIPELINEID.eq(pipelineId)));
-    }
-
     /**
      * Create only. Throws DuplicateKeyException if already exists (requires UNIQUE on PIPELINEID).
      */
