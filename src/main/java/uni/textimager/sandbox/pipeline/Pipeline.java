@@ -2,9 +2,13 @@ package uni.textimager.sandbox.pipeline;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
+import uni.textimager.sandbox.generators.Generator;
+import uni.textimager.sandbox.sources.DBAccess;
+import uni.textimager.sandbox.sources.Source;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.sql.SQLException;
 import java.util.*;
 
 @Getter
@@ -47,6 +51,25 @@ public class Pipeline {
         return null;
     }
 
+
+    public List<Generator> generateGenerators(DBAccess dbAccess) throws SQLException {
+        return generateGenerators(dbAccess, true, true);
+    }
+    public List<Generator> generateGenerators(DBAccess dbAccess, boolean onlyRelevantSources, boolean onlyRelevantGenerators) throws SQLException {
+        Map<String, PipelineNode> sourceNodes = onlyRelevantSources ? filteredSources : sources;
+        Map<String, PipelineNode> generatorNodes = onlyRelevantGenerators ? filteredGenerators : generators;
+        ArrayList<Generator> generatedGenerators = new ArrayList<>();
+        for (PipelineNode sourceNode : sourceNodes.values()) {
+            Source s = new Source(dbAccess, sourceNode.getConfig(), generatorNodes, sourceNode.getChildren());
+            System.out.println("Source created: " + s.getConfig().get("name"));
+            List<Generator> sourceGenerators = s.createGenerators();
+            generatedGenerators.addAll(sourceGenerators);
+            System.out.println(sourceGenerators.size() + " Generators created for source " + s.getName());
+        }
+        return generatedGenerators;
+    }
+
+
     private Pipeline(String name, Map<String, PipelineNode> visualizations, Map<String, PipelineNode> generators, Map<String, PipelineNode> sources, List<PipelineNode> customTypes, JSONView rootJSONView) {
         this.name = name;
         this.visualizations = visualizations;
@@ -61,9 +84,9 @@ public class Pipeline {
         for (PipelineNode v : visualizations.values()) {
             filterPipeline(v, filteredSources, filteredGenerators);
         }
-        System.out.println("Removed Sources:");
+        System.out.println("Non-relevant Sources:");
         System.out.println(Arrays.toString(keysOnlyInA(sources, filteredSources)));
-        System.out.println("Removed Generators:");
+        System.out.println("Non-relevant Generators:");
         System.out.println(Arrays.toString(keysOnlyInA(generators, filteredGenerators)));
 
         this.filteredGenerators = filteredGenerators;
