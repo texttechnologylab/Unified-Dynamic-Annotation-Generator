@@ -42,10 +42,11 @@ public class AppController {
 
 		// String configs =
 		// Files.readString(Paths.get("./src/main/resources/pipelines/examples/configs.json"));
-		String filters = Files.readString(Paths.get("./src/main/resources/pipelines/examples/filters.json"));
+		// String filters =
+		// Files.readString(Paths.get("./src/main/resources/pipelines/examples/filters.json"));
 
 		model.addAttribute("title", "Dynamic Visualizations");
-		model.addAttribute("filters", filters);
+		// model.addAttribute("filters", filters);
 		model.addAttribute("configs", configs);
 
 		return "index";
