@@ -2,6 +2,7 @@ package uni.textimager.sandbox.api.Repositories;
 
 import org.jooq.*;
 import org.springframework.stereotype.Repository;
+import uni.textimager.sandbox.database.DBConstants;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -27,15 +28,15 @@ public class GeneratorDataRepository {
             boolean desc,
             Integer limit
     ) {
-        Table<?> n = table(name("GENERATORDATA_CATEGORYNUMBER")).as("n");
-        Table<?> c = table(name("GENERATORDATA_CATEGORYCOLOR")).as("c");
+        Table<?> n = table(name(DBConstants.TABLENAME_GENERATORDATA_CATEGORYNUMBER)).as("n");
+        Table<?> c = table(name(DBConstants.TABLENAME_GENERATORDATA_CATEGORYCOLOR)).as("c");
 
-        Field<String> N_GENERATORID = field(name("n", "GENERATORID"), String.class);
-        Field<String> N_CATEGORY = field(name("n", "CATEGORY"), String.class);
-        Field<BigDecimal> N_NUMBER = field(quotedName("n", "NUMBER"), BigDecimal.class); // quoted: keyword
-        Field<String> C_GENERATORID = field(name("c", "GENERATORID"), String.class);
-        Field<String> C_CATEGORY = field(name("c", "CATEGORY"), String.class);
-        Field<String> C_COLOR = field(name("c", "COLOR"), String.class);
+        Field<String> N_GENERATORID = field(name("n", DBConstants.TABLEATTR_GENERATORID), String.class);
+        Field<String> N_CATEGORY = field(name("n", DBConstants.TABLEATTR_GENERATORDATA_CATEGORY), String.class);
+        Field<BigDecimal> N_NUMBER = field(quotedName("n", DBConstants.TABLEATTR_GENERATORDATA_NUMBER), BigDecimal.class); // quoted: keyword
+        Field<String> C_GENERATORID = field(name("c", DBConstants.TABLEATTR_GENERATORID), String.class);
+        Field<String> C_CATEGORY = field(name("c",DBConstants.TABLEATTR_GENERATORDATA_CATEGORY), String.class);
+        Field<String> C_COLOR = field(name("c", DBConstants.TABLEATTR_GENERATORDATA_COLOR), String.class);
 
         Field<String> LABEL = N_CATEGORY.as("label");
         Field<BigDecimal> VALUE = sum(N_NUMBER).as("value");

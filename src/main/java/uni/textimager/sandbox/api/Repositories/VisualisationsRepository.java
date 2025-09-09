@@ -6,6 +6,7 @@ import org.jooq.Table;
 import org.jooq.exception.DataAccessException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Repository;
+import uni.textimager.sandbox.database.DBConstants;
 
 import static org.jooq.impl.DSL.*;
 
@@ -14,9 +15,9 @@ public class VisualisationsRepository {
 
     private final DSLContext dsl;
 
-    private final Table<?> V = table(name("VISUALIZATIONJSONS")).as("v");
-    private final Field<String> PIPELINEID = field(name("v", "PIPELINEID"), String.class);
-    private final Field<String> JSONSTR = field(name("v", "JSONSTR"), String.class);
+    private final Table<?> V = table(name(DBConstants.TABLENAME_VISUALIZATIONJSONS)).as("v");
+    private final Field<String> PIPELINEID = field(name("v", DBConstants.TABLEATTR_PIPELINEID), String.class);
+    private final Field<String> JSONSTR = field(name("v", DBConstants.TABLEATTR_JSONSTR), String.class);
 
     public VisualisationsRepository(DSLContext dsl) {
         this.dsl = dsl;
