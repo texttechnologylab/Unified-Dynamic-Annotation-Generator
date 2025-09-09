@@ -1,5 +1,6 @@
 package uni.textimager.sandbox.api.Repositories;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jooq.DSLContext;
@@ -75,20 +76,7 @@ public class VisualisationsRepository {
         if (json == null) return Optional.empty();
 
         try {
-            JsonNode root = mapper.readTree(json);
-            if (root.isArray()) {
-                for (JsonNode n : root) {
-                    String id = n.path("id").asText(null);
-                    if (visualizationId.equals(id)) {
-                        String type = n.path("type").asText(null);
-                        String gen = n.path("generator").path("id").asText(null);
-                        if (type != null && gen != null) {
-                            return Optional.of(new VisualizationMeta(id, type, gen));
-                        }
-                    }
-                }
-            }
-            return Optional.empty();
+            return getVisualizationMeta(visualizationId, json);
         } catch (Exception e) {
             throw new DataAccessException("Failed to parse visualization JSON for pipeline " + pipelineId, e) {
             };
@@ -103,24 +91,28 @@ public class VisualisationsRepository {
         return dsl.select(PIPELINEID, JSONSTR).from(V).fetchStream().map(rec -> {
             String json = rec.get(JSONSTR);
             try {
-                JsonNode root = mapper.readTree(json);
-                if (root.isArray()) {
-                    for (JsonNode n : root) {
-                        String id = n.path("id").asText(null);
-                        if (visualizationId.equals(id)) {
-                            String type = n.path("type").asText(null);
-                            String gen = n.path("generator").path("id").asText(null);
-                            if (type != null && gen != null) {
-                                return Optional.of(new VisualizationMeta(id, type, gen));
-                            }
-                        }
-                    }
-                }
-                return Optional.<VisualizationMeta>empty();
+                return getVisualizationMeta(visualizationId, json);
             } catch (Exception e) {
                 return Optional.<VisualizationMeta>empty();
             }
-        }).filter(Optional::isPresent).map(Optional::get).findFirst();
+        }).filter(visualizationMeta -> false).map(Optional::get).findFirst();
+    }
+
+    private Optional<VisualizationMeta> getVisualizationMeta(String visualizationId, String json) throws JsonProcessingException {
+        JsonNode root = mapper.readTree(json);
+        if (root.isArray()) {
+            for (JsonNode n : root) {
+                String id = n.path("id").asText(null);
+                if (visualizationId.equals(id)) {
+                    String type = n.path("type").asText(null);
+                    String gen = n.path("generator").path("id").asText(null);
+                    if (type != null && gen != null) {
+                        return Optional.of(new VisualizationMeta(id, type, gen));
+                    }
+                }
+            }
+        }
+        return Optional.empty();
     }
 
     public record VisualizationMeta(String visualizationId, String type, String generatorId) {
