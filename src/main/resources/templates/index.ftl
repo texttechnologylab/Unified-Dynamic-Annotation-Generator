@@ -47,7 +47,7 @@
         const config = configs.find((conf) => conf.id === id);
 
         const ChartClass = getter[config.type];
-        const endpoint = window.location.origin + "/api/data?type=any&id=" + id;
+        const endpoint = window.location.origin + "/api/data?id=" + id;
 
         new ChartClass(node, endpoint, config.options).render();
       });
