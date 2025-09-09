@@ -5,7 +5,9 @@ import org.springframework.stereotype.Repository;
 import uni.textimager.sandbox.database.DBConstants;
 
 import java.math.BigDecimal;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.jooq.impl.DSL.*;
@@ -13,6 +15,20 @@ import static org.jooq.impl.DSL.*;
 @Repository
 public class GeneratorDataRepository {
 
+    // --- tables
+    private static final Table<?> T_TEXT = table(DBConstants.TABLENAME_GENERATORDATA_TEXT);
+    private static final Table<?> T_STYLE = table(DBConstants.TABLENAME_GENERATORDATA_TYPESTYLE);
+    private static final Table<?> T_COLOR = table(DBConstants.TABLENAME_GENERATORDATA_TYPECATEGORYCOLOR);
+    private static final Table<?> T_SEGS = table(DBConstants.TABLENAME_GENERATORDATA_TYPESEGMENTS);
+    // --- fields
+    private static final Field<String> GENERATORID = field(DBConstants.TABLEATTR_GENERATORID, String.class);
+    private static final Field<String> A_TEXT = field(DBConstants.TABLEATTR_GENERATORDATA_TEXT, String.class);
+    private static final Field<String> A_TYPE = field(DBConstants.TABLEATTR_GENERATORDATA_TYPE, String.class);
+    private static final Field<String> A_STYLE = field(DBConstants.TABLEATTR_GENERATORDATA_STYLE, String.class);
+    private static final Field<String> A_CATEGORY = field(DBConstants.TABLEATTR_GENERATORDATA_CATEGORY, String.class);
+    private static final Field<String> A_COLOR = field(DBConstants.TABLEATTR_GENERATORDATA_COLOR, String.class);
+    private static final Field<Integer> A_BEGIN = field(DBConstants.TABLEATTR_GENERATORDATA_BEGIN, Integer.class);
+    private static final Field<Integer> A_END = field(DBConstants.TABLEATTR_GENERATORDATA_END, Integer.class);
     private final DSLContext dsl;
 
     public GeneratorDataRepository(DSLContext dsl) {
@@ -35,7 +51,7 @@ public class GeneratorDataRepository {
         Field<String> N_CATEGORY = field(name("n", DBConstants.TABLEATTR_GENERATORDATA_CATEGORY), String.class);
         Field<BigDecimal> N_NUMBER = field(quotedName("n", DBConstants.TABLEATTR_GENERATORDATA_NUMBER), BigDecimal.class); // quoted: keyword
         Field<String> C_GENERATORID = field(name("c", DBConstants.TABLEATTR_GENERATORID), String.class);
-        Field<String> C_CATEGORY = field(name("c",DBConstants.TABLEATTR_GENERATORDATA_CATEGORY), String.class);
+        Field<String> C_CATEGORY = field(name("c", DBConstants.TABLEATTR_GENERATORDATA_CATEGORY), String.class);
         Field<String> C_COLOR = field(name("c", DBConstants.TABLEATTR_GENERATORDATA_COLOR), String.class);
 
         Field<String> LABEL = N_CATEGORY.as("label");
@@ -73,6 +89,43 @@ public class GeneratorDataRepository {
                 r.get(VALUE) == null ? 0d : r.get(VALUE).doubleValue(),
                 r.get(COLOR)
         ));
+    }
+
+    public String getText(String generatorId) {
+        String t = dsl.select(A_TEXT).from(T_TEXT).where(GENERATORID.eq(generatorId)).fetchOne(A_TEXT);
+        return t == null ? "" : t;
+    }
+
+    /**
+     * type -> styleName (bold|underline|highlight)
+     */
+    public Map<String, String> getTypeStyles(String generatorId) {
+        return dsl.select(A_TYPE, A_STYLE).from(T_STYLE).where(GENERATORID.eq(generatorId)).fetchMap(A_TYPE, A_STYLE);
+    }
+
+    /**
+     * type -> (category -> color)
+     */
+    public Map<String, Map<String, String>> getTypeCategoryColors(String generatorId) {
+        Map<String, Map<String, String>> out = new LinkedHashMap<>();
+        dsl.select(A_TYPE, A_CATEGORY, A_COLOR)
+                .from(T_COLOR)
+                .where(GENERATORID.eq(generatorId))
+                .fetch()
+                .forEach(r -> out.computeIfAbsent(r.get(A_TYPE), k -> new LinkedHashMap<>()).put(r.get(A_CATEGORY), r.get(A_COLOR)));
+        return out;
+    }
+
+    public List<Segment> getSegments(String generatorId, Set<String> typeFilter, Set<String> categoryFilter) {
+        Condition c = GENERATORID.eq(generatorId);
+        if (typeFilter != null && !typeFilter.isEmpty()) c = c.and(A_TYPE.in(typeFilter));
+        if (categoryFilter != null && !categoryFilter.isEmpty()) c = c.and(A_CATEGORY.in(categoryFilter));
+        return dsl.select(A_TYPE, A_BEGIN, A_END, A_CATEGORY)
+                .from(T_SEGS).where(c).orderBy(A_BEGIN.asc(), A_END.asc())
+                .fetch(r -> new Segment(r.get(A_TYPE), r.get(A_BEGIN), r.get(A_END), r.get(A_CATEGORY)));
+    }
+
+    public record Segment(String type, int begin, int end, String category) {
     }
 
     public record BarPieRow(String label, double value, String color) {
