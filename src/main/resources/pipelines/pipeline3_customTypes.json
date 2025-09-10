@@ -5,11 +5,7 @@
       "customTypes": [
         {
           "id": "CUSTOM1",
-          "contains": [
-            "POS",
-            "MORPHOLOGICALFEATURES",
-            "LEMMA"
-          ]
+          "contains": ["POS", "MORPHOLOGICALFEATURES", "LEMMA"]
         }
       ],
       "sources": [
@@ -25,18 +21,10 @@
               "type": "CategoryNumberColorMapping",
               "id": "Gesamtverteilung",
               "settings": {
-                "categoriesBlacklist": [
-                  "article"
-                ],
+                "categoriesBlacklist": ["article"],
                 "fixedColors": [
-                  [
-                    "noun",
-                    "FF0000"
-                  ],
-                  [
-                    "verb",
-                    "FFA500"
-                  ]
+                  ["noun", "FF0000"],
+                  ["verb", "FFA500"]
                 ]
               }
             },
@@ -44,18 +32,10 @@
               "type": "TextFormatting",
               "id": "Textfaerbung",
               "settings": {
-                "categoriesBlacklist": [
-                  "article"
-                ],
+                "categoriesBlacklist": ["article"],
                 "fixedColors": [
-                  [
-                    "noun",
-                    "FF0000"
-                  ],
-                  [
-                    "verb",
-                    "FFA500"
-                  ]
+                  ["noun", "FF0000"],
+                  ["verb", "FFA500"]
                 ],
                 "sofaFile": "ID21200100.xmi"
               }
@@ -64,28 +44,17 @@
               "type": "CategoryNumberMapping",
               "id": "Gesamtverteilung2",
               "settings": {
-                "categoriesBlacklist": [
-                  "article"
-                ],
+                "categoriesBlacklist": ["article"],
                 "fixedColors": [
-                  [
-                    "noun",
-                    "FF0000"
-                  ],
-                  [
-                    "verb",
-                    "FFA500"
-                  ]
+                  ["noun", "FF0000"],
+                  ["verb", "FFA500"]
                 ]
               }
             }
           ]
         }
       ],
-      "derivedGenerators": [
-        {
-        }
-      ],
+      "derivedGenerators": [{}],
       "visualizations": [
         {
           "id": "bar-chart",
@@ -122,6 +91,19 @@
           "options": {
             "radius": 300,
             "hole": 0
+          }
+        },
+        {
+          "id": "another-bar-chart",
+          "type": "BarChart",
+          "title": "BarChart",
+          "generator": {
+            "id": "Gesamtverteilung"
+          },
+          "options": {
+            "width": 800,
+            "height": 600,
+            "horizontal": true
           }
         }
       ]
