@@ -40,14 +40,10 @@ public class AppController {
 		HttpResponse<String> response = this.client.send(request, this.bodyHandler);
 
 		String configs = response.body();
+		String filters = Files.readString(Paths.get("./src/main/resources/pipelines/examples/filters.json"));
 
-		// String configs =
-		// Files.readString(Paths.get("./src/main/resources/pipelines/examples/configs.json"));
-		// String filters =
-		// Files.readString(Paths.get("./src/main/resources/pipelines/examples/filters.json"));
-
-		model.addAttribute("title", "Dynamic Visualizations");
-		// model.addAttribute("filters", filters);
+		model.addAttribute("title", id + " - Dynamic Visualizations");
+		model.addAttribute("filters", filters);
 		model.addAttribute("configs", configs);
 
 		return "index";

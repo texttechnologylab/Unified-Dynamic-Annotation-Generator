@@ -1,7 +1,7 @@
 <#macro toolbar id title>
   <div class="dv-toolbar">
     <button
-      class="dv-btn dv-title"
+      class="dv-btn dv-btn-toolbar"
       type="button"
       title="Controls"
       data-dv-toggle="sidepanel"
@@ -13,7 +13,7 @@
     <span class="dv-title dv-bold">${title}</span>
 
     <button
-      class="dv-btn dv-title"
+      class="dv-btn dv-btn-toolbar"
       type="button"
       title="Exports"
       data-bs-toggle="dropdown"

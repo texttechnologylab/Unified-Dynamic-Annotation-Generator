@@ -6,6 +6,7 @@
     <title>${title}</title>
 
     <link rel="stylesheet" href="/css/variables.css">
+    <link rel="stylesheet" href="/css/global.css">
     <link rel="stylesheet" href="/css/index.css">
     <link rel="stylesheet" href="/css/chart.css">
     <link rel="stylesheet" href="/css/controls.css">
@@ -19,7 +20,7 @@
   
   <body>
     <div class="dv-layout">
-      <@sidebar />
+      <@sidebar filters=filters?eval_json />
       
       <main class="dv-main">
         <#list configs?eval_json as config>
@@ -39,6 +40,7 @@
     <script type="module">
       import getter from "/js/utils/getter.js";
       import components from "/js/utils/components.js";
+      import sidebar from "/js/utils/sidebar.js";
 
       const configs = JSON.parse("${configs?json_string}");
 
@@ -53,6 +55,7 @@
       });
 
       components.init();
+      sidebar.init();
     </script>
   </body>
 </html>
