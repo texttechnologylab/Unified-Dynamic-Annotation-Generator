@@ -22,18 +22,22 @@ public class AppController {
 	HttpClient client = HttpClient.newHttpClient();
 	BodyHandler<String> bodyHandler = HttpResponse.BodyHandlers.ofString();
 
-	@PostMapping("/submit")
-	public String submit(@RequestParam("file") MultipartFile file, Model model) throws Exception {
-		String configs = new String(file.getBytes(), StandardCharsets.UTF_8);
-
+	@GetMapping("/")
+	public String index(Model model) throws Exception {
 		model.addAttribute("title", "Dynamic Visualizations");
-		model.addAttribute("configs", configs);
 
 		return "index";
 	}
 
+	@GetMapping("/editor/{id}")
+	public String editor(@PathVariable("id") String id, Model model) throws Exception {
+		model.addAttribute("title", id + " - Editor - Dynamic Visualizations");
+
+		return "editor";
+	}
+
 	@GetMapping("/pipeline/{id}")
-	public String index(@PathVariable("id") String id, Model model) throws Exception {
+	public String pipeline(@PathVariable("id") String id, Model model) throws Exception {
 		URI uri = URI.create("http://localhost:8080/api/visualisations?pipelineId=" + id);
 		HttpRequest request = HttpRequest.newBuilder(uri).build();
 
@@ -44,6 +48,16 @@ public class AppController {
 
 		model.addAttribute("title", id + " - Dynamic Visualizations");
 		model.addAttribute("filters", filters);
+		model.addAttribute("configs", configs);
+
+		return "pipeline";
+	}
+
+	@PostMapping("/submit")
+	public String submit(@RequestParam("file") MultipartFile file, Model model) throws Exception {
+		String configs = new String(file.getBytes(), StandardCharsets.UTF_8);
+
+		model.addAttribute("title", "Dynamic Visualizations");
 		model.addAttribute("configs", configs);
 
 		return "index";

@@ -1,8 +1,8 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import D3Visualization from "../D3Visualization.js";
-import ControlsHandler from "../utils/ControlsHandler.js";
-import ExportHandler from "../utils/ExportHandler.js";
-import { maxOf, minOf } from "../utils/helper.js";
+import ControlsHandler from "../../utils/classes/ControlsHandler.js";
+import ExportHandler from "../../utils/classes/ExportHandler.js";
+import { maxOf, minOf } from "../../utils/modules/helper.js";
 
 export default class BarChart extends D3Visualization {
   constructor(root, endpoint, { width, height, horizontal = false }) {
