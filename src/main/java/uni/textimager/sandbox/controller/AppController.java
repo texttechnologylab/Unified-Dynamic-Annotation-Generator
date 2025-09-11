@@ -46,7 +46,7 @@ public class AppController {
 		String configs = response.body();
 		String filters = Files.readString(Paths.get("./src/main/resources/pipelines/examples/filters.json"));
 
-		model.addAttribute("title", id + " - Dynamic Visualizations");
+		model.addAttribute("pipeline", id);
 		model.addAttribute("filters", filters);
 		model.addAttribute("configs", configs);
 
@@ -60,6 +60,6 @@ public class AppController {
 		model.addAttribute("title", "Dynamic Visualizations");
 		model.addAttribute("configs", configs);
 
-		return "index";
+		return "editor";
 	}
 }

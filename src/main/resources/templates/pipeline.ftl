@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>${title}</title>
+    <title>${pipeline} - Dynamic Visualizations</title>
 
     <link rel="stylesheet" href="/css/variables.css">
     <link rel="stylesheet" href="/css/global.css">
@@ -20,7 +20,7 @@
   
   <body>
     <div class="dv-layout">
-      <@sidebar filters=filters?eval_json />
+      <@sidebar pipeline=pipeline filters=filters?eval_json />
       
       <main class="dv-main">
         <#list configs?eval_json as config>

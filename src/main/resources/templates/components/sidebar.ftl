@@ -1,13 +1,44 @@
 <#include "/components/accordion.ftl">
 
-<#macro sidebar filters>
+<#macro sidebar pipeline filters>
   <aside class="dv-sidebar">
     <div class="dv-sidebar-header">
       <h1 class="dv-bold">Dynamic Visualizations</h1>
-      <h4>Corpus Filter</h4>
     </div>
 
     <div class="dv-sidebar-body">
+      <a 
+        class="dv-btn dv-menu-link"
+        href="/"
+      >
+        <div>
+          <i class="bi bi-box-arrow-in-left"></i>
+          <span>Pipeline Selection</span>
+        </div>
+      </a>
+      
+      <div class="dv-menu-title">Pipeline: ${pipeline}</div>
+      <a 
+        class="dv-btn dv-menu-link"
+        href="/editor/${pipeline}"
+      >
+        <div>
+          <i class="bi bi-database-fill-gear"></i>
+          <span>Edit Configuration</span>
+        </div>
+      </a>
+      <a 
+        class="dv-btn dv-menu-link"
+        href="/api/visualisations?pipelineId=${pipeline}&pretty=true"
+        download="pipeline.json"
+      >
+        <div>
+          <i class="bi bi-cloud-arrow-down-fill"></i>
+          <span>Export Configuration</span>
+        </div>
+      </a>
+      
+      <div class="dv-menu-title">Corpus Filter</div>
       <@accordion icon="bi bi-file-earmark-text-fill" title="Files">
           <div class="dv-file-filter">
             <input
@@ -45,6 +76,11 @@
           </div>
       </@accordion>
 
+      <#if filters.tags??>
+        <@accordion icon="bi bi-tags-fill" title="Tags">
+        </@accordion>
+      </#if>
+
       <#if filters.date??>
         <@accordion icon="bi bi-calendar-fill" title="Date">
             <div class="dv-date-filter">
@@ -55,6 +91,7 @@
                   class="dv-date-input" 
                   min="${filters.date.min}" 
                   max="${filters.date.max}"
+                  required
                 >
               </div>
               <div>
@@ -64,11 +101,22 @@
                   class="dv-date-input" 
                   min="${filters.date.min}" 
                   max="${filters.date.max}"
+                  required
                 >
               </div>
             </div>
         </@accordion>
       </#if>
+
+      <div class="d-flex justify-content-center mt-2">
+        <button
+          id="btn-apply-filter"
+          type="button"
+          class="dv-btn-primary"
+        >
+          Apply Filter
+        </button>
+      </div>
     </div>
   </aside>
 </#macro>
