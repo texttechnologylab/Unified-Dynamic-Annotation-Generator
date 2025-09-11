@@ -5,6 +5,8 @@ import org.apache.uima.UIMAException;
 import org.dkpro.core.io.xmi.XmiWriter;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 import org.texttechnologylab.DockerUnifiedUIMAInterface.DUUIComposer;
 import org.texttechnologylab.DockerUnifiedUIMAInterface.driver.DUUIDockerDriver;
@@ -22,7 +24,7 @@ import java.net.URISyntaxException;
 import static org.apache.uima.fit.factory.AnalysisEngineFactory.createEngineDescription;
 
 @Component
-public class DUUIImporter {
+public class DUUIImporter implements ApplicationRunner {
     private static DUUIComposer pComposer = null;
     private static int iWorkers = 1;
 
@@ -82,5 +84,11 @@ public class DUUIImporter {
         pComposer.shutdown();
 
 
+    }
+
+    @Override
+    public void run(ApplicationArguments args) throws Exception {
+        init();
+        execute();
     }
 }

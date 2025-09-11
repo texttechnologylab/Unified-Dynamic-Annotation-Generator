@@ -242,6 +242,9 @@
                         <goals><goal>generate</goal></goals>
                         <configuration>
                             <typeSystemIncludes>src/main/resources/types/PlenumTypeSystem.xml</typeSystemIncludes>
+                            <outputDirectory>
+                                src/main/java/
+                            </outputDirectory>
                         </configuration>
                     </execution>
                 </executions>

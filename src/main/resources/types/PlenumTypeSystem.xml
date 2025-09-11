@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <typeSystemDescription xmlns="http://uima.apache.org/resourceSpecifier">
-<!--    <imports>-->
-<!--        <import name="de.tudarmstadt.ukp.dkpro.core.api.metadata.type.TypeSystem"/>-->
-<!--    </imports>-->
     <types>
         <typeDescription>
             <name>de.uni.type.Sitzung</name>
