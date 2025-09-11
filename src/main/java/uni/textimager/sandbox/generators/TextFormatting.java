@@ -15,7 +15,7 @@ import java.util.List;
 
 public class TextFormatting extends Generator implements TextFormattingInterface {
 
-    public static final String DEFAULT_STYLE = "highlight";
+    public static final String DEFAULT_STYLE = "underline";
 
     @Getter
     private final String filename;

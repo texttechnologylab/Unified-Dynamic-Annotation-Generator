@@ -142,7 +142,7 @@ public class Source implements SourceInterface {
                 Collection<String> categoriesBlacklist = generateCategoriesBlacklist(configCombi, g.getConfig());
                 HashMap<String, HashMap<String, Double>> categoryNumberMap = dbCreateCategoryCountMap(featureName, generatorSourceFiles, categoriesWhitelist, categoriesBlacklist);
                 HashMap<String, Color> categoryColorMap = new HashMap<>(mapFeatureToCategoryColorMap.get(featureName));
-                categoryColorMap.keySet().retainAll(categoryNumberMap.keySet());
+                categoryColorMap.keySet().retainAll(CategoryNumberMapping.calculateTotalFromCategoryCountMap(categoryNumberMap).keySet());
                 combiGenerators.add(new CategoryNumberColorMapping(generatorID, categoryNumberMap, categoryColorMap));
             } else if (generatorType.equals("TextFormatting")) {
                 String configSofaFile = generateBundleAttribute(configCombi, g.getConfig(), "sofaFile");

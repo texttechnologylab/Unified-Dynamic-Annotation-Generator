@@ -18,39 +18,28 @@
           },
           "createsGenerators": [
             {
-              "type": "CategoryNumberColorMapping",
-              "id": "Gesamtverteilung",
+              "type": "combi",
               "settings": {
-                "categoriesBlacklist": ["article"],
-                "fixedColors": [
-                  ["noun", "FF0000"],
-                  ["verb", "FFA500"]
-                ]
-              }
-            },
-            {
-              "type": "TextFormatting",
-              "id": "Textfaerbung",
-              "settings": {
-                "categoriesBlacklist": ["article"],
-                "fixedColors": [
-                  ["noun", "FF0000"],
-                  ["verb", "FFA500"]
-                ],
-                "sofaFile": "ID21200100.xmi",
-                "style": "underline"
-              }
-            },
-            {
-              "type": "CategoryNumberMapping",
-              "id": "Gesamtverteilung2",
-              "settings": {
-                "categoriesBlacklist": ["article"],
-                "fixedColors": [
-                  ["noun", "FF0000"],
-                  ["verb", "FFA500"]
-                ]
-              }
+                "categoriesBlacklist": ["PUNCT"]
+              },
+              "createsGenerators": [
+                {
+                  "type": "CategoryNumberColorMapping",
+                  "id": "Gesamtverteilung",
+                  "settings": {
+                    "categoriesBlacklist": ["DET"]
+                  }
+                },
+                {
+                  "type": "TextFormatting",
+                  "id": "Textfaerbung",
+                  "settings": {
+                    "categoriesBlacklist": ["article"],
+                    "sofaFile": "ID21200100.xmi",
+                    "style": "underline"
+                  }
+                }
+              ]
             }
           ]
         }
