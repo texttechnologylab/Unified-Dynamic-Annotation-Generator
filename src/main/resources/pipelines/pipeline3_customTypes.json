@@ -37,7 +37,8 @@
                   ["noun", "FF0000"],
                   ["verb", "FFA500"]
                 ],
-                "sofaFile": "ID21200100.xmi"
+                "sofaFile": "ID21200100.xmi",
+                "style": "underline"
               }
             },
             {
