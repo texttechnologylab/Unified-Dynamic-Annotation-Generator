@@ -47,6 +47,7 @@
                 "categoriesBlacklist": [
                   "article"
                 ],
+                "style": "underline",
                 "fixedColors": [
                   [
                     "noun",
