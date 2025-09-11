@@ -32,6 +32,28 @@
         </repository>
     </repositories>
 
+    <dependencyManagement>
+        <dependencies>
+            <!-- Keep docker-java modules aligned -->
+            <dependency>
+                <groupId>com.github.docker-java</groupId>
+                <artifactId>docker-java-bom</artifactId>
+                <version>3.3.4</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Pin HttpComponents 5 to provide httpcore5/httpcore5-h2 that docker-java transport needs -->
+            <dependency>
+                <groupId>org.apache.httpcomponents.client5</groupId>
+                <artifactId>httpclient5</artifactId>
+                <version>5.3.1</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <!-- Spring -->
         <dependency>
@@ -53,7 +75,7 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- Templating -->
+        <!-- Template engine -->
         <dependency>
             <groupId>org.freemarker</groupId>
             <artifactId>freemarker</artifactId>
@@ -118,36 +140,18 @@
             <groupId>org.dkpro.core</groupId>
             <artifactId>dkpro-core-io-xmi-asl</artifactId>
             <version>2.5.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-simple</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.dkpro.core</groupId>
             <artifactId>dkpro-core-api-metadata-asl</artifactId>
             <version>2.5.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-simple</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
-        <!-- Avro / Parquet (Hadoop stack pulls extra logging; keep Logback only) -->
+        <!-- Avro / Parquet -->
         <dependency>
             <groupId>org.apache.avro</groupId>
             <artifactId>avro</artifactId>
             <version>1.11.1</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-simple</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.parquet</groupId>
@@ -173,19 +177,71 @@
             <groupId>org.apache.parquet</groupId>
             <artifactId>parquet-hadoop</artifactId>
             <version>1.15.1</version>
+        </dependency>
+
+        <!-- JSON util -->
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20240303</version>
+        </dependency>
+
+        <!-- TextTechnologyLab -->
+        <dependency>
+            <groupId>com.github.texttechnologylab</groupId>
+            <artifactId>DockerUnifiedUIMAInterface</artifactId>
+            <version>0e6ddc8476</version>
             <exclusions>
+                <!-- keep Boot's Logback as the only SLF4J binding -->
                 <exclusion>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-simple</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
-
-        <!-- JitPack DockerUnifiedUIMAInterface -->
         <dependency>
             <groupId>com.github.texttechnologylab</groupId>
-            <artifactId>DockerUnifiedUIMAInterface</artifactId>
-            <version>0e6ddc8476</version>
+            <artifactId>UIMATypeSystem</artifactId>
+            <version>3.0.10</version>
+        </dependency>
+
+        <!-- docker-java + HttpClient5 transport -->
+        <dependency>
+            <groupId>com.github.docker-java</groupId>
+            <artifactId>docker-java-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.docker-java</groupId>
+            <artifactId>docker-java-transport-httpclient5</artifactId>
+            <exclusions>
+                <!-- we pin httpcomponents via DM to ensure httpcore5/h2 present -->
+                <exclusion>
+                    <groupId>org.apache.httpcomponents.client5</groupId>
+                    <artifactId>httpclient5</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents.core5</groupId>
+                    <artifactId>httpcore5</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents.core5</groupId>
+                    <artifactId>httpcore5-h2</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- bring the pinned HttpComponents onto the classpath -->
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents.core5</groupId>
+            <artifactId>httpcore5</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents.core5</groupId>
+            <artifactId>httpcore5-h2</artifactId>
         </dependency>
     </dependencies>
 
@@ -217,7 +273,6 @@
                     </argLine>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
@@ -239,12 +294,12 @@
                     <execution>
                         <id>generate-jcas</id>
                         <phase>generate-sources</phase>
-                        <goals><goal>generate</goal></goals>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
                         <configuration>
                             <typeSystemIncludes>src/main/resources/types/PlenumTypeSystem.xml</typeSystemIncludes>
-                            <outputDirectory>
-                                src/main/java/
-                            </outputDirectory>
+                            <outputDirectory>src/main/java/</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>

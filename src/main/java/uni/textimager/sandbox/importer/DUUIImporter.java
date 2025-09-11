@@ -41,9 +41,10 @@ public class DUUIImporter implements ApplicationRunner {
         DUUIUIMADriver uima_driver = new DUUIUIMADriver();
         DUUIRemoteDriver remoteDriver = new DUUIRemoteDriver();
         DUUIDockerDriver dockerDriver = new DUUIDockerDriver();
+        DUUISwarmDriver  swarmDriver  = new DUUISwarmDriver();
 
         // Hinzufügen der einzelnen Driver zum Composer
-        pComposer.addDriver(uima_driver, remoteDriver, dockerDriver);
+        pComposer.addDriver(uima_driver, remoteDriver, dockerDriver, swarmDriver);
     }
 
     @DisplayName("NLP")
