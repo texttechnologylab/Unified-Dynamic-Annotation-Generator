@@ -11,10 +11,8 @@
         class="dv-btn dv-menu-link"
         href="/"
       >
-        <div>
-          <i class="bi bi-box-arrow-in-left"></i>
-          <span>Pipeline Selection</span>
-        </div>
+        <i class="bi bi-box-arrow-in-left"></i>
+        <span>Pipeline selection</span>
       </a>
       
       <div class="dv-menu-title">Pipeline: ${pipeline}</div>
@@ -22,24 +20,20 @@
         class="dv-btn dv-menu-link"
         href="/editor/${pipeline}"
       >
-        <div>
-          <i class="bi bi-database-fill-gear"></i>
-          <span>Edit Configuration</span>
-        </div>
+        <i class="bi bi-pencil"></i>
+        <span>Edit configuration</span>
       </a>
       <a 
         class="dv-btn dv-menu-link"
         href="/api/visualisations?pipelineId=${pipeline}&pretty=true"
         download="pipeline.json"
       >
-        <div>
-          <i class="bi bi-cloud-arrow-down-fill"></i>
-          <span>Export Configuration</span>
-        </div>
+        <i class="bi bi-download"></i>
+        <span>Export configuration</span>
       </a>
       
       <div class="dv-menu-title">Corpus Filter</div>
-      <@accordion icon="bi bi-file-earmark-text-fill" title="Files">
+      <@accordion icon="bi bi-file-earmark-text" title="Files">
           <div class="dv-file-filter">
             <input
               type="text"
@@ -77,12 +71,12 @@
       </@accordion>
 
       <#if filters.tags??>
-        <@accordion icon="bi bi-tags-fill" title="Tags">
+        <@accordion icon="bi bi-tags" title="Tags">
         </@accordion>
       </#if>
 
       <#if filters.date??>
-        <@accordion icon="bi bi-calendar-fill" title="Date">
+        <@accordion icon="bi bi-calendar-week" title="Date">
             <div class="dv-date-filter">
               <div>
                 <span class="">min</span>
@@ -112,9 +106,9 @@
         <button
           id="btn-apply-filter"
           type="button"
-          class="dv-btn-primary"
+          class="dv-btn-outline"
         >
-          Apply Filter
+          Apply filter
         </button>
       </div>
     </div>

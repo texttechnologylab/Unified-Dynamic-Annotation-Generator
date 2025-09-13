@@ -8,17 +8,16 @@
     <link rel="stylesheet" href="/css/variables.css">
     <link rel="stylesheet" href="/css/global.css">
     <link rel="stylesheet" href="/css/pipeline.css">
-    <link rel="stylesheet" href="/css/chart.css">
     <link rel="stylesheet" href="/css/controls.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
   </head>
 
-  <#include "/components/sidebar.ftl">
-  <#include "/components/chart/toolbar.ftl">
-  <#include "/components/chart/sidepanel.ftl">
-  
   <body>
+    <#include "/components/sidebar.ftl">
+    <#include "/components/chart/toolbar.ftl">
+    <#include "/components/chart/sidepanel.ftl">
+    
     <div class="dv-layout">
       <@sidebar pipeline=pipeline filters=filters?eval_json />
       
@@ -54,7 +53,9 @@
         new ChartClass(node, endpoint, config.options).render();
       });
 
-      components.init();
+      components.initSidepanels();
+      components.initDropdowns();
+      components.initAccordions();
       corpusFilter.init();
     </script>
   </body>

@@ -18,6 +18,11 @@
   </head>
 
   <body>
-    <div>Editor under construction...</div>
+    <div class="w-50">
+      <div class="dv-title">Editor</div>
+      <textarea class="form-control" rows="30">
+        ${json}
+      </textarea>
+    </div>
   </body>
 </html>
