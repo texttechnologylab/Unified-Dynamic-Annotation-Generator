@@ -15,7 +15,7 @@
   
   <body>
     <#include "/components/modal.ftl">
-    <#include "/components/input/file-input.ftl">
+    <#include "/components/index/file-input.ftl">
 
     <div class="dv-layout">
       <div class="dv-main-title">

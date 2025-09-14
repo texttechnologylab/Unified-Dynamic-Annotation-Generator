@@ -14,9 +14,9 @@
   </head>
 
   <body>
-    <#include "/components/sidebar.ftl">
-    <#include "/components/chart/toolbar.ftl">
-    <#include "/components/chart/sidepanel.ftl">
+    <#include "/components/pipeline/sidebar.ftl">
+    <#include "/components/pipeline/chart/toolbar.ftl">
+    <#include "/components/pipeline/chart/sidepanel.ftl">
     
     <div class="dv-layout">
       <@sidebar pipeline=pipeline filters=filters?eval_json />

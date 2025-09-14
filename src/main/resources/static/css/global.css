@@ -114,6 +114,29 @@
   }
 }
 
+/* Sidebar */
+.dv-sidebar {
+  grid-area: sidebar;
+  position: fixed;
+  width: 20rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  background-color: var(--bg-color-emphasis);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-color);
+}
+
+.dv-sidebar-header {
+  margin-bottom: 1rem;
+}
+
+.dv-sidebar-body {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
 /* Accordion */
 .dv-btn-accordion {
   width: 100%;
