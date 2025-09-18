@@ -56,7 +56,6 @@
 
 .dv-btn-delete {
   font-size: 1.25rem;
-  padding: 0.375rem 0.75rem;
   border: none;
   border-radius: var(--border-radius);
   background-color: transparent;
@@ -135,6 +134,7 @@
 .dv-sidebar-body {
   overflow-x: hidden;
   overflow-y: auto;
+  flex-grow: 1;
 }
 
 /* Accordion */

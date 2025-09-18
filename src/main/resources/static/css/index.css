@@ -41,6 +41,7 @@
   }
 
   .dv-btn-delete {
+    padding: 0.375rem 0.75rem;
     opacity: 0;
   }
 

@@ -13,6 +13,99 @@
   background-color: var(--bg-color);
 }
 
+/* Filter */
+.dv-autocomplete-container {
+  position: relative;
+}
+
+.dv-autocomplete-input {
+  width: 100%;
+  background-color: var(--bg-color);
+  padding: 0.25rem 0.5rem;
+  border: none;
+  border-radius: var(--border-radius);
+  outline: 1px solid var(--border-color);
+
+  &:focus {
+    outline-color: var(--primary);
+    box-shadow: var(--shadow);
+  }
+}
+
+.dv-autocomplete-results {
+  position: absolute;
+  width: 100%;
+  background-color: var(--bg-color);
+  padding: 0.2rem;
+  border-radius: var(--border-radius);
+  outline: 1px solid var(--border-color);
+  margin-top: 0.2rem;
+  box-shadow: var(--shadow);
+  z-index: 99;
+
+  button {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: 0.25rem 0.5rem;
+  }
+
+  i {
+    color: var(--secondary);
+  }
+
+  i:hover {
+    color: unset;
+  }
+}
+
+.dv-filter-checkboxes {
+  display: flex;
+  flex-direction: column;
+  margin-top: 0.5rem;
+}
+
+.dv-filter-checkbox-all,
+.dv-filter-checkbox {
+  border-radius: var(--border-radius);
+  padding: 0.25rem 0.5rem;
+  transition: all 300ms ease;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  input:checked {
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
+  }
+
+  .dv-btn-delete {
+    font-size: 0.875rem;
+    padding: 0;
+  }
+
+  &:hover {
+    background-color: var(--hover-color);
+  }
+
+  &:active {
+    background-color: var(--active-color);
+  }
+}
+
+.dv-selection-info {
+  float: right;
+}
+
+.dv-filter-date-inputs {
+  display: flex;
+  justify-content: space-between;
+}
+
 /* Chart */
 .dv-chart {
   box-shadow: var(--shadow);

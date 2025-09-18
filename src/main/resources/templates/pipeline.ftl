@@ -23,7 +23,7 @@
       
       <main class="dv-main">
         <#list configs?eval_json as config>
-          <div class="dv-chart dv-hidden" data-chart-id="${config.id}">
+          <div class="dv-chart dv-hidden" data-dv-chart="${config.id}">
             <@toolbar id=config.id title=config.title />
 
             <div class="dv-chart-area">
@@ -39,12 +39,12 @@
     <script type="module">
       import getter from "/js/utils/modules/getter.js";
       import components from "/js/utils/modules/components.js";
-      import { corpusFilter } from "/js/utils/classes/CorpusFilter.js";
+      import { corpusFilter } from "/js/filter/CorpusFilter.js";
 
       const configs = JSON.parse("${configs?json_string}");
 
-      document.querySelectorAll("[data-chart-id]").forEach((node) => {
-        const id = node.dataset.chartId;
+      document.querySelectorAll("[data-dv-chart]").forEach((node) => {
+        const id = node.dataset.dvChart;
         const config = configs.find((conf) => conf.id === id);
 
         const ChartClass = getter[config.type];

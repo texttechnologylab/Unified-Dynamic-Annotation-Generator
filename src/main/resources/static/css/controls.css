@@ -136,45 +136,6 @@
   padding-top: 0.5rem;
 }
 
-.dv-filter-checkboxes {
-  display: flex;
-  flex-direction: column;
-  margin-top: 0.5rem;
-}
-
-.dv-checkbox-label {
-  border-radius: var(--border-radius);
-  padding: 0.25rem 0.5rem;
-  transition: all 300ms ease;
-  cursor: pointer;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-
-  &:hover {
-    background-color: var(--hover-color);
-  }
-
-  &:active {
-    background-color: var(--active-color);
-  }
-}
-
-.dv-checkbox-all:checked,
-.dv-checkbox:checked {
-  background-color: var(--primary) !important;
-  border-color: var(--primary) !important;
-}
-
-.dv-selection-info {
-  float: right;
-}
-
-.dv-date-filter {
-  display: flex;
-  justify-content: space-between;
-}
-
 .dv-date-input {
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
