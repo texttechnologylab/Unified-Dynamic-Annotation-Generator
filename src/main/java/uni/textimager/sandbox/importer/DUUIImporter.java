@@ -54,20 +54,24 @@ public class DUUIImporter implements ApplicationRunner {
 
         pComposer.add(new DUUIDockerDriver.Component("docker.texttechnologylab.org/textimager-duui-spacy-single-de_core_news_sm:0.1.4")
                 .withScale(iWorkers)
+                .withImageFetching()
                 .build());
 
-        pComposer.add(new DUUIDockerDriver.Component("docker.texttechnologylab.org/gervader_duui:latest")
-                .withParameter("selection", Sentence.class.getName())
-                .withScale(iWorkers)
-                .build());
-
-        pComposer.add(new DUUIDockerDriver.Component("docker.texttechnologylab.org/parlbert-topic-german:latest")
-                .withScale(iWorkers)
-                .build());
+//        pComposer.add(new DUUIDockerDriver.Component("docker.texttechnologylab.org/gervader_duui:latest")
+//                .withParameter("selection", Sentence.class.getName())
+//                .withImageFetching()
+//                .withScale(iWorkers)
+//                .build());
+//
+//        pComposer.add(new DUUIDockerDriver.Component("docker.texttechnologylab.org/parlbert-topic-german:latest")
+//                .withScale(iWorkers)
+//                .withImageFetching()
+//                .build());
 
         // remove
         pComposer.add(new DUUIUIMADriver.Component(createEngineDescription(RemoveMetaInformation.class))
-                .withScale(iWorkers).build());
+                .withScale(iWorkers)
+                .build());
 
         // write into XMI for debugging purposes.
         pComposer.add(new DUUIUIMADriver.Component(createEngineDescription(XmiWriter.class,
