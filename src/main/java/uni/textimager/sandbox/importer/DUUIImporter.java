@@ -39,12 +39,11 @@ public class DUUIImporter implements ApplicationRunner {
                 .withWorkers(iWorkers);         // wir geben dem Composer eine Anzahl an Threads mit.
 
         DUUIUIMADriver uima_driver = new DUUIUIMADriver();
-        DUUIRemoteDriver remoteDriver = new DUUIRemoteDriver();
         DUUIDockerDriver dockerDriver = new DUUIDockerDriver();
         DUUISwarmDriver  swarmDriver  = new DUUISwarmDriver();
 
         // Hinzufügen der einzelnen Driver zum Composer
-        pComposer.addDriver(uima_driver, remoteDriver, dockerDriver, swarmDriver);
+        pComposer.addDriver(uima_driver, dockerDriver, swarmDriver);
     }
 
     @DisplayName("NLP")
