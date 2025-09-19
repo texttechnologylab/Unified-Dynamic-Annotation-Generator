@@ -40,10 +40,9 @@ public class DUUIImporter implements ApplicationRunner {
 
         DUUIUIMADriver uima_driver = new DUUIUIMADriver();
         DUUIDockerDriver dockerDriver = new DUUIDockerDriver();
-        DUUISwarmDriver  swarmDriver  = new DUUISwarmDriver();
 
         // Hinzufügen der einzelnen Driver zum Composer
-        pComposer.addDriver(uima_driver, dockerDriver, swarmDriver);
+        pComposer.addDriver(uima_driver, dockerDriver);
     }
 
     @DisplayName("NLP")
@@ -53,16 +52,16 @@ public class DUUIImporter implements ApplicationRunner {
 
         DUUIAsynchronousProcessor processor = new DUUIAsynchronousProcessor(pCorpusReader);
 
-        pComposer.add(new DUUISwarmDriver.Component("docker.texttechnologylab.org/textimager-duui-spacy-single-de_core_news_sm:0.1.4")
+        pComposer.add(new DUUIDockerDriver.Component("docker.texttechnologylab.org/textimager-duui-spacy-single-de_core_news_sm:0.1.4")
                 .withScale(iWorkers)
                 .build());
 
-        pComposer.add(new DUUISwarmDriver.Component("docker.texttechnologylab.org/gervader_duui:latest")
+        pComposer.add(new DUUIDockerDriver.Component("docker.texttechnologylab.org/gervader_duui:latest")
                 .withParameter("selection", Sentence.class.getName())
                 .withScale(iWorkers)
                 .build());
 
-        pComposer.add(new DUUISwarmDriver.Component("docker.texttechnologylab.org/parlbert-topic-german:latest")
+        pComposer.add(new DUUIDockerDriver.Component("docker.texttechnologylab.org/parlbert-topic-german:latest")
                 .withScale(iWorkers)
                 .build());
 
