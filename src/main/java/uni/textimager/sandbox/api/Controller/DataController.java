@@ -95,7 +95,6 @@ public class DataController {
         String generatorId = meta.get().generatorId();
         String chartType = meta.get().type();
 
-        System.out.println(corpusValues);
         String json = handler.buildArrayJson(generatorId, chartType, filterValues, corpusValues, pretty);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
