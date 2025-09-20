@@ -42,13 +42,135 @@ public class DataQueryHandler {
         };
     }
 
+    // --- transform values (RAW/SHARE/MAX1/ZSCORE) ---
+    private static List<GeneratorDataRepository.BarPieRow> applyTransform(
+            List<GeneratorDataRepository.BarPieRow> rows,
+            ValueMode mode
+    ) {
+        switch (mode) {
+            case SHARE -> {
+                double total = rows.stream().mapToDouble(GeneratorDataRepository.BarPieRow::value).sum();
+                double denom = (total == 0d) ? 1d : total;
+                return rows.stream()
+                        .map(r -> new GeneratorDataRepository.BarPieRow(r.label(), r.value() / denom, r.color()))
+                        .toList();
+            }
+            case MAX1 -> {
+                double max = rows.stream().mapToDouble(GeneratorDataRepository.BarPieRow::value).max().orElse(0d);
+                double denom = (max == 0d) ? 1d : max;
+                return rows.stream()
+                        .map(r -> new GeneratorDataRepository.BarPieRow(r.label(), r.value() / denom, r.color()))
+                        .toList();
+            }
+            case ZSCORE -> {
+                double mean = rows.stream().mapToDouble(GeneratorDataRepository.BarPieRow::value).average().orElse(0d);
+                double var = rows.stream().mapToDouble(r -> {
+                    double d = r.value() - mean;
+                    return d * d;
+                }).average().orElse(0d);
+                double sd = Math.sqrt(var);
+                double denom = (sd == 0d) ? 1d : sd;
+                return rows.stream()
+                        .map(r -> new GeneratorDataRepository.BarPieRow(r.label(), (r.value() - mean) / denom, r.color()))
+                        .toList();
+            }
+            case PER_FILE_AVG -> throw new IllegalStateException("PER_FILE_AVG requires per-file data; use the overloaded applyTransform variant.");
+            default -> {
+                return rows;
+            }
+        }
+    }
+
+    // --- PER_FILE_AVG variant (requires repo + query context) ---
+    private static List<GeneratorDataRepository.BarPieRow> applyTransform(
+            List<GeneratorDataRepository.BarPieRow> rows, // optional: used for colors fallback
+            ValueMode mode,
+            GeneratorDataRepository repo,
+            String generatorId,
+            Set<String> keepLabels,
+            Set<String> corpusFiles
+    ) {
+        if (mode != ValueMode.PER_FILE_AVG) {
+            return applyTransform(rows, mode);
+        }
+
+        // Fetch per-file grouped sums, then average across files per category.
+        var perFile = repo.loadBarPiePerFile(generatorId, keepLabels, corpusFiles);
+
+        // category -> stats; color per category (first seen)
+        Map<String, DoubleSummaryStatistics> byCat = new LinkedHashMap<>();
+        Map<String, String> colorByCat = new LinkedHashMap<>();
+
+        perFile.forEach(p -> {
+            byCat.computeIfAbsent(p.label(), k -> new DoubleSummaryStatistics()).accept(p.value());
+            colorByCat.putIfAbsent(p.label(), p.color());
+        });
+
+        // Fallback color map from original rows if needed
+        if (colorByCat.isEmpty() && rows != null) {
+            rows.forEach(r -> colorByCat.putIfAbsent(r.label(), r.color()));
+        }
+
+        return byCat.entrySet().stream()
+                .map(e -> new GeneratorDataRepository.BarPieRow(
+                        e.getKey(),
+                        e.getValue().getAverage(),
+                        colorByCat.getOrDefault(e.getKey(), "#999999")
+                ))
+                .toList();
+    }
+
+    // --- sort + min/max + limit after transform ---
+    private static List<GeneratorDataRepository.BarPieRow> sortLimitFilter(
+            List<GeneratorDataRepository.BarPieRow> rows,
+            String sortKey,            // "value" (default) or "label"
+            boolean desc,
+            Double min,                // nullable; applied after transform
+            Double max,                // nullable; applied after transform
+            Integer limit              // nullable; applied after sort
+    ) {
+        // filter by min/max if provided
+        double minV = (min == null) ? Double.NEGATIVE_INFINITY : min;
+        double maxV = (max == null) ? Double.POSITIVE_INFINITY : max;
+
+        List<GeneratorDataRepository.BarPieRow> filtered = rows.stream()
+                .filter(r -> r.value() >= minV && r.value() <= maxV)
+                .toList();
+
+        // sort
+        Comparator<GeneratorDataRepository.BarPieRow> cmp =
+                "label".equalsIgnoreCase(sortKey)
+                        ? Comparator.comparing(GeneratorDataRepository.BarPieRow::label, String.CASE_INSENSITIVE_ORDER)
+                        : Comparator.comparingDouble(GeneratorDataRepository.BarPieRow::value);
+
+        if (desc) cmp = cmp.reversed();
+
+        List<GeneratorDataRepository.BarPieRow> sorted = filtered.stream()
+                .sorted(cmp)
+                .toList();
+
+        // limit
+        if (limit != null && limit >= 0 && limit < sorted.size()) {
+            return sorted.subList(0, limit);
+        }
+        return sorted;
+    }
+
     public String buildArrayJson(String id,
                                  String type,
-                                 String attrsCsv,
                                  Map<String, String> filters,
+                                 Map<String, String> corpus,
                                  boolean pretty) {
 
         String shape = normalizedShape(type, id);
+
+        Set<String> files = Optional.ofNullable(corpus)
+                .map(m -> m.get("files"))
+                .map(DataQueryHandler.Parsing::parseCsvSet)
+                .orElseGet(Collections::emptySet);
+        String valueModeString = filters.get("valueMode");
+        ValueMode valueMode = ValueMode.from(valueModeString);
+        filters.remove("valueMode");
 
         // TEXT → return spans JSON string immediately
         if ("text".equals(shape)) {
@@ -58,7 +180,7 @@ public class DataQueryHandler {
         // DB bar/pie → build JsonNode then serialize
         JsonNode result;
         if ("bar-chart".equals(shape) || "pie-chart".equals(shape)) {
-            result = dbBarPie(id, attrsCsv, filters);
+            result = dbBarPie(id, filters, files, valueMode);
         } else {
             // Fallback to existing dummy/provider for other shapes
             String raw = provider.getJsonFor(id, type);
@@ -112,33 +234,57 @@ public class DataQueryHandler {
 
     // ---------- DB bar/pie ----------
     private JsonNode dbBarPie(String generatorId,
-                              String attrsCsv,
-                              Map<String, String> filters) {
-
-        LinkedHashSet<String> attrs = Arrays.stream(Optional.ofNullable(attrsCsv).orElse("")
-                        .split(","))
-                .map(String::trim).filter(s -> !s.isEmpty())
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+                              Map<String, String> filters,
+                              Set<String> corpusFiles,
+                              ValueMode valueMode) {
+        // parse filters
+        LinkedHashSet<String> attrs =
+                Arrays.stream(Optional.ofNullable(filters.get("attrs")).orElse("").split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .collect(Collectors.toCollection(LinkedHashSet::new));
         if (attrs.isEmpty()) attrs = new LinkedHashSet<>(List.of("label", "value", "color"));
 
-        Set<String> keepLabels = Parsing.parseCsvSet(filters.get("label"));
+        Set<String> keepLabels = Parsing.parseCsvSet(
+                Optional.ofNullable(filters.get("label")).orElse(filters.getOrDefault("label", ""))
+        );
         Double min = Parsing.parseDouble(filters.get("min"));
         Double max = Parsing.parseDouble(filters.get("max"));
-        String sortKey = Optional.ofNullable(filters.get("sort")).orElse("value");
+        String sort = Optional.ofNullable(filters.get("sort")).orElse("value");
         boolean desc = Optional.ofNullable(filters.get("desc"))
-                .map(v -> v.equalsIgnoreCase("true") || v.equals("1"))
-                .orElse(true);
+                .map(v -> v.equalsIgnoreCase("true") || v.equals("1")).orElse(true);
         Integer limit = Parsing.parseInt(filters.get("limit"));
 
-        List<GeneratorDataRepository.BarPieRow> rows =
-                repo.loadBarPie(generatorId, keepLabels, min, max, sortKey, desc, limit);
+        // RAW → identical to current behavior, including DB-side HAVING/order/limit
+        if (valueMode == ValueMode.RAW) {
+            var rows = repo.loadBarPie(generatorId, keepLabels, corpusFiles, min, max, sort, desc, limit);
+            System.out.println(attrs.size() + " attrs, " + rows.size() + " rows");
+            return toArrayNode(rows, attrs);
+        }
 
+        // Non-RAW → fetch full set, transform post-aggregation, then sort/limit/min/max client-side
+        var rows = repo.loadBarPie(generatorId, keepLabels, corpusFiles, null, null, "value", true, null);
+        List<GeneratorDataRepository.BarPieRow> transformed =
+                (valueMode == ValueMode.PER_FILE_AVG)
+                        ? applyTransform(rows, valueMode, repo, generatorId, keepLabels, corpusFiles)
+                        : applyTransform(rows, valueMode);
+        var sliced = sortLimitFilter(transformed, sort, desc, min, max, limit);
+        return toArrayNode(sliced, attrs);
+    }
+
+    private ArrayNode toArrayNode(
+            List<GeneratorDataRepository.BarPieRow> rows,
+            Set<String> attrs
+    ) {
         ArrayNode out = mapper.createArrayNode();
-        for (GeneratorDataRepository.BarPieRow r : rows) {
+        if (rows == null || rows.isEmpty()) return out;
+
+        for (var r : rows) {
+            System.out.println(r);
             ObjectNode o = mapper.createObjectNode();
             if (attrs.contains("label")) o.put("label", r.label());
             if (attrs.contains("value")) o.put("value", r.value());
-            if (attrs.contains("color")) o.put("color", r.color());
+            if (attrs.contains("color")) o.put("color", r.color() == null ? "#999999" : r.color());
             out.add(o);
         }
         return out;

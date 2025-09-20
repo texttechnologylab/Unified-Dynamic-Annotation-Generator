@@ -38,6 +38,7 @@ public class GeneratorDataRepository {
     public List<BarPieRow> loadBarPie(
             String generatorId,
             Set<String> labels,
+            Set<String> files,
             Double min,
             Double max,
             String sortKey,
@@ -50,6 +51,7 @@ public class GeneratorDataRepository {
         Field<String> N_GENERATORID = field(name("n", DBConstants.TABLEATTR_GENERATORID), String.class);
         Field<String> N_CATEGORY = field(name("n", DBConstants.TABLEATTR_GENERATORDATA_CATEGORY), String.class);
         Field<BigDecimal> N_NUMBER = field(quotedName("n", DBConstants.TABLEATTR_GENERATORDATA_NUMBER), BigDecimal.class); // quoted: keyword
+        Field<String> N_FILENAME = field(name("n", DBConstants.TABLEATTR_FILENAME), String.class);
         Field<String> C_GENERATORID = field(name("c", DBConstants.TABLEATTR_GENERATORID), String.class);
         Field<String> C_CATEGORY = field(name("c", DBConstants.TABLEATTR_GENERATORDATA_CATEGORY), String.class);
         Field<String> C_COLOR = field(name("c", DBConstants.TABLEATTR_GENERATORDATA_COLOR), String.class);
@@ -59,9 +61,8 @@ public class GeneratorDataRepository {
         Field<String> COLOR = coalesce(max(C_COLOR), inline("#999999")).as("color");
 
         Condition where = N_GENERATORID.eq(generatorId);
-        if (labels != null && !labels.isEmpty()) {
-            where = where.and(N_CATEGORY.in(labels));
-        }
+        if (labels != null && !labels.isEmpty()) where = where.and(N_CATEGORY.in(labels));
+        if (files != null && !files.isEmpty()) where = where.and(N_FILENAME.in(files));
 
         Condition having = noCondition();
         if (min != null) having = having.and(VALUE.ge(BigDecimal.valueOf(min)));
@@ -89,6 +90,44 @@ public class GeneratorDataRepository {
                 r.get(VALUE) == null ? 0d : r.get(VALUE).doubleValue(),
                 r.get(COLOR)
         ));
+    }
+
+    // per-file grouped query (no min/max/limit here; post-process later)
+    public List<BarPieFileRow> loadBarPiePerFile(String generatorId,
+                                                 Set<String> labels,
+                                                 Set<String> files) {
+        Table<?> n = table(name(DBConstants.TABLENAME_GENERATORDATA_CATEGORYNUMBER)).as("n");
+        Table<?> c = table(name(DBConstants.TABLENAME_GENERATORDATA_CATEGORYCOLOR)).as("c");
+
+        Field<String> N_GENERATORID = field(name("n", DBConstants.TABLEATTR_GENERATORID), String.class);
+        Field<String> N_CATEGORY = field(name("n", DBConstants.TABLEATTR_GENERATORDATA_CATEGORY), String.class);
+        Field<BigDecimal> N_NUMBER = field(quotedName("n", DBConstants.TABLEATTR_GENERATORDATA_NUMBER), BigDecimal.class);
+        Field<String> N_FILENAME = field(name("n", DBConstants.TABLEATTR_FILENAME), String.class);
+
+        Field<String> C_GENERATORID = field(name("c", DBConstants.TABLEATTR_GENERATORID), String.class);
+        Field<String> C_CATEGORY = field(name("c", DBConstants.TABLEATTR_GENERATORDATA_CATEGORY), String.class);
+        Field<String> C_COLOR = field(name("c", DBConstants.TABLEATTR_GENERATORDATA_COLOR), String.class);
+
+        Field<String> FILE = N_FILENAME.as("file");
+        Field<String> LABEL = N_CATEGORY.as("label");
+        Field<BigDecimal> VALUE = sum(N_NUMBER).as("value");
+        Field<String> COLOR = coalesce(max(C_COLOR), inline("#999999")).as("color");
+
+        Condition where = N_GENERATORID.eq(generatorId);
+        if (labels != null && !labels.isEmpty()) where = where.and(N_CATEGORY.in(labels));
+        if (files != null && !files.isEmpty()) where = where.and(N_FILENAME.in(files));
+
+        return dsl.select(FILE, LABEL, VALUE, COLOR)
+                .from(n)
+                .leftJoin(c).on(C_GENERATORID.eq(N_GENERATORID)).and(C_CATEGORY.eq(N_CATEGORY))
+                .where(where)
+                .groupBy(FILE, LABEL)
+                .fetch(r -> new BarPieFileRow(
+                        r.get(FILE),
+                        r.get(LABEL),
+                        r.get(VALUE) == null ? 0d : r.get(VALUE).doubleValue(),
+                        r.get(COLOR)
+                ));
     }
 
     public String getText(String generatorId) {
@@ -123,6 +162,9 @@ public class GeneratorDataRepository {
         return dsl.select(A_TYPE, A_BEGIN, A_END, A_CATEGORY)
                 .from(T_SEGS).where(c).orderBy(A_BEGIN.asc(), A_END.asc())
                 .fetch(r -> new Segment(r.get(A_TYPE), r.get(A_BEGIN), r.get(A_END), r.get(A_CATEGORY)));
+    }
+
+    public record BarPieFileRow(String file, String label, double value, String color) {
     }
 
     public record Segment(String type, int begin, int end, String category) {

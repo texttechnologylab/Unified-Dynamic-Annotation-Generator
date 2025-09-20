@@ -2,24 +2,24 @@
 
 package uni.textimager.sandbox.api.Controller;
 
+import lombok.Setter;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import uni.textimager.sandbox.api.Handler.DataQueryHandler;
 import uni.textimager.sandbox.api.Repositories.VisualisationsRepository;
 
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/data")
+@RequestMapping("/api")
 public class DataController {
 
     private final DataQueryHandler handler;
@@ -30,24 +30,28 @@ public class DataController {
         this.visRepo = visRepo;
     }
 
-    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> getData(@RequestParam Map<String, String> params) {
-        String visId = params.get("id");
-        if (visId == null || visId.isBlank()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("{\"error\":\"id is required\"}");
+    /**
+     * Backward-compatible GET endpoint. Keeps existing query-parameter based filter passing.
+     */
+    @GetMapping(value = "/data", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> getData(
+            @RequestParam("id") String visId,
+            @RequestParam(value = "pipelineId", defaultValue = "main") String pipelineId,
+            @RequestParam Map<String, String> allParams,
+            @RequestParam(value = "pretty", defaultValue = "false") boolean pretty
+    ) {
+        // Extract legacy "filters=" style params into a LinkedHashMap to preserve order
+        Map<String, String> filters = new LinkedHashMap<>();
+        for (Map.Entry<String, String> e : allParams.entrySet()) {
+            String k = e.getKey();
+            if (k == null) continue;
+            // exclude controller-known params
+            String kn = k.toLowerCase(Locale.ROOT);
+            if (kn.equals("id") || kn.equals("pretty") || kn.equals("pipelineid")) continue;
+            filters.put(k, e.getValue());
         }
 
-        String pipelineId = Optional.ofNullable(params.get("pipelineId")).orElse("main");
-        boolean pretty = Boolean.parseBoolean(Optional.ofNullable(params.get("pretty")).orElse("false"));
-        String attrsCsv = Optional.ofNullable(params.get("attrs")).orElse("");
-
-        // Build filters = all params minus reserved
-        Map<String, String> filters = new LinkedHashMap<>(params);
-        filters.keySet().removeAll(Set.of("id", "pipelineId", "pretty", "attrs"));
-
-        // Resolve generatorId + chart type from VISUALIZATIONJSONS JSON
-        var meta = visRepo.findMeta(pipelineId, visId).or(() -> visRepo.findMeta(visId));
+        Optional<VisualisationsRepository.VisualizationMeta> meta = visRepo.findMeta(pipelineId, visId);
         if (meta.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body("{\"error\":\"visualization not found\",\"id\":\"" + visId + "\"}");
@@ -56,9 +60,73 @@ public class DataController {
         String generatorId = meta.get().generatorId();
         String chartType = meta.get().type();
 
-        String json = handler.buildArrayJson(generatorId, chartType, attrsCsv, filters, pretty);
+        String json = handler.buildArrayJson(generatorId, chartType, filters, null, pretty);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .body(json);
+    }
+
+    /**
+     * New JSON-driven endpoint.
+     * Expects a body of the shape:
+     * {
+     *   "corpus": { ... },   // reserved for future: files, tags, date (not yet implemented)
+     *   "chart":  { ... }    // contains all existing chart filter key/values
+     * }
+     * <p>
+     * Only "chart" values are applied to the current data pipeline. "corpus" is accepted and ignored for now.
+     */
+    @PostMapping(value = "/data", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> postData(
+            @RequestParam("id") String visId,
+            @RequestParam(value = "pipelineId", defaultValue = "main") String pipelineId,
+            @RequestParam(value = "pretty", defaultValue = "false") boolean pretty,
+            @RequestBody FilterEnvelope body
+    ) {
+        Optional<VisualisationsRepository.VisualizationMeta> meta = visRepo.findMeta(pipelineId, visId);
+        if (meta.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("{\"error\":\"visualization not found\",\"id\":\"" + visId + "\"}");
+        }
+
+        Map<String, String> filterValues = toStringMap(body.chart());
+        Map<String, String> corpusValues = toStringMap(body.corpus());
+
+        String generatorId = meta.get().generatorId();
+        String chartType = meta.get().type();
+
+        System.out.println(corpusValues);
+        String json = handler.buildArrayJson(generatorId, chartType, filterValues, corpusValues, pretty);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .body(json);
+    }
+
+    // ---- helpers & DTO ----
+
+    /**
+     * Envelope DTO for the posted filters.
+     */
+    @Setter
+    public static class FilterEnvelope {
+        private Map<String, Object> corpus;
+        private Map<String, Object> chart;
+
+        public Map<String, Object> corpus() { return corpus; }
+        public Map<String, Object> chart() { return chart; }
+
+    }
+
+    private static Map<String, String> toStringMap(Map<String, Object> src) {
+        if (src == null) return new LinkedHashMap<>();
+        // Preserve insertion order where possible
+        return src.entrySet().stream()
+                .filter(e -> e.getKey() != null)
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        e -> Objects.toString(e.getValue(), null),
+                        (a, b) -> b,
+                        LinkedHashMap::new
+                ));
     }
 }
