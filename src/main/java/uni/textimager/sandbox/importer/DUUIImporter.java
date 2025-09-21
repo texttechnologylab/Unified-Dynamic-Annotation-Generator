@@ -1,6 +1,6 @@
 package uni.textimager.sandbox.importer;
 
-import de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence;
+import lombok.RequiredArgsConstructor;
 import org.apache.uima.UIMAException;
 import org.dkpro.core.io.xmi.XmiWriter;
 import org.junit.jupiter.api.BeforeAll;
@@ -10,13 +10,12 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 import org.texttechnologylab.DockerUnifiedUIMAInterface.DUUIComposer;
 import org.texttechnologylab.DockerUnifiedUIMAInterface.driver.DUUIDockerDriver;
-import org.texttechnologylab.DockerUnifiedUIMAInterface.driver.DUUIRemoteDriver;
-import org.texttechnologylab.DockerUnifiedUIMAInterface.driver.DUUISwarmDriver;
 import org.texttechnologylab.DockerUnifiedUIMAInterface.driver.DUUIUIMADriver;
 import org.texttechnologylab.DockerUnifiedUIMAInterface.io.DUUIAsynchronousProcessor;
 import org.texttechnologylab.DockerUnifiedUIMAInterface.io.reader.DUUIFileReaderLazy;
 import org.texttechnologylab.DockerUnifiedUIMAInterface.lua.DUUILuaContext;
 import org.xml.sax.SAXException;
+import uni.textimager.sandbox.importer.config.DbProps;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -24,9 +23,11 @@ import java.net.URISyntaxException;
 import static org.apache.uima.fit.factory.AnalysisEngineFactory.createEngineDescription;
 
 @Component
+@RequiredArgsConstructor
 public class DUUIImporter implements ApplicationRunner {
+    private static final int iWorkers = 2;
     private static DUUIComposer pComposer = null;
-    private static int iWorkers = 1;
+    private final DbProps db;
 
     @BeforeAll
     public static void init() throws IOException, URISyntaxException, UIMAException, SAXException {
@@ -57,17 +58,6 @@ public class DUUIImporter implements ApplicationRunner {
                 .withImageFetching()
                 .build());
 
-//        pComposer.add(new DUUIDockerDriver.Component("docker.texttechnologylab.org/gervader_duui:latest")
-//                .withParameter("selection", Sentence.class.getName())
-//                .withImageFetching()
-//                .withScale(iWorkers)
-//                .build());
-//
-//        pComposer.add(new DUUIDockerDriver.Component("docker.texttechnologylab.org/parlbert-topic-german:latest")
-//                .withScale(iWorkers)
-//                .withImageFetching()
-//                .build());
-
         // remove
         pComposer.add(new DUUIUIMADriver.Component(createEngineDescription(RemoveMetaInformation.class))
                 .withScale(iWorkers)
@@ -81,6 +71,18 @@ public class DUUIImporter implements ApplicationRunner {
                 XmiWriter.PARAM_VERSION, "1.1",
                 XmiWriter.PARAM_COMPRESSION, "GZIP"
         )).withScale(iWorkers).build());
+
+        pComposer.add(new DUUIUIMADriver.Component(
+                createEngineDescription(
+                        JooqDatabaseWriter.class,
+                        JooqDatabaseWriter.PARAM_JDBC_URL, db.getUrl(),
+                        JooqDatabaseWriter.PARAM_DB_USER, db.getUser(),
+                        JooqDatabaseWriter.PARAM_DB_PASS, db.getPass(),
+                        JooqDatabaseWriter.PARAM_SCHEMA, db.getSchema(),
+                        JooqDatabaseWriter.PARAM_BATCH_SIZE, db.getBatchSize(),
+                        JooqDatabaseWriter.PARAM_MAX_IDENT, db.getMaxIdent(),
+                        JooqDatabaseWriter.PARAM_SQL_DIALECT, db.getDialect()
+                )).withScale(1).build());
 
         pComposer.run(processor, "Beispiel");
 
