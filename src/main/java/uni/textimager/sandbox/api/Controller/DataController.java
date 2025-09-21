@@ -11,12 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import uni.textimager.sandbox.api.Handler.DataQueryHandler;
 import uni.textimager.sandbox.api.Repositories.VisualisationsRepository;
 
-import java.util.LinkedHashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api")
@@ -28,6 +23,35 @@ public class DataController {
     public DataController(DataQueryHandler handler, VisualisationsRepository visRepo) {
         this.handler = handler;
         this.visRepo = visRepo;
+    }
+
+    private static Map<String, String> toStringMap(Map<String, Object> src) {
+        if (src == null) return new LinkedHashMap<>();
+        Map<String, String> out = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> e : src.entrySet()) {
+            String key = e.getKey();
+            if (key == null) continue;
+
+            Object v = e.getValue();
+            if (v == null) {
+                out.put(key, null);
+                continue;
+            }
+
+            if (v instanceof Iterable<?>) {
+                StringBuilder sb = new StringBuilder();
+                boolean first = true;
+                for (Object item : (Iterable<?>) v) {
+                    if (!first) sb.append(',');
+                    sb.append(Objects.toString(item, ""));
+                    first = false;
+                }
+                out.put(key, sb.toString());
+            } else {
+                out.put(key, Objects.toString(v, null));
+            }
+        }
+        return out;
     }
 
     /**
@@ -66,12 +90,14 @@ public class DataController {
                 .body(json);
     }
 
+    // ---- helpers & DTO ----
+
     /**
      * New JSON-driven endpoint.
      * Expects a body of the shape:
      * {
-     *   "corpus": { ... },   // reserved for future: files, tags, date (not yet implemented)
-     *   "chart":  { ... }    // contains all existing chart filter key/values
+     * "corpus": { ... },   // reserved for future: files, tags, date (not yet implemented)
+     * "chart":  { ... }    // contains all existing chart filter key/values
      * }
      * <p>
      * Only "chart" values are applied to the current data pipeline. "corpus" is accepted and ignored for now.
@@ -101,8 +127,6 @@ public class DataController {
                 .body(json);
     }
 
-    // ---- helpers & DTO ----
-
     /**
      * Envelope DTO for the posted filters.
      */
@@ -111,21 +135,13 @@ public class DataController {
         private Map<String, Object> corpus;
         private Map<String, Object> chart;
 
-        public Map<String, Object> corpus() { return corpus; }
-        public Map<String, Object> chart() { return chart; }
+        public Map<String, Object> corpus() {
+            return corpus;
+        }
 
-    }
+        public Map<String, Object> chart() {
+            return chart;
+        }
 
-    private static Map<String, String> toStringMap(Map<String, Object> src) {
-        if (src == null) return new LinkedHashMap<>();
-        // Preserve insertion order where possible
-        return src.entrySet().stream()
-                .filter(e -> e.getKey() != null)
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        e -> Objects.toString(e.getValue(), null),
-                        (a, b) -> b,
-                        LinkedHashMap::new
-                ));
     }
 }
