@@ -20,7 +20,6 @@ import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
 
-import javax.sql.DataSource;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -70,6 +69,7 @@ public class JooqDatabaseWriter extends JCasAnnotator_ImplBase {
     private DSLContext dsl;
     // Guards so we only build schema/registry once per JVM
     private volatile boolean schemaEnsured = false;
+    private HikariDataSource dataSource;
 
     private static Iterable<Type> iterable(Iterator<Type> it) {
         List<Type> out = new ArrayList<>();
@@ -163,15 +163,14 @@ public class JooqDatabaseWriter extends JCasAnnotator_ImplBase {
         cfg.setMinimumIdle(1);
         cfg.setAutoCommit(true);
         // --- Infra ---
-        DataSource ds;
+        cfg.setPoolName("JooqWriterPool"); // optional, makes thread names obvious
         try {
-            ds = new HikariDataSource(cfg);
+            this.dataSource = new HikariDataSource(cfg);
         } catch (IllegalArgumentException e) {
             throw new ResourceInitializationException(e);
         }
 
-        // IMPORTANT CHANGE: always quote identifiers so hash-based names are valid
-        this.dsl = DSL.using(ds, dialect,
+        this.dsl = DSL.using(this.dataSource, dialect,
                 new Settings().withRenderQuotedNames(RenderQuotedNames.ALWAYS));
 
         ensureRegistryTables();
@@ -1041,6 +1040,32 @@ public class JooqDatabaseWriter extends JCasAnnotator_ImplBase {
         // 3) final fallback
         return (id != null) ? id : "_InitialView";
     }
+
+    @Override
+    public void destroy() {
+        // Close Hikari to stop housekeeping threads
+        try {
+            if (dataSource != null && !dataSource.isClosed()) {
+                dataSource.close();
+            }
+        } catch (Exception ignore) {
+        }
+
+        // optional: clear caches if this AE can be reused in-JVM
+        try {
+            seenTsFingerprints.clear();
+            typeToTable.clear();
+            createdTables.clear();
+        } catch (Exception ignore) {
+        }
+
+        // let GC reclaim the DSL context; nothing to close there
+        dsl = null;
+        dataSource = null;
+
+        super.destroy();
+    }
+
 
     // --- Minimal JSON serializer for non-primitive/array features
     static final class FeatureJsonSerializer {
