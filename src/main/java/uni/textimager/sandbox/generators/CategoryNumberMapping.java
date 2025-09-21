@@ -14,17 +14,25 @@ import java.util.*;
 import java.util.List;
 
 public class CategoryNumberMapping extends Generator implements CategoryNumberMappingInterface {
-    HashMap<String, HashMap<String, Double>> categoryNumberMap;
+    Map<String, Map<String, Double>> categoryNumberMap;
+    Color fixedColor;
 
 
-    public CategoryNumberMapping(String id, HashMap<String, HashMap<String, Double>> categoryNumberMap) {
+    public CategoryNumberMapping(String id, Map<String, Map<String, Double>> categoryNumberMap) {
         super(id);
-        this.categoryNumberMap = new HashMap<>(categoryNumberMap);
+        this.categoryNumberMap = new HashMap<>();
+        categoryNumberMap.forEach((k, v) -> this.categoryNumberMap.put(k, new HashMap<>(v)));
+    }
+
+    public CategoryNumberMapping(String id, Map<String, Map<String, Double>> categoryNumberMap, Color fixedColor) {
+        this(id, categoryNumberMap);
+        this.fixedColor = fixedColor;
     }
 
     public CategoryNumberMapping(String id, CategoryNumberMapping copyOf) {
         super(id);
         this.categoryNumberMap = new HashMap<>(copyOf.categoryNumberMap);
+        this.fixedColor = copyOf.fixedColor;
     }
 
     @Override
@@ -66,10 +74,6 @@ public class CategoryNumberMapping extends Generator implements CategoryNumberMa
 
     @Override
     public void saveToDB(DBAccess dbAccess) throws SQLException {
-        saveToDB(dbAccess, null);
-    }
-
-    public void saveToDB(DBAccess dbAccess, Color fixedColor) throws SQLException {
         if (categoryNumberMap == null || categoryNumberMap.isEmpty()) return;
         if (fixedColor == null) {
             CategoryNumberColorMapping colorMapping = new CategoryNumberColorMapping(id, categoryNumberMap);
@@ -94,6 +98,7 @@ public class CategoryNumberMapping extends Generator implements CategoryNumberMa
         }
     }
 
+
     protected void saveCategoryNumberMapToDB(DBAccess dbAccess) throws SQLException {
         if (categoryNumberMap == null || categoryNumberMap.isEmpty()) return;
 
@@ -101,9 +106,9 @@ public class CategoryNumberMapping extends Generator implements CategoryNumberMa
             DSLContext dsl = DSL.using(connection);
 
             List<Query> inserts = new ArrayList<>();
-            for (Map.Entry<String, HashMap<String, Double>> entry : categoryNumberMap.entrySet()) {
+            for (Map.Entry<String, Map<String, Double>> entry : categoryNumberMap.entrySet()) {
                 String filename = entry.getKey();
-                HashMap<String, Double> subMap = entry.getValue();
+                Map<String, Double> subMap = entry.getValue();
 
                 for (Map.Entry<String, Double> subMapEntry : subMap.entrySet()) {
                     String category = subMapEntry.getKey();
@@ -122,7 +127,7 @@ public class CategoryNumberMapping extends Generator implements CategoryNumberMa
     }
 
 
-    public static HashMap<String, Double> calculateTotalFromCategoryCountMap(HashMap<String, HashMap<String, Double>> categoryCountMap) {
+    public static Map<String, Double> calculateTotalFromCategoryCountMap(Map<String, Map<String, Double>> categoryCountMap) {
         HashMap<String, Double> totals = new HashMap<>();
 
         for (Map<String, Double> innerMap : categoryCountMap.values()) {

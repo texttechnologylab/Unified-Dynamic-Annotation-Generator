@@ -17,14 +17,18 @@ import java.util.List;
 
 public class CategoryNumberColorMapping extends CategoryNumberMapping implements CategoryNumberColorMappingInterface {
     @Getter
-    HashMap<String, Color> categoryColorMap;
+    Map<String, Color> categoryColorMap;
 
-    public CategoryNumberColorMapping(String id, HashMap<String, HashMap<String, Double>> categoryNumberMap, HashMap<String, Color> categoryColorMap) {
+    public CategoryNumberColorMapping(String id, Map<String, Map<String, Double>> categoryNumberMap, Map<String, Color> categoryColorMap) {
         super(id, categoryNumberMap);
         this.categoryColorMap = categoryColorMap;
     }
 
-    public CategoryNumberColorMapping(String id, HashMap<String, HashMap<String, Double>> categoryNumberMap) {
+    public CategoryNumberColorMapping(String id, Map<String, Map<String, Double>> categoryNumberMap, Color fixedColor) {
+        super(id, categoryNumberMap, fixedColor);
+    }
+
+    public CategoryNumberColorMapping(String id, Map<String, Map<String, Double>> categoryNumberMap) {
         super(id, categoryNumberMap);
         this.categoryColorMap = categoryColorMapFromCategoriesNumberMap(CategoryNumberMapping.calculateTotalFromCategoryCountMap(categoryNumberMap));
     }
@@ -49,8 +53,13 @@ public class CategoryNumberColorMapping extends CategoryNumberMapping implements
 
     @Override
     public void saveToDB(DBAccess dbAccess) throws SQLException {
-        saveCategoryNumberMapToDB(dbAccess);
-        saveCategoryColorMapToDB(dbAccess);
+        if (categoryNumberMap == null || categoryNumberMap.isEmpty()) return;
+        if (fixedColor != null) {
+            super.saveToDB(dbAccess);
+        } else {
+            saveCategoryNumberMapToDB(dbAccess);
+            saveCategoryColorMapToDB(dbAccess);
+        }
     }
 
 
@@ -80,7 +89,7 @@ public class CategoryNumberColorMapping extends CategoryNumberMapping implements
 
 
 
-    public static HashMap<String, Color> categoryColorMapFromCategoriesNumberMap(Map<String, Double> categoryNumberMap) {
+    public static Map<String, Color> categoryColorMapFromCategoriesNumberMap(Map<String, Double> categoryNumberMap) {
         List<Color> distinctColors = Arrays.asList(
                 Color.RED,
                 Color.BLUE,

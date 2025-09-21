@@ -34,7 +34,20 @@
           ]
         }
       ],
-      "derivedGenerators": [{}],
+      "derivedGenerators": [
+        {
+          "id": "text_formatting",
+          "type": "TextFormatting",
+          "generators": [
+            {
+              "id": "Textfaerbung"
+            },
+            {
+              "id": "Textfaerbung2"
+            }
+          ]
+        }
+      ],
       "visualizations": [
         {
           "id": "bar-chart",

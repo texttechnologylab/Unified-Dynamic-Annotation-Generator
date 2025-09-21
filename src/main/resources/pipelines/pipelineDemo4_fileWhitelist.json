@@ -10,7 +10,8 @@
             {
               "type": "combi",
               "settings": {
-                "categoriesWhitelist": ["NOUN", "ADV", "PRON", "ADP", "VERB"]
+                "categoriesWhitelist": ["NOUN", "ADV", "PRON", "ADP", "VERB"],
+                "sourceFilesWhitelist": ["ID21200100.xmi"]
               },
               "createsGenerators": [
                 {
