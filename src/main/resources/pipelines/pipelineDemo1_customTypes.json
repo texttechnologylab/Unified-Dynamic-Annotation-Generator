@@ -12,29 +12,18 @@
         {
           "id": "MyPOS",
           "type": "POS",
-          "settings": {
-            "sourceFilesWhitelist": [],
-            "sourceFilesBlacklist": []
-          },
           "createsGenerators": [
             {
               "type": "combi",
-              "settings": {
-                "categoriesBlacklist": ["PUNCT"]
-              },
               "createsGenerators": [
                 {
                   "type": "CategoryNumberColorMapping",
-                  "id": "Gesamtverteilung",
-                  "settings": {
-                    "categoriesBlacklist": ["DET"]
-                  }
+                  "id": "Gesamtverteilung"
                 },
                 {
                   "type": "TextFormatting",
                   "id": "Textfaerbung",
                   "settings": {
-                    "categoriesBlacklist": ["article"],
                     "sofaFile": "ID21200100.xmi",
                     "style": "underline"
                   }

@@ -2,20 +2,10 @@
   "pipelines": [
     {
       "id": "main",
-      "customTypes": [
-        {
-          "id": "CUSTOM1",
-          "contains": ["POS", "MORPHOLOGICALFEATURES", "LEMMA"]
-        }
-      ],
       "sources": [
         {
           "id": "MyPOS",
           "type": "POS",
-          "settings": {
-            "sourceFilesWhitelist": [],
-            "sourceFilesBlacklist": []
-          },
           "createsGenerators": [
             {
               "type": "combi",
@@ -34,7 +24,6 @@
                   "type": "TextFormatting",
                   "id": "Textfaerbung",
                   "settings": {
-                    "categoriesBlacklist": ["article"],
                     "sofaFile": "ID21200100.xmi",
                     "style": "underline"
                   }

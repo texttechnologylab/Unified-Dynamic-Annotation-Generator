@@ -142,20 +142,21 @@ public class Source implements SourceInterface {
                 Collection<String> categoriesBlacklist = generateCategoriesBlacklist(configCombi, g.getConfig());
                 HashMap<String, HashMap<String, Double>> categoryNumberMap = dbCreateCategoryCountMap(featureName, generatorSourceFiles, categoriesWhitelist, categoriesBlacklist);
                 HashMap<String, Color> categoryColorMap = new HashMap<>(mapFeatureToCategoryColorMap.get(featureName));
-                categoryColorMap.keySet().retainAll(categoryNumberMap.keySet());
+                categoryColorMap.keySet().retainAll(CategoryNumberMapping.calculateTotalFromCategoryCountMap(categoryNumberMap).keySet());
                 combiGenerators.add(new CategoryNumberColorMapping(generatorID, categoryNumberMap, categoryColorMap));
             } else if (generatorType.equals("TextFormatting")) {
-                String configSofaFile = generateSofaFile(configCombi, g.getConfig());
-                String configSofaID = generateSofaID(configCombi, g.getConfig());
+                String configSofaFile = generateBundleAttribute(configCombi, g.getConfig(), "sofaFile");
+                String configSofaID = generateBundleAttribute(configCombi, g.getConfig(), "sofaID");
                 String[] sofa = dbGetSofa(configSofaFile, configSofaID);
                 String sofaFile = sofa[0];
                 String sofaID = sofa[1];
                 String sofaString = sofa[2];
                 String featureName = generateFeatureNameCategory(configCombi, g.getConfig());
+                String style = generateTextFormattingStyle(configCombi, g.getConfig());
                 HashMap<String, Color> categoryColorMap = mapFeatureToCategoryColorMap.get(featureName);
                 Collection<String> categoriesWhitelist = generateCategoriesWhitelist(configCombi, g.getConfig());
                 Collection<String> categoriesBlacklist = generateCategoriesBlacklist(configCombi, g.getConfig());
-                combiGenerators.add(dbBuildTextFormatting(featureName, sofaFile, sofaID, categoriesWhitelist, categoriesBlacklist, categoryColorMap, sofaString, generatorID));
+                combiGenerators.add(dbBuildTextFormatting(featureName, sofaFile, sofaID, categoriesWhitelist, categoriesBlacklist, categoryColorMap, generatorID, sofaString, style));
             } else { // Default case: Just treat the unknown bundle generator like a normal single generator.
                 combiGenerators.add(createGenerator(g, configCombi, g.getConfig()));
             }
@@ -180,26 +181,27 @@ public class Source implements SourceInterface {
                 return new CategoryNumberMapping(generatorID, categoryCountMap);
             }
         } else if (generatorType.equals("TextFormatting")) {
-            String configSofaFile = generateSofaFile(configBundle, config);
-            String configSofaID = generateSofaID(configBundle, config);
+            String configSofaFile =  generateBundleAttribute(configBundle, config, "sofaFile");
+            String configSofaID = generateBundleAttribute(configBundle, config, "sofaID");
             String[] sofa = dbGetSofa(configSofaFile, configSofaID);
             String sofaFile = sofa[0];
             String sofaID = sofa[1];
             String sofaString = sofa[2];
 
             String featureName = generateFeatureNameCategory(configBundle, config);
+            String style = generateTextFormattingStyle(configBundle, config);
             Collection<String> categoriesWhitelist = generateCategoriesWhitelist(configBundle, config);
             Collection<String> categoriesBlacklist = generateCategoriesBlacklist(configBundle, config);
             HashMap<String, Color> categoryColorMap = dbCreateCategoryColorMap(featureName, sourceFiles, categoriesWhitelist, categoriesBlacklist);
-            return dbBuildTextFormatting(featureName, sofaFile, sofaID, categoriesWhitelist, categoriesBlacklist, categoryColorMap, sofaString, generatorID);
+            return dbBuildTextFormatting(featureName, sofaFile, sofaID, categoriesWhitelist, categoriesBlacklist, categoryColorMap, generatorID, sofaString, style);
         } else {
             throw new IllegalArgumentException("Unknown generator type: " + generator.getConfig().get("type") + " for source: " + id);
         }
     }
 
     private String generateFeatureNameCategory(JSONView configBundle, JSONView config) {
-        try { return config.get("settings").get("featureName").toString(); } catch (Exception ignored) {}
-        try { return configBundle.get("settings").get("featureName").toString(); } catch (Exception ignored) {}
+        String featureNameCategory = generateBundleAttribute(configBundle, config, "featureName");
+        if (featureNameCategory != null) return featureNameCategory;
 
         return switch (type) {
             case DEFAULT_TYPE_POS -> featureNames.get("coarseValue");
@@ -207,15 +209,15 @@ public class Source implements SourceInterface {
         };
     }
 
-    private String generateSofaFile(JSONView configBundle, JSONView config) {
-        try { return config.get("settings").get("sofaFile").toString(); } catch (Exception ignored) {}
-        try { return configBundle.get("settings").get("sofaFile").toString(); } catch (Exception ignored) {}
-        return null;
+    private String generateTextFormattingStyle(JSONView configBundle, JSONView config) {
+        String textFormattingType = generateBundleAttribute(configBundle, config, "style");
+        if (textFormattingType != null) return textFormattingType;
+        return TextFormatting.DEFAULT_STYLE;
     }
 
-    private String generateSofaID(JSONView configBundle, JSONView config) {
-        try { return config.get("settings").get("sofaID").toString(); } catch (Exception ignored) {}
-        try { return configBundle.get("settings").get("sofaID").toString(); } catch (Exception ignored) {}
+    private String generateBundleAttribute(JSONView configBundle, JSONView config, String attribute) {
+        try { return config.get("settings").get(attribute).toString(); } catch (Exception ignored) {}
+        try { return configBundle.get("settings").get(attribute).toString(); } catch (Exception ignored) {}
         return null;
     }
 
@@ -270,9 +272,6 @@ public class Source implements SourceInterface {
         ArrayList<TextFormatting.Dataset.Segment> segments = dbCreateTextFormattingSegments(featureName, sofaFile, sofaID, categoriesWhitelist, categoriesBlacklist);
         TextFormatting.Dataset ds = new TextFormatting.Dataset(featureName, style, categoryColorMap, segments);
         return new TextFormatting(generatorID, sofaFile, sofaID, text, new ArrayList<>(List.of(ds)));
-    }
-    private TextFormatting dbBuildTextFormatting(String featureName, String sofaFile, String sofaID, Collection<String> categoriesWhitelist, Collection<String> categoriesBlacklist, HashMap<String, Color> categoryColorMap, String text, String generatorID) throws SQLException {
-        return dbBuildTextFormatting(featureName, sofaFile, sofaID, categoriesWhitelist, categoriesBlacklist, categoryColorMap, generatorID, text, TextFormatting.DEFAULT_STYLE);
     }
 
     private ArrayList<TextFormatting.Dataset.Segment> dbCreateTextFormattingSegments (String featureName, String sofaFile, String sofaID, Collection<String> categoriesWhitelist, Collection<String> categoriesBlacklist) throws SQLException {

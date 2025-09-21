@@ -18,7 +18,8 @@
                   "type": "TextFormatting",
                   "id": "Textfaerbung",
                   "settings": {
-                    "sofaFile": "ID21200300.xmi"
+                    "sofaFile": "ID21200300.xmi",
+                    "style": "underline"
                   }
                 },
                 {

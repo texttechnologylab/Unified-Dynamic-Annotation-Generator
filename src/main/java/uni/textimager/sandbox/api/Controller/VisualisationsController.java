@@ -26,7 +26,7 @@ public class VisualisationsController {
     /** Create new pipeline entry. 201 Created, Location header. 409 if exists. 400 if invalid JSON. */
     @PostMapping(value = "/visualisations", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> createVisualisations(
-            @RequestParam(name = "pipelineId") String pipelineId,
+            @RequestParam(name = "pipelineId", defaultValue = "main") String pipelineId,
             @RequestBody String json
     ) {
         try {

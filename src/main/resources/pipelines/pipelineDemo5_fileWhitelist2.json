@@ -2,39 +2,29 @@
   "pipelines": [
     {
       "id": "main",
-      "customTypes": [
-        {
-          "id": "CUSTOM1",
-          "contains": ["POS", "MORPHOLOGICALFEATURES", "LEMMA"]
-        }
-      ],
       "sources": [
         {
           "id": "MyPOS",
           "type": "POS",
-          "settings": {
-            "sourceFilesWhitelist": [],
-            "sourceFilesBlacklist": []
-          },
           "createsGenerators": [
             {
               "type": "combi",
               "settings": {
-                "categoriesBlacklist": ["PUNCT"]
+                "categoriesWhitelist": ["NOUN", "ADV", "PRON", "ADP", "VERB"],
+                "sourceFilesWhitelist": ["ID21200100.xmi"]
               },
               "createsGenerators": [
                 {
                   "type": "CategoryNumberColorMapping",
                   "id": "Gesamtverteilung",
                   "settings": {
-                    "categoriesBlacklist": ["DET"]
+                    "categoriesWhitelist": ["NOUN", "ADV", "VERB"]
                   }
                 },
                 {
                   "type": "TextFormatting",
                   "id": "Textfaerbung",
                   "settings": {
-                    "categoriesBlacklist": ["article"],
                     "sofaFile": "ID21200100.xmi",
                     "style": "underline"
                   }

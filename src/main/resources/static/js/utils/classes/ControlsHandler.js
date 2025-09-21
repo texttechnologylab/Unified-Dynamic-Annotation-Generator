@@ -1,4 +1,4 @@
-import { minOf, maxOf, randomId } from "./helper.js";
+import { minOf, maxOf, randomId } from "../modules/helper.js";
 
 export default class ControlsHandler {
   constructor(node, icons) {
