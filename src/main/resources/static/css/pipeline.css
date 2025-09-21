@@ -84,7 +84,7 @@
   }
 
   .dv-btn-delete {
-    font-size: 0.875rem;
+    font-size: var(--font-size-sm);
     padding: 0;
   }
 
@@ -125,7 +125,7 @@
 }
 
 .dv-btn-toolbar {
-  font-size: 1.25rem;
+  font-size: var(--font-size-lg);
   padding: 0.125rem 0.5rem;
   margin: 0.2rem;
 }

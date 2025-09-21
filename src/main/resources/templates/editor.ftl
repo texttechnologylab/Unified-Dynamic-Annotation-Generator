@@ -9,21 +9,14 @@
     <link rel="stylesheet" href="/css/global.css" />
     <link rel="stylesheet" href="/css/editor.css" />
     <link rel="stylesheet" href="/css/controls.css" />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/gridstack@12.3.3/dist/gridstack.min.css"
-    />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@12.3.3/dist/gridstack.min.css" />
   </head>
 
   <body>
+    <#include "/components/accordion.ftl">
+
     <div class="dv-layout">
       <aside class="dv-sidebar">
         <div class="dv-sidebar-header">
@@ -31,34 +24,102 @@
         </div>
 
         <div class="dv-sidebar-body">
-          <div class="dv-label">Name</div>
-          <input type="text" class="form-control mb-3" value="main" />
+          <div class="">Name</div>
+          <input type="text" class="w-100" value="main" />
 
-          <button type="button" class="dv-btn-outline w-100 mb-5">
+          <button type="button" class="dv-btn-outline w-100 my-2">
             <i class="bi bi-plus-circle"></i>
             Add generator
           </button>
 
-          <button type="button" class="dv-btn-primary w-100 mb-3">Save</button>
-          <button type="button" class="dv-btn-outline w-100 mb-3">
-            Cancel
-          </button>
+          <@accordion icon="bi bi-grid" title="Widgets">
+            <p>Add new widgets by dragging them into the grid area.</p>
+            <div class="dv-widgets-container">
+              <template id="new-widget-template">
+                <div class="dv-new-widget">
+                  <div class="dv-widget-draggable" title="Drag to add">
+                    <i></i>
+                  </div>
+                  <span class="dv-widget-title"></span>
+                </div>
+              </template>
+            </div>
+          </@accordion>
         </div>
       </aside>
-
+      
       <div class="dv-main">
-        <div class="grid-stack"></div>
+        <div class="grid-stack">
+          <template id="grid-stack-item-template">
+            <div class="grid-stack-item-content">
+              <button type="button">Settings</button>
+            </div>
+          </template>
+        </div>
       </div>
     </div>
 
     <script type="module">
+      import components from "/js/utils/modules/components.js";
       import { GridStack } from "https://cdn.jsdelivr.net/npm/gridstack@12.3.3/+esm";
 
-      const grid = GridStack.init();
-      grid.addWidget({ w: 7, h: 5, content: "BarChart" });
-      grid.addWidget({ w: 5, h: 5, content: "HighlightText" });
-      grid.addWidget({ w: 5, h: 5, content: "PieChart" });
-      grid.addWidget({ w: 7, h: 5, content: "BarChart2" });
+      const container = document.querySelector(".dv-widgets-container")
+      const template = document.querySelector("#new-widget-template");
+      const widgets = [
+        {
+          title: "Text",
+          icon: "bi bi-fonts"
+        },
+        {
+          title: "Image",
+          icon: "bi bi-image"
+        },
+        {
+          title: "Bar Chart",
+          icon: "bi bi-bar-chart"
+        },
+        {
+          title: "Pie Chart",
+          icon: "bi bi-pie-chart"
+        },
+        {
+          title: "Line Chart",
+          icon: "bi bi-graph-up"
+        },
+        {
+          title: "Highlight Text",
+          icon: "bi bi-card-text"
+        },
+        {
+          title: "Network 2D",
+          icon: "bi bi-diagram-3"
+        },
+        {
+          title: "Map 2D",
+          icon: "bi bi-map"
+        },
+      ];
+
+      widgets.forEach(widget => {
+        const node = template.content.cloneNode(true);
+        const icon = node.querySelector("i");
+        const span = node.querySelector("span");
+        icon.className = widget.icon;
+        span.textContent = widget.title;
+        span.title = widget.title;
+
+        container.appendChild(node);
+      })
+
+      
+      const grid = GridStack.init({
+        minRow: 6,
+        float: true,
+        acceptWidgets: ".dv-widget-draggable",
+      });
+      GridStack.setupDragIn(".dv-widget-draggable");
+
+      components.initAccordions();
     </script>
   </body>
 </html>
