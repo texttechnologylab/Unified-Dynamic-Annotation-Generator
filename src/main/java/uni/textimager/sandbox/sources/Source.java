@@ -69,8 +69,8 @@ public class Source implements SourceInterface {
 
     // Don't leave out filtered generators that are part of a combi with at least one relevant generator to keep visualization results consistent
     @Override
-    public List<Generator> createGenerators() throws SQLException {
-        ArrayList<Generator> generators = new ArrayList<>();
+    public Map<String, Generator> createGenerators() throws SQLException {
+        HashMap<String, Generator> generators = new HashMap<>();
 
         JSONView createsGenerators = config.get("createsGenerators");
         for (JSONView generatorEntry : createsGenerators) {
@@ -88,23 +88,25 @@ public class Source implements SourceInterface {
                     System.out.println("Skipping irrelevant combi-generator \"" + combiName + "\".");
                     continue;
                 }
-                generators.addAll(createGeneratorsCombi(subGeneratorNodes, generatorEntry));
+                generators.putAll(createGeneratorsCombi(subGeneratorNodes, generatorEntry));
             } else if (generatorType.equals("bundle")) {
                 for (JSONView subGeneratorEntry : generatorEntry.get("createsGenerators")) {
                     if (!relevantGenerators.containsKey(subGeneratorEntry.get("id").toString())) {
                         System.out.println("Skipping irrelevant bundle-part generator \"" + subGeneratorEntry.get("id") + "\".");
                         continue;
                     }
-                    PipelineNode generatorNode = generatorsToBuild.get(subGeneratorEntry.get("id").toString());
-                    generators.add(createGenerator(generatorNode, generatorEntry, subGeneratorEntry));
+                    String generatorID = generatorEntry.get("id").toString();
+                    PipelineNode generatorNode = generatorsToBuild.get(generatorID);
+                    generators.put(generatorID, createGenerator(generatorNode, generatorEntry, subGeneratorEntry));
                 }
             } else {
                 if (!relevantGenerators.containsKey(generatorEntry.get("id").toString())) {
                     System.out.println("Skipping irrelevant generator \"" + generatorEntry.get("id") + "\".");
                     continue;
                 }
-                PipelineNode generatorNode = generatorsToBuild.get(generatorEntry.get("id").toString());
-                generators.add(createGenerator(generatorNode, null, generatorEntry));
+                String generatorID = generatorEntry.get("id").toString();
+                PipelineNode generatorNode = generatorsToBuild.get(generatorID);
+                generators.put(generatorID, createGenerator(generatorNode, null, generatorEntry));
             }
 
         }
@@ -113,7 +115,7 @@ public class Source implements SourceInterface {
     }
 
 
-    private Collection<Generator> createGeneratorsCombi(Collection<PipelineNode> generators, JSONView configCombi) throws SQLException {
+    private Map<String, Generator> createGeneratorsCombi(Collection<PipelineNode> generators, JSONView configCombi) throws SQLException {
         // Step 1 - Find common traits for generators
         HashMap<String, Map<String, Color>> mapFeatureToCategoryColorMap = new HashMap<>();
         for (PipelineNode g : generators) {
@@ -132,7 +134,7 @@ public class Source implements SourceInterface {
         }
 
         // Step 3 - Create generators using the common data
-        ArrayList<Generator> combiGenerators = new ArrayList<>();
+        HashMap<String, Generator> combiGenerators = new HashMap<>();
         for (PipelineNode g : generators) {
             String generatorID = g.getConfig().get("id").toString();
             String generatorType = g.getConfig().get("type").toString();
@@ -146,9 +148,9 @@ public class Source implements SourceInterface {
                 if (singleColor == null) {
                     Map<String, Color> categoryColorMap = new HashMap<>(mapFeatureToCategoryColorMap.get(featureName));
                     categoryColorMap.keySet().retainAll(CategoryNumberMapping.calculateTotalFromCategoryCountMap(categoryNumberMap).keySet());
-                    combiGenerators.add(new CategoryNumberColorMapping(generatorID, categoryNumberMap, categoryColorMap));
+                    combiGenerators.put(generatorID, new CategoryNumberColorMapping(generatorID, categoryNumberMap, categoryColorMap));
                 } else {
-                    combiGenerators.add(new CategoryNumberColorMapping(generatorID, categoryNumberMap, singleColor));
+                    combiGenerators.put(generatorID, new CategoryNumberColorMapping(generatorID, categoryNumberMap, singleColor));
                 }
             } else if (generatorType.equals("TextFormatting")) {
                 String configSofaFile = generateBundleAttribute(configCombi, g.getConfig(), "sofaFile");
@@ -168,9 +170,9 @@ public class Source implements SourceInterface {
                 }
                 Collection<String> categoriesWhitelist = generateCategoriesWhitelist(configCombi, g.getConfig());
                 Collection<String> categoriesBlacklist = generateCategoriesBlacklist(configCombi, g.getConfig());
-                combiGenerators.add(dbBuildTextFormatting(featureName, sofaFile, sofaID, categoriesWhitelist, categoriesBlacklist, categoryColorMap, generatorID, sofaString, style));
+                combiGenerators.put(generatorID, dbBuildTextFormatting(featureName, sofaFile, sofaID, categoriesWhitelist, categoriesBlacklist, categoryColorMap, generatorID, sofaString, style));
             } else { // Default case: Just treat the unknown bundle generator like a normal single generator.
-                combiGenerators.add(createGenerator(g, configCombi, g.getConfig()));
+                combiGenerators.put(generatorID, createGenerator(g, configCombi, g.getConfig()));
             }
         }
 
