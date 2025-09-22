@@ -1,6 +1,7 @@
 package uni.textimager.sandbox.generators;
 
 
+import lombok.Getter;
 import org.jooq.DSLContext;
 import org.jooq.Query;
 import org.jooq.impl.DSL;
@@ -12,7 +13,9 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.List;
+import java.util.stream.Collectors;
 
+@Getter
 public class CategoryNumberMapping extends Generator implements CategoryNumberMappingInterface {
     Map<String, Map<String, Double>> categoryNumberMap;
     Color fixedColor;
@@ -139,5 +142,43 @@ public class CategoryNumberMapping extends Generator implements CategoryNumberMa
         }
 
         return totals;
+    }
+
+    public static Map<String, Map<String, Double>> keepTotalTopN(Map<String, Map<String, Double>> categoryCountMap, int n) {
+        Set<String> topN = keepTopN(calculateTotalFromCategoryCountMap(categoryCountMap), n).keySet();
+        HashMap<String, Map<String, Double>> resultMap = new HashMap<>();
+        for (Map.Entry<String, Map<String, Double>> entry : categoryCountMap.entrySet()) {
+            resultMap.put(entry.getKey(), keepKeys(entry.getValue(), topN));
+        }
+        return resultMap;
+    }
+
+    public static Map<String, Double> keepTopN(Map<String, Double> categoryCountMap, int n) {
+        if (n < 1) {
+            return new HashMap<>(categoryCountMap);
+        }
+        if (categoryCountMap == null) {
+            return new HashMap<>();
+        }
+        return categoryCountMap.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .limit(n)
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue
+                ));
+    }
+
+    private static <K, V> Map<K, V> keepKeys(Map<K, V> original, Set<K> allowedKeys) {
+        if (original == null || allowedKeys == null) {
+            return Collections.emptyMap();
+        }
+
+        return original.entrySet().stream()
+                .filter(entry -> allowedKeys.contains(entry.getKey()))
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue
+                ));
     }
 }

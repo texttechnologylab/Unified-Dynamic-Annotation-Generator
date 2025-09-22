@@ -2,16 +2,19 @@ package uni.textimager.sandbox.pipeline;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
+import uni.textimager.sandbox.generators.CategoryNumberColorMapping;
 import uni.textimager.sandbox.generators.CategoryNumberMapping;
 import uni.textimager.sandbox.generators.Generator;
 import uni.textimager.sandbox.generators.TextFormatting;
 import uni.textimager.sandbox.sources.DBAccess;
 import uni.textimager.sandbox.sources.Source;
 
+import java.awt.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.List;
 
 @Getter
 public class Pipeline {
@@ -76,12 +79,14 @@ public class Pipeline {
             if (generatorNode.getType() != PipelineNodeType.DERIVED_GENERATOR) continue;
             String generatorID = generatorNode.getConfig().get("id").toString();
             HashMap<String, Generator> subGenerators = new HashMap<>();
+            HashMap<String, JSONView> subGeneratorsConfig = new HashMap<>();
             HashMap<DerivedGeneratorSubtype, Integer> subtypesCounts = new HashMap<>();
-            JSONView subNodes = generatorNode.getConfig().get("generators");
+            JSONView subNodes = generatorNode.getConfig().get("fromGenerators");
             for (JSONView node : subNodes) {
                 String nodeID = node.get("id").toString();
                 Generator subGenerator = generatedGenerators.get(nodeID);
                 subGenerators.put(nodeID, subGenerator);
+                subGeneratorsConfig.put(nodeID, node);
                 if (subGenerator instanceof TextFormatting) {
                     subtypesCounts.merge(DerivedGeneratorSubtype.TEXT_FORMATTING, 1, Integer::sum);
                 } else if (subGenerator instanceof CategoryNumberMapping) {
@@ -105,6 +110,25 @@ public class Pipeline {
                     } else {
                         System.out.println("Didn't create generator \"" + generatorNode.getConfig().get("id") + "\". There was a text mismatch.");
                     }
+                } else if (subtypesCounts.containsKey(DerivedGeneratorSubtype.CATEGORY_NUMBER)) {
+                    Map<String, Map<String, Double>> categoryNumberMap = new HashMap<>();
+                    Map<String, Color> categoryColorMap = new HashMap<>();
+                    for (Map.Entry<String, Generator> entry : subGenerators.entrySet()) {
+                        JSONView config = subGeneratorsConfig.get(entry.getKey());
+                        CategoryNumberColorMapping subCategoryNumberMapping = (CategoryNumberColorMapping) entry.getValue();
+                        int keepTop = -1;
+                        try { keepTop = Integer.parseInt(config.get("settings").get("keepTop").toString());
+                        } catch (Exception ignored) {}
+
+                        if (keepTop == -1) {
+                            // Todo: fertig machen, inklusive static color (einfach in color map machen?) => Zuerst CategoryNumber(Color)Mappings unifien
+                        } else {
+                            categoryNumberMap.putAll(CategoryNumberMapping.keepTotalTopN(subCategoryNumberMapping.getCategoryNumberMap(), keepTop));
+                        }
+                        categoryColorMap.putAll(subCategoryNumberMapping.getCategoryColorMap());
+                    }
+                    CategoryNumberColorMapping categoryNumberMapping = new CategoryNumberColorMapping(generatorID, categoryNumberMap, categoryColorMap);
+                    generatedGenerators.put(generatorID, categoryNumberMapping);
                 }
             } else if (subtypesCounts.size() > 1) {
                 System.out.println("Didn't create generator \"" + generatorNode.getConfig().get("id") + "\". Sub-generators with different types not supported yet.");
@@ -191,7 +215,7 @@ public class Pipeline {
             for (JSONView derivedGeneratorEntry : derivedGeneratorsView) {
                 HashMap<String, PipelineNode> dependencies = new HashMap<>();
                 String generatorID = derivedGeneratorEntry.get("id").toString();
-                JSONView dependenciesGenerators = derivedGeneratorEntry.get("generators");
+                JSONView dependenciesGenerators = derivedGeneratorEntry.get("fromGenerators");
                 for (JSONView dependencyEntry : dependenciesGenerators) {
                     String dependencyID = dependencyEntry.get("id").toString();
                     PipelineNode dependency = generators.get(dependencyID);

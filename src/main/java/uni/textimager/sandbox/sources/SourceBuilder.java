@@ -36,7 +36,7 @@ public class SourceBuilder implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws SQLException, IOException {
-        Pipeline pipeline = Pipeline.fromJSON("pipelines/pipelineDemo5_combinedGenerator.json");
+        Pipeline pipeline = Pipeline.fromJSON("pipelines/pipelineUseCase2.json");
         System.out.println("Pipeline loaded: " + pipeline.getId());
         dbSavePipelinesVisualizationsJSONs(List.of(pipeline));
         dbBuildCustomTypes(pipeline);

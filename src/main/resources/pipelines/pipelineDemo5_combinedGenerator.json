@@ -59,7 +59,7 @@
       "derivedGenerators": [
         {
           "id": "text_formatting",
-          "generators": [
+          "fromGenerators": [
             {
               "id": "Textfaerbung"
             },
