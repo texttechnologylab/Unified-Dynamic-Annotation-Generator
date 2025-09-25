@@ -7,9 +7,6 @@
 
 .dv-main {
   grid-area: main;
-  display: flex;
-  justify-content: space-evenly;
-  flex-wrap: wrap;
   background-color: var(--bg-color);
 }
 
@@ -108,10 +105,16 @@
 
 /* Chart */
 .dv-chart {
+  opacity: 0;
+  display: flex;
+  flex-direction: column;
   box-shadow: var(--shadow);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
-  margin: 3rem;
+}
+
+.dv-chart.show {
+  opacity: 1;
 }
 
 .dv-toolbar {
@@ -133,6 +136,7 @@
 .dv-chart-area {
   position: relative;
   overflow: hidden;
+  flex-grow: 1;
   background-color: var(--bg-color);
   border-bottom-left-radius: inherit;
   border-bottom-right-radius: inherit;
@@ -140,11 +144,13 @@
 
 .dv-sidepanel {
   position: absolute;
-  top: 0;
-  left: -40%;
-  width: 40%;
+  left: -18rem;
+  width: 18rem;
   height: 100%;
+  display: flex;
+  flex-direction: column;
   background-color: var(--bg-color);
+  padding: 1rem;
   opacity: 0.97;
   transition: all 300ms ease-in-out;
   z-index: 10;
@@ -160,12 +166,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem;
+  margin-bottom: 1rem;
 }
 
 .dv-sidepanel-body {
-  padding: 1rem;
-  overflow-y: auto;
+  flex-grow: 1;
+  overflow: auto;
 }
 
 .dv-tooltip {

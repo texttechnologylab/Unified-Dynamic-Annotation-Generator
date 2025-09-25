@@ -3,7 +3,7 @@ import D3Visualization from "../D3Visualization.js";
 import ExportHandler from "../../utils/classes/ExportHandler.js";
 
 export default class Network2D extends D3Visualization {
-  constructor(root, endpoint, { width, height, radius }) {
+  constructor(root, endpoint, { width = 800, height = 600, radius = 10 }) {
     super(
       root,
       endpoint,

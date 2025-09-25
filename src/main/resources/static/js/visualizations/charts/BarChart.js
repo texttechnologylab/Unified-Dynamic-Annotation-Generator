@@ -5,7 +5,11 @@ import ExportHandler from "../../utils/classes/ExportHandler.js";
 import { maxOf, minOf } from "../../utils/modules/helper.js";
 
 export default class BarChart extends D3Visualization {
-  constructor(root, endpoint, { width, height, horizontal = false }) {
+  constructor(
+    root,
+    endpoint,
+    { width = 800, height = 600, horizontal = false }
+  ) {
     super(
       root,
       endpoint,

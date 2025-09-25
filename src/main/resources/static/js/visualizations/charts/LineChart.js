@@ -5,7 +5,11 @@ import ExportHandler from "../../utils/classes/ExportHandler.js";
 import { flatData } from "../../utils/modules/helper.js";
 
 export default class LineChart extends D3Visualization {
-  constructor(root, endpoint, { width, height, line = true, dots = true }) {
+  constructor(
+    root,
+    endpoint,
+    { width = 800, height = 600, line = true, dots = true }
+  ) {
     super(
       root,
       endpoint,

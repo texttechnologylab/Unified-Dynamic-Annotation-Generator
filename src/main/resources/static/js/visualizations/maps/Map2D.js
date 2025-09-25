@@ -3,7 +3,7 @@ import D3Visualization from "../D3Visualization.js";
 import ExportHandler from "../../utils/classes/ExportHandler.js";
 
 export default class Map2D extends D3Visualization {
-  constructor(root, endpoint, { width, height }) {
+  constructor(root, endpoint, { width = 800, height = 600 }) {
     super(
       root,
       endpoint,
