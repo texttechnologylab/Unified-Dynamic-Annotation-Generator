@@ -206,23 +206,6 @@ public class JooqDatabaseWriter extends JCasAnnotator_ImplBase {
                 .constraints(DSL.constraint(DSL.name(cut("pk_documents"))).primaryKey("doc_id"))
                 .execute();
 
-        dsl.createTableIfNotExists(DSL.name(schema, "tablenames"))
-                .column("hash", SQLDataType.CLOB.nullable(false))
-                .column("table_name", SQLDataType.CLOB.nullable(false))
-                .column("uima_type_uri", SQLDataType.CLOB.nullable(true))
-                .constraints(
-                        DSL.constraint(DSL.name(cut("pk_tablenames"))).primaryKey("hash"),
-                        DSL.constraint(DSL.name(cut("uq_tablenames_tbl"))).unique("table_name")
-                )
-                .execute();
-
-        dsl.createTableIfNotExists(DSL.name(schema, "files"))
-                .column("filename", SQLDataType.CLOB.nullable(false))
-                .column("doc_id", SQLDataType.CLOB.nullable(false))
-                .column("created_at", SQLDataType.TIMESTAMPWITHTIMEZONE.defaultValue(DSL.currentOffsetDateTime()))
-                .constraints(DSL.constraint(DSL.name(cut("pk_files"))).primaryKey("filename", "doc_id"))
-                .execute();
-
         dsl.createTableIfNotExists(DSL.name(schema, "type_system_fingerprints"))
                 .column("ts_hash", SQLDataType.CLOB.nullable(false))
                 .column("created_at", SQLDataType.TIMESTAMPWITHTIMEZONE.defaultValue(DSL.currentOffsetDateTime()))
@@ -267,30 +250,17 @@ public class JooqDatabaseWriter extends JCasAnnotator_ImplBase {
         String uri = safe(md.getDocumentUri(), md::getDocumentTitle, () -> docId);
         String lang = jCas.getDocumentLanguage();
 
-        // filename for FILES table
-        String filename;
-        if (uri != null) {
-            int cutAt = Math.max(uri.lastIndexOf('/'), uri.lastIndexOf('\\'));
-            filename = (cutAt >= 0 && cutAt < uri.length() - 1) ? uri.substring(cutAt + 1) : uri;
-        } else if (!isBlank(md.getDocumentTitle())) {
-            filename = md.getDocumentTitle();
-        } else {
-            filename = docId;
-        }
-
         String tsHash = computeTypeSystemHash(ts);
         String contentHash = computeDocumentContentHash(jCas, ts);
 
         // If unchanged, still ensure FILES mapping and also SOFAs (idempotent upsert)
         if (isDocumentUpToDate(docId, tsHash, contentHash)) {
-            if (!isBlank(filename)) upsertFile(filename, docId);
             collectAndUpsertSofas(jCas, docId);  // cheap no-op if already present
             return;
         }
 
         // Update / insert the document row with the new fingerprints
         upsertDocument(docId, uri, lang, tsHash, contentHash);
-        if (!isBlank(filename)) upsertFile(filename, docId);
 
         // Persist all SOFAs for this document up-front
         collectAndUpsertSofas(jCas, docId);
@@ -392,9 +362,6 @@ public class JooqDatabaseWriter extends JCasAnnotator_ImplBase {
             String uimaType = t.getName();
             String tableNameHash = typeToTable.computeIfAbsent(uimaType, this::toSafeTableName);
             if (createdTables.contains(tableNameHash)) continue;
-
-            String originalDescriptive = sanitizeIdent(uimaType.replace('.', '_'));
-            upsertTableNameMapping(tableNameHash, originalDescriptive, uimaType);
 
             String pkCol = pkColName(tableNameHash);
             String colRowH = sysColName(tableNameHash, "row_hash");
@@ -547,10 +514,6 @@ public class JooqDatabaseWriter extends JCasAnnotator_ImplBase {
                 } catch (DataAccessException ignoreDup) { /* ignore */ }
         }
 
-        // also keep TABLENAMES in sync (unchanged)
-        String originalDescriptive = sanitizeIdent(uimaType.replace('.', '_'));
-        upsertTableNameMapping(tableNameHash, originalDescriptive, uimaType);
-
         typeToTable.put(uimaType, tableNameHash);
     }
 
@@ -583,73 +546,6 @@ public class JooqDatabaseWriter extends JCasAnnotator_ImplBase {
         String base = sanitizeIdent(f.getShortName() != null ? f.getShortName() : f.getName());
         // add _f_ to guarantee no clash with system columns like doc_id, fs_begin, ...
         return cut(tableHash + "_f_" + base);
-    }
-
-    private void upsertTableNameMapping(String hash, String originalTableName, String uimaType) {
-        switch (dsl.dialect().family()) {
-            case POSTGRES:
-                dsl.insertInto(table(name(schema, "tablenames")))
-                        .columns(field("hash"), field("table_name"), field("uima_type_uri"))
-                        .values(hash, originalTableName, uimaType)
-                        .onConflict(field("hash")).doUpdate()
-                        .set(field("table_name"), originalTableName)
-                        .set(field("uima_type_uri"), uimaType)
-                        .execute();
-                break;
-            case H2:
-            case MARIADB:
-            case MYSQL:
-            case DUCKDB:
-            case SQLITE:
-                dsl.mergeInto(table(name(schema, "tablenames")))
-                        .usingDual()
-                        .on(field("hash").eq(hash))
-                        .whenMatchedThenUpdate()
-                        .set(field("table_name"), originalTableName)
-                        .set(field("uima_type_uri"), uimaType)
-                        .whenNotMatchedThenInsert(field("hash"), field("table_name"), field("uima_type_uri"))
-                        .values(hash, originalTableName, uimaType)
-                        .execute();
-                break;
-            default:
-                try {
-                    dsl.insertInto(table(name(schema, "tablenames")))
-                            .columns(field("hash"), field("table_name"), field("uima_type_uri"))
-                            .values(hash, originalTableName, uimaType)
-                            .execute();
-                } catch (DataAccessException ignoreDup) { /* ignore */ }
-        }
-    }
-
-    private void upsertFile(String filename, String docId) {
-        switch (dsl.dialect().family()) {
-            case POSTGRES:
-                dsl.insertInto(table(name(schema, "files")))
-                        .columns(field("filename"), field("doc_id"))
-                        .values(filename, docId)
-                        .onConflict(field("filename"), field("doc_id")).doNothing()
-                        .execute();
-                break;
-            case H2:
-            case MARIADB:
-            case MYSQL:
-            case DUCKDB:
-            case SQLITE:
-                dsl.mergeInto(table(name(schema, "files")))
-                        .usingDual()
-                        .on(field("filename").eq(filename).and(field("doc_id").eq(docId)))
-                        .whenNotMatchedThenInsert(field("filename"), field("doc_id"))
-                        .values(filename, docId)
-                        .execute();
-                break;
-            default:
-                try {
-                    dsl.insertInto(table(name(schema, "files")))
-                            .columns(field("filename"), field("doc_id"))
-                            .values(filename, docId)
-                            .execute();
-                } catch (DataAccessException ignoreDup) { /* ignore */ }
-        }
     }
 
     private String computeTypeSystemHash(TypeSystem ts) {
