@@ -18,7 +18,7 @@
   font-size: var(--font-size-sm);
   cursor: pointer;
   background-color: var(--bg-color);
-  background-image: url("../img/chevron.svg");
+  background-image: url("/img/chevron.svg");
   background-repeat: no-repeat;
   background-position: right 0.75rem center;
   background-size: 10px;

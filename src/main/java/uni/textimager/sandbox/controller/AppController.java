@@ -35,7 +35,7 @@ public class AppController {
 		model.addAttribute("title", "Dynamic Visualizations");
 		model.addAttribute("pipelines", "[\"main\", \"example_pipeline\", \"pipeline2\"]");
 
-		return "index";
+		return "/pages/index/index";
 	}
 
 	@GetMapping("/editor")
@@ -45,7 +45,7 @@ public class AppController {
 		model.addAttribute("title", "Editor - Dynamic Visualizations");
 		model.addAttribute("json", json);
 
-		return "editor";
+		return "/pages/editor/editor";
 	}
 
 	@PostMapping("/editor")
@@ -55,7 +55,7 @@ public class AppController {
 		model.addAttribute("title", "Editor - Dynamic Visualizations");
 		model.addAttribute("json", json);
 
-		return "editor";
+		return "/pages/editor/editor";
 	}
 
 	@GetMapping("/editor/{id}")
@@ -65,7 +65,7 @@ public class AppController {
 		model.addAttribute("title", id + " - Editor - Dynamic Visualizations");
 		model.addAttribute("json", json);
 
-		return "editor";
+		return "/pages/editor/editor";
 	}
 
 	@GetMapping("/pipeline/{id}")
@@ -77,6 +77,6 @@ public class AppController {
 		model.addAttribute("filters", filters);
 		model.addAttribute("configs", configs);
 
-		return "pipeline";
+		return "/pages/pipeline/pipeline";
 	}
 }

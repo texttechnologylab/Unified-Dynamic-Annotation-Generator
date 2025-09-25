@@ -1,5 +1,5 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
-import { corpusFilter } from "../filter/CorpusFilter.js";
+import { corpusFilter } from "../pages/pipeline/filter/CorpusFilter.js";
 
 export default class D3Visualization {
   constructor(root, endpoint, margin, width, height) {

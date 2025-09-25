@@ -36,7 +36,7 @@
 .dv-btn-close {
   width: 1rem;
   height: 1rem;
-  background: transparent url("../img/close.svg") center/1rem auto no-repeat;
+  background: transparent url("/img/close.svg") center/1rem auto no-repeat;
   box-sizing: content-box;
   opacity: 0.5;
   padding: 0.25rem;
@@ -216,6 +216,7 @@
   width: 20rem;
   background-color: var(--bg-color);
   border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
   padding: 1rem;
 }
 
@@ -228,6 +229,7 @@
 
 .dv-modal-body {
   display: flex;
+  flex-direction: column;
   margin-bottom: 1rem;
 }
 
