@@ -8,37 +8,104 @@
           "type": "POS",
           "createsGenerators": [
             {
-              "type": "CategoryNumberColorMapping",
-              "id": "Generator_POS1"
+              "type": "combi",
+              "settings": {
+                "categoriesWhitelist": ["NOUN", "ADV", "PRON", "ADP", "VERB"],
+                "sourceFilesWhitelist": ["ID21200100.xmi"]
+              },
+              "createsGenerators": [
+                {
+                  "type": "CategoryNumberColorMapping",
+                  "id": "POS_Numbers"
+                },
+                {
+                  "type": "TextFormatting",
+                  "id": "POS_Formatting",
+                  "settings": {
+                    "sofaFile": "ID21200100.xmi",
+                    "style": "underline"
+                  }
+                }
+              ]
+            }
+          ]
+        },{
+          "id": "Source_NE1",
+          "type": "NAMEDENTITY",
+          "createsGenerators": [
+            {
+              "type": "combi",
+              "settings": {
+                "sourceFilesWhitelist": ["ID21200100.xmi"]
+              },
+              "createsGenerators": [
+                {
+                  "type": "CategoryNumberColorMapping",
+                  "id": "NE_Numbers"
+                },
+                {
+                  "type": "TextFormatting",
+                  "id": "NE_Formatting",
+                  "settings": {
+                    "sofaFile": "ID21200100.xmi",
+                    "style": "highlight"
+                  }
+                }
+              ]
             }
           ]
         }
       ],
       "derivedGenerators": [
         {
-          "id": "Generator_POS2",
+          "id": "Total_Formatting",
           "fromGenerators": [
             {
-              "id": "Generator_POS1",
-              "settings": {
-                "keepTop": 5
-              }
+              "id": "POS_Formatting"
+            },
+            {
+              "id": "NE_Formatting"
             }
           ]
         }
       ],
       "visualizations": [
         {
-          "id": "Diagram_POS1",
+          "id": "bar-chart",
           "type": "BarChart",
-          "title": "Parts of Speech",
+          "title": "Parts of Speech (POS)",
           "generator": {
-            "id": "Generator_POS2"
+            "id": "POS_Numbers"
           },
           "options": {
             "width": 800,
             "height": 600,
             "horizontal": false
+          }
+        },
+        {
+          "id": "text",
+          "type": "HighlightText",
+          "title": "POS & NE in one TextFormatting",
+          "generator": {
+            "id": "Total_Formatting"
+          },
+          "options": {
+            "width": 600,
+            "height": 600
+          }
+        },
+        {
+          "id": "bar-chart2",
+          "type": "BarChart",
+          "title": "Named Entities (NE)",
+          "generator": {
+            "id": "NE_Numbers"
+          },
+          "options": {
+            "width": 800,
+            "height": 600,
+            "horizontal": true
           }
         }
       ]

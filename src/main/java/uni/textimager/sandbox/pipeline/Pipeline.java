@@ -121,12 +121,21 @@ public class Pipeline {
                         } catch (Exception ignored) {}
 
                         if (keepTop == -1) {
-                            // Todo: fertig machen, inklusive static color (einfach in color map machen?) => Zuerst CategoryNumber(Color)Mappings unifien
+                            // Todo: fertig machen, inklusive static color (einfach in color map machen?) und unnötige farben rausschmeißen => Zuerst CategoryNumber(Color)Mappings unifien
                         } else {
                             categoryNumberMap.putAll(CategoryNumberMapping.keepTotalTopN(subCategoryNumberMapping.getCategoryNumberMap(), keepTop));
                         }
                         categoryColorMap.putAll(subCategoryNumberMapping.getCategoryColorMap());
+                        String capitalization = null;
+                        try {
+                            capitalization = config.get("settings").get("categoryCapitalization").toString();
+                        } catch (Exception ignored) {}
+                        if (capitalization != null) { // Todo: Check for duplicates that exist now due to Lowercase/Uppercase (unify and print warning?)
+                            categoryNumberMap = CategoryNumberMapping.capitalizeCategoryNumberKeys(categoryNumberMap, capitalization);
+                            categoryColorMap = CategoryNumberMapping.capitalizeCategoryKeys(categoryColorMap, capitalization);
+                        }
                     }
+
                     CategoryNumberColorMapping categoryNumberMapping = new CategoryNumberColorMapping(generatorID, categoryNumberMap, categoryColorMap);
                     generatedGenerators.put(generatorID, categoryNumberMapping);
                 }

@@ -8,33 +8,20 @@
           "type": "POS",
           "createsGenerators": [
             {
-              "type": "CategoryNumberColorMapping",
+              "type": "CategoryNumberMapping",
               "id": "Generator_POS1"
             }
           ]
         }
       ],
-      "derivedGenerators": [
-        {
-          "id": "Generator_POS2",
-          "fromGenerators": [
-            {
-              "id": "Generator_POS1",
-              "settings": {
-                "keepTop": 10,
-                "categoryCapitalization": "TitleCase"
-              }
-            }
-          ]
-        }
-      ],
+      "derivedGenerators": [],
       "visualizations": [
         {
           "id": "Diagram_POS1",
           "type": "BarChart",
           "title": "Parts of Speech",
           "generator": {
-            "id": "Generator_POS2"
+            "id": "Generator_POS1"
           },
           "options": {
             "width": 800,

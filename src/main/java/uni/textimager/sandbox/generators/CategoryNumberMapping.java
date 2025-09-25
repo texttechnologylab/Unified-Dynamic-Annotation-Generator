@@ -129,6 +129,31 @@ public class CategoryNumberMapping extends Generator implements CategoryNumberMa
         }
     }
 
+    public static Map<String, Map<String, Double>> capitalizeCategoryNumberKeys(Map<String, Map<String, Double>> categoryNumberMap, String capitalization) {
+        HashMap<String, Map<String, Double>> resultMap = new HashMap<>();
+        for (Map.Entry<String, Map<String, Double>> entry : categoryNumberMap.entrySet()) {
+            resultMap.put(entry.getKey(), capitalizeCategoryKeys(entry.getValue(), capitalization));
+        }
+        return resultMap;
+    }
+
+    public static <V> Map<String, V> capitalizeCategoryKeys(Map<String, V> categoryMap, String capitalization) {
+        if (capitalization == null) { return new HashMap<>(categoryMap); }
+        HashMap<String, V> resultMap = new HashMap<>();
+        for (Map.Entry<String, V> entry : categoryMap.entrySet()) {
+            if (capitalization.equalsIgnoreCase("Uppercase")) {
+                resultMap.put(entry.getKey().toUpperCase(), entry.getValue());
+            } else if (capitalization.equalsIgnoreCase("Lowercase")) {
+                resultMap.put(entry.getKey().toLowerCase(), entry.getValue());
+            } else if (capitalization.equalsIgnoreCase("Titlecase")) {
+                resultMap.put(entry.getKey().substring(0, 1).toUpperCase() + entry.getKey().substring(1).toLowerCase(), entry.getValue());
+            } else {
+                return new HashMap<>(categoryMap);
+            }
+        }
+        return resultMap;
+    }
+
 
     public static Map<String, Double> calculateTotalFromCategoryCountMap(Map<String, Map<String, Double>> categoryCountMap) {
         HashMap<String, Double> totals = new HashMap<>();
