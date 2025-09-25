@@ -1,4 +1,4 @@
-<#macro fileInput>
+<#macro fileInput info accept>
   <form 
     id="file-upload" 
     action="/editor" 
@@ -10,7 +10,7 @@
         <i class="bi bi-cloud-arrow-up"></i>
         <div class="dv-drop-area-text">
           <span>Drag and drop file here</span>
-          <span class="dv-drop-area-info">Single file • JSON</span>
+          <span class="dv-drop-area-info">${info}</span>
         </div>
       </div>
 
@@ -19,7 +19,7 @@
         <input
           type="file"
           name="file"
-          accept="application/json"
+          accept="${accept}"
         />
       </label>
     </div>

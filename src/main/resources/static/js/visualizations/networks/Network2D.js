@@ -1,9 +1,9 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import D3Visualization from "../D3Visualization.js";
-import ExportHandler from "../../utils/classes/ExportHandler.js";
+import ExportHandler from "../../pages/pipeline/chart/ExportHandler.js";
 
 export default class Network2D extends D3Visualization {
-  constructor(root, endpoint, { width, height, radius }) {
+  constructor(root, endpoint, { width = 800, height = 600, radius = 10 }) {
     super(
       root,
       endpoint,

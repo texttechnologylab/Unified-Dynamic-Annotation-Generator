@@ -1,17 +1,22 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import D3Visualization from "../D3Visualization.js";
-import ControlsHandler from "../../utils/classes/ControlsHandler.js";
-import ExportHandler from "../../utils/classes/ExportHandler.js";
-import { maxOf, minOf } from "../../utils/modules/helper.js";
+import ControlsHandler from "../../pages/pipeline/chart/ControlsHandler.js";
+import ExportHandler from "../../pages/pipeline/chart/ExportHandler.js";
+import { maxOf, minOf } from "../../shared/modules/utils.js";
 
 export default class PieChart extends D3Visualization {
-  constructor(root, endpoint, { radius, hole = 0 }) {
+  constructor(root, endpoint, { width = 600, height = 600, hole = 0 }) {
     super(
       root,
       endpoint,
-      { top: radius, right: radius, bottom: radius, left: radius },
-      radius * 2,
-      radius * 2
+      {
+        top: height / 2,
+        right: width / 2,
+        bottom: height / 2,
+        left: width / 2,
+      },
+      width,
+      height
     );
     this.controls = new ControlsHandler(this.root.select(".dv-sidepanel-body"));
     this.exports = new ExportHandler(this.root.select(".dv-dropdown"), [
@@ -21,7 +26,7 @@ export default class PieChart extends D3Visualization {
       "json",
     ]);
 
-    this.radius = radius;
+    this.radius = minOf([width, height]) / 2;
     this.hole = hole;
   }
 

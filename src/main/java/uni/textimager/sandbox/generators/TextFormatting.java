@@ -13,11 +13,11 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.List;
 
+@Getter
 public class TextFormatting extends Generator implements TextFormattingInterface {
 
     public static final String DEFAULT_STYLE = "underline";
 
-    @Getter
     private final String filename;
     private final String sofaID;
     private final String text;

@@ -1,4 +1,5 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+import { corpusFilter } from "../pages/pipeline/filter/CorpusFilter.js";
 
 export default class D3Visualization {
   constructor(root, endpoint, margin, width, height) {
@@ -9,7 +10,7 @@ export default class D3Visualization {
 
     this.filter = {};
 
-    this.tooltip = this.root.select(".dv-tooltip");
+    this.tooltip = d3.select(".dv-tooltip");
 
     // Add svg
     this.svg = this.root
@@ -22,16 +23,23 @@ export default class D3Visualization {
       .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
     // Show chart
-    this.root.classed("dv-hidden", false);
+    this.root.classed("show", true);
   }
 
   async fetch() {
     const url = new URL(this.endpoint);
-    for (const [key, value] of Object.entries(this.filter)) {
-      url.searchParams.append(key, value);
-    }
+    const options = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        corpus: corpusFilter.filter,
+        chart: this.filter,
+      }),
+    };
 
-    return await fetch(url).then((response) => response.json());
+    return await fetch(url, options).then((response) => response.json());
   }
 
   clear() {

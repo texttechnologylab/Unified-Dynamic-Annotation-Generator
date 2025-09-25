@@ -6,16 +6,16 @@
     <title>${title}</title>
 
     <link rel="stylesheet" href="/css/variables.css" />
-    <link rel="stylesheet" href="/css/global.css" />
-    <link rel="stylesheet" href="/css/index.css" />
-    <link rel="stylesheet" href="/css/controls.css" />
+    <link rel="stylesheet" href="/css/pages/index.css" />
+    <link rel="stylesheet" href="/css/shared/global.css" />
+    <link rel="stylesheet" href="/css/shared/controls.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
   </head>
   
   <body>
-    <#include "/components/modal.ftl">
-    <#include "/components/index/file-input.ftl">
+    <#include "/shared/modal.ftl">
+    <#include "/shared/file-input.ftl">
 
     <div class="dv-layout">
       <div class="dv-main-title">
@@ -66,19 +66,29 @@
         <div class="dv-separator">OR</div>
 
         <div class="dv-title">Start with a json configuration</div>
-        <@fileInput />
+        <@fileInput info="Single file • JSON" accept="application/json" />
       </div>
 
       <@modal />
     </div>
 
     <script type="module">
-      import Modal from "/js/utils/classes/Modal.js";
-      import components from "/js/utils/modules/components.js";
+      import Modal from "/js/shared/classes/Modal.js";
+      import fileInput from "/js/shared/modules/fileInput.js";
 
       const modal = new Modal(document.querySelector(".dv-modal").parentElement);
-      components.initModal(modal);
-      components.initFileInput(modal);
+      
+      document.querySelectorAll("[data-dv-toggle='modal']").forEach((node) => {
+        node.addEventListener("click", () => {
+          modal.confirm(
+            "Delete " + node.dataset.pipeline,
+            "Do you want to delete this pipeline?",
+            () => console.log(node.dataset.pipeline)
+          );
+        });
+      });
+      
+      fileInput.init(modal);
     </script>
   </body>
 </html>

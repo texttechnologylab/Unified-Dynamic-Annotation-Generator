@@ -17,6 +17,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 @Getter
@@ -68,8 +69,8 @@ public class Source implements SourceInterface {
 
     // Don't leave out filtered generators that are part of a combi with at least one relevant generator to keep visualization results consistent
     @Override
-    public List<Generator> createGenerators() throws SQLException {
-        ArrayList<Generator> generators = new ArrayList<>();
+    public Map<String, Generator> createGenerators() throws SQLException {
+        HashMap<String, Generator> generators = new HashMap<>();
 
         JSONView createsGenerators = config.get("createsGenerators");
         for (JSONView generatorEntry : createsGenerators) {
@@ -87,23 +88,25 @@ public class Source implements SourceInterface {
                     System.out.println("Skipping irrelevant combi-generator \"" + combiName + "\".");
                     continue;
                 }
-                generators.addAll(createGeneratorsCombi(subGeneratorNodes, generatorEntry));
+                generators.putAll(createGeneratorsCombi(subGeneratorNodes, generatorEntry));
             } else if (generatorType.equals("bundle")) {
                 for (JSONView subGeneratorEntry : generatorEntry.get("createsGenerators")) {
                     if (!relevantGenerators.containsKey(subGeneratorEntry.get("id").toString())) {
                         System.out.println("Skipping irrelevant bundle-part generator \"" + subGeneratorEntry.get("id") + "\".");
                         continue;
                     }
-                    PipelineNode generatorNode = generatorsToBuild.get(subGeneratorEntry.get("id").toString());
-                    generators.add(createGenerator(generatorNode, generatorEntry, subGeneratorEntry));
+                    String generatorID = generatorEntry.get("id").toString();
+                    PipelineNode generatorNode = generatorsToBuild.get(generatorID);
+                    generators.put(generatorID, createGenerator(generatorNode, generatorEntry, subGeneratorEntry));
                 }
             } else {
                 if (!relevantGenerators.containsKey(generatorEntry.get("id").toString())) {
                     System.out.println("Skipping irrelevant generator \"" + generatorEntry.get("id") + "\".");
                     continue;
                 }
-                PipelineNode generatorNode = generatorsToBuild.get(generatorEntry.get("id").toString());
-                generators.add(createGenerator(generatorNode, null, generatorEntry));
+                String generatorID = generatorEntry.get("id").toString();
+                PipelineNode generatorNode = generatorsToBuild.get(generatorID);
+                generators.put(generatorID, createGenerator(generatorNode, null, generatorEntry));
             }
 
         }
@@ -112,9 +115,9 @@ public class Source implements SourceInterface {
     }
 
 
-    private Collection<Generator> createGeneratorsCombi(Collection<PipelineNode> generators, JSONView configCombi) throws SQLException {
+    private Map<String, Generator> createGeneratorsCombi(Collection<PipelineNode> generators, JSONView configCombi) throws SQLException {
         // Step 1 - Find common traits for generators
-        HashMap<String, HashMap<String, Color>> mapFeatureToCategoryColorMap = new HashMap<>();
+        HashMap<String, Map<String, Color>> mapFeatureToCategoryColorMap = new HashMap<>();
         for (PipelineNode g : generators) {
             String generatorType = g.getConfig().get("type").toString();
             if (generatorType.equals("CategoryNumberColorMapping") || generatorType.equals("TextFormatting")) {
@@ -131,7 +134,7 @@ public class Source implements SourceInterface {
         }
 
         // Step 3 - Create generators using the common data
-        ArrayList<Generator> combiGenerators = new ArrayList<>();
+        HashMap<String, Generator> combiGenerators = new HashMap<>();
         for (PipelineNode g : generators) {
             String generatorID = g.getConfig().get("id").toString();
             String generatorType = g.getConfig().get("type").toString();
@@ -140,10 +143,15 @@ public class Source implements SourceInterface {
                 Collection<String> generatorSourceFiles = generateSourceFiles(g.getConfig(), combiSourceFiles);
                 Collection<String> categoriesWhitelist = generateCategoriesWhitelist(configCombi, g.getConfig());
                 Collection<String> categoriesBlacklist = generateCategoriesBlacklist(configCombi, g.getConfig());
-                HashMap<String, HashMap<String, Double>> categoryNumberMap = dbCreateCategoryCountMap(featureName, generatorSourceFiles, categoriesWhitelist, categoriesBlacklist);
-                HashMap<String, Color> categoryColorMap = new HashMap<>(mapFeatureToCategoryColorMap.get(featureName));
-                categoryColorMap.keySet().retainAll(CategoryNumberMapping.calculateTotalFromCategoryCountMap(categoryNumberMap).keySet());
-                combiGenerators.add(new CategoryNumberColorMapping(generatorID, categoryNumberMap, categoryColorMap));
+                Map<String, Map<String, Double>> categoryNumberMap = dbCreateCategoryCountMap(featureName, generatorSourceFiles, categoriesWhitelist, categoriesBlacklist);
+                Color singleColor = generateColor(configCombi, g.getConfig());
+                if (singleColor == null) {
+                    Map<String, Color> categoryColorMap = new HashMap<>(mapFeatureToCategoryColorMap.get(featureName));
+                    categoryColorMap.keySet().retainAll(CategoryNumberMapping.calculateTotalFromCategoryCountMap(categoryNumberMap).keySet());
+                    combiGenerators.put(generatorID, new CategoryNumberColorMapping(generatorID, categoryNumberMap, categoryColorMap));
+                } else {
+                    combiGenerators.put(generatorID, new CategoryNumberColorMapping(generatorID, categoryNumberMap, singleColor));
+                }
             } else if (generatorType.equals("TextFormatting")) {
                 String configSofaFile = generateBundleAttribute(configCombi, g.getConfig(), "sofaFile");
                 String configSofaID = generateBundleAttribute(configCombi, g.getConfig(), "sofaID");
@@ -153,12 +161,18 @@ public class Source implements SourceInterface {
                 String sofaString = sofa[2];
                 String featureName = generateFeatureNameCategory(configCombi, g.getConfig());
                 String style = generateTextFormattingStyle(configCombi, g.getConfig());
-                HashMap<String, Color> categoryColorMap = mapFeatureToCategoryColorMap.get(featureName);
+                Color singleColor = generateColor(configCombi, g.getConfig());
+                Map<String, Color> categoryColorMap;
+                if (singleColor == null) {
+                    categoryColorMap = mapFeatureToCategoryColorMap.get(featureName);
+                } else {
+                    categoryColorMap = mapFeatureToCategoryColorMap.get(featureName).keySet().stream().collect(Collectors.toMap(k -> k, k -> singleColor));
+                }
                 Collection<String> categoriesWhitelist = generateCategoriesWhitelist(configCombi, g.getConfig());
                 Collection<String> categoriesBlacklist = generateCategoriesBlacklist(configCombi, g.getConfig());
-                combiGenerators.add(dbBuildTextFormatting(featureName, sofaFile, sofaID, categoriesWhitelist, categoriesBlacklist, categoryColorMap, generatorID, sofaString, style));
+                combiGenerators.put(generatorID, dbBuildTextFormatting(featureName, sofaFile, sofaID, categoriesWhitelist, categoriesBlacklist, categoryColorMap, generatorID, sofaString, style));
             } else { // Default case: Just treat the unknown bundle generator like a normal single generator.
-                combiGenerators.add(createGenerator(g, configCombi, g.getConfig()));
+                combiGenerators.put(generatorID, createGenerator(g, configCombi, g.getConfig()));
             }
         }
 
@@ -174,8 +188,15 @@ public class Source implements SourceInterface {
         if (generatorType.equals("CategoryNumberMapping") || generatorType.equals("CategoryNumberColorMapping")) {
             Collection<String> categoriesWhitelist = generateCategoriesWhitelist(configBundle, config);
             Collection<String> categoriesBlacklist = generateCategoriesBlacklist(configBundle, config);
-            HashMap<String, HashMap<String, Double>> categoryCountMap = dbCreateCategoryCountMap(generateFeatureNameCategory(configBundle, config), sourceFiles, categoriesWhitelist, categoriesBlacklist);
-            if (generatorType.equals("CategoryNumberColorMapping")) {
+            Map<String, Map<String, Double>> categoryCountMap = dbCreateCategoryCountMap(generateFeatureNameCategory(configBundle, config), sourceFiles, categoriesWhitelist, categoriesBlacklist);
+            Color singleColor = generateColor(configBundle, config);
+            if (singleColor != null) {
+                if (generatorType.equals("CategoryNumberColorMapping")) {
+                    return new CategoryNumberColorMapping(generatorID, categoryCountMap, singleColor);
+                } else {
+                    return new CategoryNumberMapping(generatorID, categoryCountMap, singleColor);
+                }
+            } else if (generatorType.equals("CategoryNumberColorMapping")) {
                 return new CategoryNumberColorMapping(generatorID, categoryCountMap);
             } else {
                 return new CategoryNumberMapping(generatorID, categoryCountMap);
@@ -192,7 +213,8 @@ public class Source implements SourceInterface {
             String style = generateTextFormattingStyle(configBundle, config);
             Collection<String> categoriesWhitelist = generateCategoriesWhitelist(configBundle, config);
             Collection<String> categoriesBlacklist = generateCategoriesBlacklist(configBundle, config);
-            HashMap<String, Color> categoryColorMap = dbCreateCategoryColorMap(featureName, sourceFiles, categoriesWhitelist, categoriesBlacklist);
+            Color singleColor = generateColor(configBundle, config);
+            Map<String, Color> categoryColorMap = dbCreateCategoryColorMap(featureName, sourceFiles, categoriesWhitelist, categoriesBlacklist, singleColor);
             return dbBuildTextFormatting(featureName, sofaFile, sofaID, categoriesWhitelist, categoriesBlacklist, categoryColorMap, generatorID, sofaString, style);
         } else {
             throw new IllegalArgumentException("Unknown generator type: " + generator.getConfig().get("type") + " for source: " + id);
@@ -213,6 +235,14 @@ public class Source implements SourceInterface {
         String textFormattingType = generateBundleAttribute(configBundle, config, "style");
         if (textFormattingType != null) return textFormattingType;
         return TextFormatting.DEFAULT_STYLE;
+    }
+
+    private Color generateColor(JSONView configBundle, JSONView config) {
+        String colorStr = generateBundleAttribute(configBundle, config, "color");
+        if (colorStr == null) return null;
+        try { return Color.decode(colorStr);
+        } catch (NumberFormatException ignored) {}
+        return null;
     }
 
     private String generateBundleAttribute(JSONView configBundle, JSONView config, String attribute) {
@@ -268,7 +298,7 @@ public class Source implements SourceInterface {
     }
 
 
-    private TextFormatting dbBuildTextFormatting(String featureName, String sofaFile, String sofaID, Collection<String> categoriesWhitelist, Collection<String> categoriesBlacklist, HashMap<String, Color> categoryColorMap, String generatorID, String text, String style) throws SQLException {
+    private TextFormatting dbBuildTextFormatting(String featureName, String sofaFile, String sofaID, Collection<String> categoriesWhitelist, Collection<String> categoriesBlacklist, Map<String, Color> categoryColorMap, String generatorID, String text, String style) throws SQLException {
         ArrayList<TextFormatting.Dataset.Segment> segments = dbCreateTextFormattingSegments(featureName, sofaFile, sofaID, categoriesWhitelist, categoriesBlacklist);
         TextFormatting.Dataset ds = new TextFormatting.Dataset(featureName, style, categoryColorMap, segments);
         return new TextFormatting(generatorID, sofaFile, sofaID, text, new ArrayList<>(List.of(ds)));
@@ -308,12 +338,18 @@ public class Source implements SourceInterface {
         return segments;
     }
 
-    private HashMap<String, Color> dbCreateCategoryColorMap(String featureName, Collection<String> sourceFiles, Collection<String> categoriesWhitelist, Collection<String> categoriesBlacklist) throws SQLException {
-        HashMap<String, HashMap<String, Double>> categoryCountMap = dbCreateCategoryCountMap(featureName, sourceFiles, categoriesWhitelist, categoriesBlacklist);
-        return CategoryNumberColorMapping.categoryColorMapFromCategoriesNumberMap(CategoryNumberMapping.calculateTotalFromCategoryCountMap(categoryCountMap));
+    private Map<String, Color> dbCreateCategoryColorMap(String featureName, Collection<String> sourceFiles, Collection<String> categoriesWhitelist, Collection<String> categoriesBlacklist) throws SQLException {
+        return dbCreateCategoryColorMap(featureName, sourceFiles, categoriesWhitelist, categoriesBlacklist, null);
     }
 
-    private HashMap<String, HashMap<String, Double>> dbCreateCategoryCountMap(String featureName, Collection<String> sourceFiles, Collection<String> categoriesWhitelist, Collection<String> categoriesBlacklist) throws SQLException {
+    private Map<String, Color> dbCreateCategoryColorMap(String featureName, Collection<String> sourceFiles, Collection<String> categoriesWhitelist, Collection<String> categoriesBlacklist, Color singleColor) throws SQLException {
+        Map<String, Map<String, Double>> categoryCountMap = dbCreateCategoryCountMap(featureName, sourceFiles, categoriesWhitelist, categoriesBlacklist);
+        Map<String, Double> totalCategories = CategoryNumberMapping.calculateTotalFromCategoryCountMap(categoryCountMap);
+        if (singleColor == null) return CategoryNumberColorMapping.categoryColorMapFromCategoriesNumberMap(totalCategories);
+        return totalCategories.keySet().stream().collect(Collectors.toMap(k -> k, k -> singleColor));
+    }
+
+    private Map<String, Map<String, Double>> dbCreateCategoryCountMap(String featureName, Collection<String> sourceFiles, Collection<String> categoriesWhitelist, Collection<String> categoriesBlacklist) throws SQLException {
         if (sourceFiles == null || sourceFiles.isEmpty()) {
             if (sourceFiles != null) {
                 System.out.println("Warning: Got empty source files list when trying to build a generator for feature \"" + featureName + "\". Defaulting to source files of Source object.");
@@ -338,7 +374,7 @@ public class Source implements SourceInterface {
             if (categoriesBlacklist != null) query = query.and(category.notIn(categoriesBlacklist));
             Result<? extends Record> result = query.groupBy(filename, category).fetch();
 
-            HashMap<String, HashMap<String, Double>> fileCategoryCountMapping = new HashMap<>();
+            HashMap<String, Map<String, Double>> fileCategoryCountMapping = new HashMap<>();
 
             result.forEach(record -> {
                 String file = record.getValue(filename).toString();

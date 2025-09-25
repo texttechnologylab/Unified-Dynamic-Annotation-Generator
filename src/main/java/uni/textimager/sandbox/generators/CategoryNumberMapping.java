@@ -1,6 +1,7 @@
 package uni.textimager.sandbox.generators;
 
 
+import lombok.Getter;
 import org.jooq.DSLContext;
 import org.jooq.Query;
 import org.jooq.impl.DSL;
@@ -12,19 +13,29 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.List;
+import java.util.stream.Collectors;
 
+@Getter
 public class CategoryNumberMapping extends Generator implements CategoryNumberMappingInterface {
-    HashMap<String, HashMap<String, Double>> categoryNumberMap;
+    Map<String, Map<String, Double>> categoryNumberMap;
+    Color fixedColor;
 
 
-    public CategoryNumberMapping(String id, HashMap<String, HashMap<String, Double>> categoryNumberMap) {
+    public CategoryNumberMapping(String id, Map<String, Map<String, Double>> categoryNumberMap) {
         super(id);
-        this.categoryNumberMap = new HashMap<>(categoryNumberMap);
+        this.categoryNumberMap = new HashMap<>();
+        categoryNumberMap.forEach((k, v) -> this.categoryNumberMap.put(k, new HashMap<>(v)));
+    }
+
+    public CategoryNumberMapping(String id, Map<String, Map<String, Double>> categoryNumberMap, Color fixedColor) {
+        this(id, categoryNumberMap);
+        this.fixedColor = fixedColor;
     }
 
     public CategoryNumberMapping(String id, CategoryNumberMapping copyOf) {
         super(id);
         this.categoryNumberMap = new HashMap<>(copyOf.categoryNumberMap);
+        this.fixedColor = copyOf.fixedColor;
     }
 
     @Override
@@ -66,10 +77,6 @@ public class CategoryNumberMapping extends Generator implements CategoryNumberMa
 
     @Override
     public void saveToDB(DBAccess dbAccess) throws SQLException {
-        saveToDB(dbAccess, null);
-    }
-
-    public void saveToDB(DBAccess dbAccess, Color fixedColor) throws SQLException {
         if (categoryNumberMap == null || categoryNumberMap.isEmpty()) return;
         if (fixedColor == null) {
             CategoryNumberColorMapping colorMapping = new CategoryNumberColorMapping(id, categoryNumberMap);
@@ -94,6 +101,7 @@ public class CategoryNumberMapping extends Generator implements CategoryNumberMa
         }
     }
 
+
     protected void saveCategoryNumberMapToDB(DBAccess dbAccess) throws SQLException {
         if (categoryNumberMap == null || categoryNumberMap.isEmpty()) return;
 
@@ -101,9 +109,9 @@ public class CategoryNumberMapping extends Generator implements CategoryNumberMa
             DSLContext dsl = DSL.using(connection);
 
             List<Query> inserts = new ArrayList<>();
-            for (Map.Entry<String, HashMap<String, Double>> entry : categoryNumberMap.entrySet()) {
+            for (Map.Entry<String, Map<String, Double>> entry : categoryNumberMap.entrySet()) {
                 String filename = entry.getKey();
-                HashMap<String, Double> subMap = entry.getValue();
+                Map<String, Double> subMap = entry.getValue();
 
                 for (Map.Entry<String, Double> subMapEntry : subMap.entrySet()) {
                     String category = subMapEntry.getKey();
@@ -121,8 +129,33 @@ public class CategoryNumberMapping extends Generator implements CategoryNumberMa
         }
     }
 
+    public static Map<String, Map<String, Double>> capitalizeCategoryNumberKeys(Map<String, Map<String, Double>> categoryNumberMap, String capitalization) {
+        HashMap<String, Map<String, Double>> resultMap = new HashMap<>();
+        for (Map.Entry<String, Map<String, Double>> entry : categoryNumberMap.entrySet()) {
+            resultMap.put(entry.getKey(), capitalizeCategoryKeys(entry.getValue(), capitalization));
+        }
+        return resultMap;
+    }
 
-    public static HashMap<String, Double> calculateTotalFromCategoryCountMap(HashMap<String, HashMap<String, Double>> categoryCountMap) {
+    public static <V> Map<String, V> capitalizeCategoryKeys(Map<String, V> categoryMap, String capitalization) {
+        if (capitalization == null) { return new HashMap<>(categoryMap); }
+        HashMap<String, V> resultMap = new HashMap<>();
+        for (Map.Entry<String, V> entry : categoryMap.entrySet()) {
+            if (capitalization.equalsIgnoreCase("Uppercase")) {
+                resultMap.put(entry.getKey().toUpperCase(), entry.getValue());
+            } else if (capitalization.equalsIgnoreCase("Lowercase")) {
+                resultMap.put(entry.getKey().toLowerCase(), entry.getValue());
+            } else if (capitalization.equalsIgnoreCase("Titlecase")) {
+                resultMap.put(entry.getKey().substring(0, 1).toUpperCase() + entry.getKey().substring(1).toLowerCase(), entry.getValue());
+            } else {
+                return new HashMap<>(categoryMap);
+            }
+        }
+        return resultMap;
+    }
+
+
+    public static Map<String, Double> calculateTotalFromCategoryCountMap(Map<String, Map<String, Double>> categoryCountMap) {
         HashMap<String, Double> totals = new HashMap<>();
 
         for (Map<String, Double> innerMap : categoryCountMap.values()) {
@@ -134,5 +167,43 @@ public class CategoryNumberMapping extends Generator implements CategoryNumberMa
         }
 
         return totals;
+    }
+
+    public static Map<String, Map<String, Double>> keepTotalTopN(Map<String, Map<String, Double>> categoryCountMap, int n) {
+        Set<String> topN = keepTopN(calculateTotalFromCategoryCountMap(categoryCountMap), n).keySet();
+        HashMap<String, Map<String, Double>> resultMap = new HashMap<>();
+        for (Map.Entry<String, Map<String, Double>> entry : categoryCountMap.entrySet()) {
+            resultMap.put(entry.getKey(), keepKeys(entry.getValue(), topN));
+        }
+        return resultMap;
+    }
+
+    public static Map<String, Double> keepTopN(Map<String, Double> categoryCountMap, int n) {
+        if (n < 1) {
+            return new HashMap<>(categoryCountMap);
+        }
+        if (categoryCountMap == null) {
+            return new HashMap<>();
+        }
+        return categoryCountMap.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .limit(n)
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue
+                ));
+    }
+
+    private static <K, V> Map<K, V> keepKeys(Map<K, V> original, Set<K> allowedKeys) {
+        if (original == null || allowedKeys == null) {
+            return Collections.emptyMap();
+        }
+
+        return original.entrySet().stream()
+                .filter(entry -> allowedKeys.contains(entry.getKey()))
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue
+                ));
     }
 }

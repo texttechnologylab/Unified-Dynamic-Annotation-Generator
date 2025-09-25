@@ -1,6 +1,6 @@
-<#include "/components/accordion.ftl">
-<#include "/components/pipeline/filter/checkbox-search.ftl">
-<#include "/components/pipeline/filter/date-range.ftl">
+<#include "/shared/accordion.ftl">
+<#include "/pages/pipeline/filter/checkbox-search.ftl">
+<#include "/pages/pipeline/filter/date-range.ftl">
 
 <#macro sidebar pipeline filters>
   <aside class="dv-sidebar">

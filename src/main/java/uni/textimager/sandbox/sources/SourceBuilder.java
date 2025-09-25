@@ -36,13 +36,13 @@ public class SourceBuilder implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws SQLException, IOException {
-        Pipeline pipeline = Pipeline.fromJSON("pipelines/pipelineDemo1_customTypes.json");
+        Pipeline pipeline = Pipeline.fromJSON("pipelines/pipelineUseCase2.json");
         System.out.println("Pipeline loaded: " + pipeline.getId());
         dbSavePipelinesVisualizationsJSONs(List.of(pipeline));
         dbBuildCustomTypes(pipeline);
         dbBuildGeneratorTables();
         DBAccess dbAccess = new DBAccess(dataSource);
-        List<Generator> generators = pipeline.generateGenerators(dbAccess);
+        Collection<Generator> generators = pipeline.generateGenerators(dbAccess);
         for (Generator g : generators) {
             g.saveToDB(dbAccess);
         }

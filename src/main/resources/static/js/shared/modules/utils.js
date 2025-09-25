@@ -16,4 +16,12 @@ function randomId(str) {
   return str + "-" + Math.random().toString(36).slice(2, 9);
 }
 
-export { flatData, minOf, maxOf, randomId };
+function createElement(tag, attributes = {}, children = []) {
+  const element = document.createElement(tag);
+  Object.assign(element, attributes);
+  element.append(...children);
+
+  return element;
+}
+
+export { flatData, minOf, maxOf, randomId, createElement };
