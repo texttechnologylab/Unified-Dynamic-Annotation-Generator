@@ -7,9 +7,9 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.regex.Pattern;
 
-@Service
-@ConditionalOnProperty(name = "app.database-generator.enabled", havingValue = "true", matchIfMissing = true)
-@Deprecated
+//@Service
+//@ConditionalOnProperty(name = "app.database-generator.enabled", havingValue = "true", matchIfMissing = true)
+//@Deprecated
 public class DynamicTableService {
     private static final Pattern IDENT = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
 

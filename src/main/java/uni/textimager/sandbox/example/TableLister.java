@@ -8,8 +8,8 @@ import uni.textimager.sandbox.importer.service.DynamicTableService;
 
 import java.util.List;
 
-@Component
-@ConditionalOnProperty(name = "app.database-generator.enabled", havingValue = "true", matchIfMissing = true)
+//@Component
+//@ConditionalOnProperty(name = "app.database-generator.enabled", havingValue = "true", matchIfMissing = true)
 public class TableLister implements ApplicationRunner {
     private final DynamicTableService dynamicTableService;
 
