@@ -3,7 +3,9 @@ package uni.textimager.sandbox.generators;
 import lombok.Getter;
 import lombok.NonNull;
 import org.jooq.DSLContext;
+import org.jooq.Field;
 import org.jooq.Query;
+import org.jooq.Table;
 import org.jooq.impl.DSL;
 import uni.textimager.sandbox.database.DBConstants;
 import uni.textimager.sandbox.sources.DBAccess;
@@ -66,26 +68,42 @@ public class CategoryNumberColorMapping extends CategoryNumberMapping implements
     private void saveCategoryColorMapToDB(DBAccess dbAccess) throws SQLException {
         if (categoryColorMap == null || categoryColorMap.isEmpty()) return;
 
+        final String schema = "public"; // or get from dbAccess
+
         try (Connection connection = dbAccess.getDataSource().getConnection()) {
             DSLContext dsl = DSL.using(connection);
 
-            List<Query> inserts = new ArrayList<>();
+            // Table reference
+            Table<?> T = DSL.table(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_CATEGORYCOLOR));
+
+            // Column references
+            Field<String> F_GEN = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_CATEGORYCOLOR,
+                    DBConstants.TABLEATTR_GENERATORID), String.class);
+            Field<String> F_CAT = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_CATEGORYCOLOR,
+                    DBConstants.TABLEATTR_GENERATORDATA_CATEGORY), String.class);
+            Field<String> F_COL = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_CATEGORYCOLOR,
+                    DBConstants.TABLEATTR_GENERATORDATA_COLOR), String.class);
+
+            List<Query> batch = new ArrayList<>();
+
             for (Map.Entry<String, Color> entry : categoryColorMap.entrySet()) {
                 String category = entry.getKey();
-                Color colorObj = entry.getValue();
-                String color = String.format("#%02x%02x%02x", colorObj.getRed(), colorObj.getGreen(), colorObj.getBlue());
+                Color colorObj  = entry.getValue();
+                String color    = String.format("#%02x%02x%02x", colorObj.getRed(), colorObj.getGreen(), colorObj.getBlue());
 
-                inserts.add(dsl.insertInto(
-                                DSL.table(DBConstants.TABLENAME_GENERATORDATA_CATEGORYCOLOR),
-                                DSL.field(DBConstants.TABLEATTR_GENERATORID),
-                                DSL.field(DBConstants.TABLEATTR_GENERATORDATA_CATEGORY),
-                                DSL.field(DBConstants.TABLEATTR_GENERATORDATA_COLOR))
-                        .values(id, category, color));
+                batch.add(
+                        dsl.insertInto(T)
+                                .columns(F_GEN, F_CAT, F_COL)
+                                .values(id, category, color)
+                );
             }
 
-            dsl.batch(inserts).execute();
+            if (!batch.isEmpty()) {
+                dsl.batch(batch).execute();
+            }
         }
     }
+
 
 
 

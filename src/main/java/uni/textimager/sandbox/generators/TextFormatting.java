@@ -2,7 +2,9 @@ package uni.textimager.sandbox.generators;
 
 import lombok.Getter;
 import org.jooq.DSLContext;
+import org.jooq.Field;
 import org.jooq.Query;
+import org.jooq.Table;
 import org.jooq.impl.DSL;
 import uni.textimager.sandbox.database.DBConstants;
 import uni.textimager.sandbox.sources.DBAccess;
@@ -50,50 +52,79 @@ public class TextFormatting extends Generator implements TextFormattingInterface
 
     @Override
     public void saveToDB(DBAccess dbAccess) throws SQLException {
+        final String schema = "public"; // or dbAccess.getSchema() if you expose it
+
         try (Connection connection = dbAccess.getDataSource().getConnection()) {
             DSLContext dsl = DSL.using(connection);
 
-            dsl.insertInto(DSL.table(DBConstants.TABLENAME_GENERATORDATA_TEXT),
-                            DSL.field(DBConstants.TABLEATTR_GENERATORID),
-                            DSL.field(DBConstants.TABLEATTR_GENERATORDATA_TEXT))
-                    .values(id, text).execute();
+            // ---------- Tables ----------
+            Table<?> T_TEXT   = DSL.table(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_TEXT));
+            Table<?> T_STYLE  = DSL.table(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_TYPESTYLE));
+            Table<?> T_COLOR  = DSL.table(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_TYPECATEGORYCOLOR));
+            Table<?> T_SEGS   = DSL.table(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_TYPESEGMENTS));
+
+            // ---------- Columns (schema-qualified & quoted) ----------
+            // TEXT
+            Field<String> GID_TEXT  = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_TEXT, DBConstants.TABLEATTR_GENERATORID), String.class);
+            Field<String> TXT_TEXT  = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_TEXT, DBConstants.TABLEATTR_GENERATORDATA_TEXT), String.class);
+
+            // TYPESTYLE
+            Field<String> GID_STYLE = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_TYPESTYLE, DBConstants.TABLEATTR_GENERATORID), String.class);
+            Field<String> TYP_STYLE = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_TYPESTYLE, DBConstants.TABLEATTR_GENERATORDATA_TYPE), String.class);
+            Field<String> STY_STYLE = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_TYPESTYLE, DBConstants.TABLEATTR_GENERATORDATA_STYLE), String.class);
+
+            // TYPECATEGORYCOLOR
+            Field<String> GID_COLOR = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_TYPECATEGORYCOLOR, DBConstants.TABLEATTR_GENERATORID), String.class);
+            Field<String> TYP_COLOR = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_TYPECATEGORYCOLOR, DBConstants.TABLEATTR_GENERATORDATA_TYPE), String.class);
+            Field<String> CAT_COLOR = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_TYPECATEGORYCOLOR, DBConstants.TABLEATTR_GENERATORDATA_CATEGORY), String.class);
+            Field<String> COL_COLOR = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_TYPECATEGORYCOLOR, DBConstants.TABLEATTR_GENERATORDATA_COLOR), String.class);
+
+            // TYPESEGMENTS
+            Field<String> GID_SEGS  = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_TYPESEGMENTS, DBConstants.TABLEATTR_GENERATORID), String.class);
+            Field<String> TYP_SEGS  = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_TYPESEGMENTS, DBConstants.TABLEATTR_GENERATORDATA_TYPE), String.class);
+            Field<Integer> BEG_SEGS = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_TYPESEGMENTS, DBConstants.TABLEATTR_GENERATORDATA_BEGIN), Integer.class);
+            Field<Integer> END_SEGS = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_TYPESEGMENTS, DBConstants.TABLEATTR_GENERATORDATA_END), Integer.class);
+            Field<String> CAT_SEGS  = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_TYPESEGMENTS, DBConstants.TABLEATTR_GENERATORDATA_CATEGORY), String.class);
+
+            // ---------- Insert text ----------
+            dsl.insertInto(T_TEXT)
+                    .columns(GID_TEXT, TXT_TEXT)
+                    .values(id, text)
+                    .execute();
 
             if (datasets == null || datasets.isEmpty()) return;
 
             for (Dataset ds : datasets) {
-                List<Query> insertsBatch = new ArrayList<>();
+                // STYLE row
+                dsl.insertInto(T_STYLE)
+                        .columns(GID_STYLE, TYP_STYLE, STY_STYLE)
+                        .values(id, ds.columnType, ds.style)
+                        .execute();
 
-                dsl.insertInto(DSL.table(DBConstants.TABLENAME_GENERATORDATA_TYPESTYLE),
-                                DSL.field(DBConstants.TABLEATTR_GENERATORID),
-                                DSL.field(DBConstants.TABLEATTR_GENERATORDATA_TYPE),
-                                DSL.field(DBConstants.TABLEATTR_GENERATORDATA_STYLE))
-                        .values(id, ds.columnType, ds.style).execute();
-
+                // COLORS batch
+                List<Query> batch = new ArrayList<>();
                 for (Map.Entry<String, Color> entry : ds.categoryColorMap.entrySet()) {
                     String category = entry.getKey();
-                    Color colorObj = entry.getValue();
-                    String color = String.format("#%02x%02x%02x", colorObj.getRed(), colorObj.getGreen(), colorObj.getBlue());
-                    insertsBatch.add(dsl.insertInto(DSL.table(DBConstants.TABLENAME_GENERATORDATA_TYPECATEGORYCOLOR),
-                                    DSL.field(DBConstants.TABLEATTR_GENERATORID),
-                                    DSL.field(DBConstants.TABLEATTR_GENERATORDATA_TYPE),
-                                    DSL.field(DBConstants.TABLEATTR_GENERATORDATA_CATEGORY),
-                                    DSL.field(DBConstants.TABLEATTR_GENERATORDATA_COLOR))
-                            .values(id, ds.columnType, category, color));
+                    Color c = entry.getValue();
+                    String hex = String.format("#%02x%02x%02x", c.getRed(), c.getGreen(), c.getBlue());
+                    batch.add(
+                            dsl.insertInto(T_COLOR)
+                                    .columns(GID_COLOR, TYP_COLOR, CAT_COLOR, COL_COLOR)
+                                    .values(id, ds.columnType, category, hex)
+                    );
                 }
-                dsl.batch(insertsBatch).execute();
-                insertsBatch.clear();
+                if (!batch.isEmpty()) dsl.batch(batch).execute();
+                batch.clear();
 
+                // SEGMENTS batch
                 for (Dataset.Segment s : ds.segments) {
-                    insertsBatch.add(dsl.insertInto(DSL.table(DBConstants.TABLENAME_GENERATORDATA_TYPESEGMENTS),
-                                    DSL.field(DBConstants.TABLEATTR_GENERATORID),
-                                    DSL.field(DBConstants.TABLEATTR_GENERATORDATA_TYPE),
-                                    DSL.field(DBConstants.TABLEATTR_GENERATORDATA_BEGIN),
-                                    DSL.field(DBConstants.TABLEATTR_GENERATORDATA_END),
-                                    DSL.field(DBConstants.TABLEATTR_GENERATORDATA_CATEGORY))
-                            .values(id, ds.columnType, s.begin, s.end, s.category));
+                    batch.add(
+                            dsl.insertInto(T_SEGS)
+                                    .columns(GID_SEGS, TYP_SEGS, BEG_SEGS, END_SEGS, CAT_SEGS)
+                                    .values(id, ds.columnType, s.begin, s.end, s.category)
+                    );
                 }
-                dsl.batch(insertsBatch).execute();
-                insertsBatch.clear();
+                if (!batch.isEmpty()) dsl.batch(batch).execute();
             }
         }
     }

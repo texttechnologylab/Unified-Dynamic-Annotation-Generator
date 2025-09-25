@@ -31,7 +31,7 @@ import java.util.*;
  *   <li>Creates metadata table TableNames and records each table name.</li>
  * </ul>
  */
-@Component
+//@Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @ConditionalOnProperty(name = "app.database-generator.enabled", havingValue = "true", matchIfMissing = true)
 public class DatabaseGenerator implements ApplicationRunner {

@@ -5,6 +5,7 @@ import org.jooq.*;
 import org.jooq.Record;
 import org.jooq.impl.DSL;
 import uni.textimager.sandbox.database.QueryHelper;
+import uni.textimager.sandbox.database.TypeTableResolver;
 import uni.textimager.sandbox.generators.*;
 import uni.textimager.sandbox.generators.Generator;
 import uni.textimager.sandbox.pipeline.JSONView;
@@ -23,7 +24,7 @@ import java.util.stream.Collectors;
 @Getter
 public class Source implements SourceInterface {
 
-    public static final String DEFAULT_TYPE_POS = "POS";
+    public static final String DEFAULT_TYPE_POS = "posvalue";
     public static final String DEFAULT_TYPE_LEMMA = "Lemma";
 
 
@@ -204,7 +205,7 @@ public class Source implements SourceInterface {
         } else if (generatorType.equals("TextFormatting")) {
             String configSofaFile =  generateBundleAttribute(configBundle, config, "sofaFile");
             String configSofaID = generateBundleAttribute(configBundle, config, "sofaID");
-            String[] sofa = dbGetSofa(configSofaFile, configSofaID);
+            String[] sofa = dbGetSofa(configSofaFile);
             String sofaFile = sofa[0];
             String sofaID = sofa[1];
             String sofaString = sofa[2];
@@ -221,15 +222,36 @@ public class Source implements SourceInterface {
         }
     }
 
-    private String generateFeatureNameCategory(JSONView configBundle, JSONView config) {
-        String featureNameCategory = generateBundleAttribute(configBundle, config, "featureName");
-        if (featureNameCategory != null) return featureNameCategory;
-
-        return switch (type) {
-            case DEFAULT_TYPE_POS -> featureNames.get("coarseValue");
-            default -> featureNames.get("value");
-        };
+    private boolean isPosType() {
+        if (this.type == null) return false;
+        String t = this.type.trim();
+        String tl = t.toLowerCase(Locale.ROOT);
+        return t.equalsIgnoreCase("POS")
+                || tl.endsWith(".lexmorph.type.pos.pos")
+                || tl.contains(".lexmorph.type.pos.");
     }
+
+    private String generateFeatureNameCategory(JSONView configBundle, JSONView config) {
+        // explicit override wins
+        String featureNameCategory = generateBundleAttribute(configBundle, config, "featureName");
+        if (featureNameCategory != null && !featureNameCategory.isBlank()) {
+            return featureNameCategory.trim();
+        }
+
+        // otherwise, choose sensible defaults per source type
+        if (isPosType()) {
+            // prefer coarse, then posValue, then value
+            String v = featureNames.getOrDefault("coarseValue",
+                    featureNames.getOrDefault("posValue",
+                            featureNames.getOrDefault("value", "posValue")));
+            return (v == null || v.isBlank()) ? "posValue" : v;
+        } else {
+            // NE, Lemma, etc.: most commonly "value"
+            String v = featureNames.getOrDefault("value", "value");
+            return (v == null || v.isBlank()) ? "value" : v;
+        }
+    }
+
 
     private String generateTextFormattingStyle(JSONView configBundle, JSONView config) {
         String textFormattingType = generateBundleAttribute(configBundle, config, "style");
@@ -304,39 +326,84 @@ public class Source implements SourceInterface {
         return new TextFormatting(generatorID, sofaFile, sofaID, text, new ArrayList<>(List.of(ds)));
     }
 
-    private ArrayList<TextFormatting.Dataset.Segment> dbCreateTextFormattingSegments (String featureName, String sofaFile, String sofaID, Collection<String> categoriesWhitelist, Collection<String> categoriesBlacklist) throws SQLException {
-        ArrayList<TextFormatting.Dataset.Segment> segments = new ArrayList<>();
+    private ArrayList<TextFormatting.Dataset.Segment> dbCreateTextFormattingSegments(String featureName,
+                                                                                     String sofaFile,
+                                                                                     String sofaId,
+                                                                                     Collection<String> categoriesWhitelist,
+                                                                                     Collection<String> categoriesBlacklist) throws SQLException {
+        final String schema = "public";
 
         try (Connection connection = dbAccess.getDataSource().getConnection()) {
             DSLContext dsl = DSL.using(connection);
-            QueryHelper q = new QueryHelper(dsl);
 
-            Table<?> table            = q.table(annotationTypeName);
-            Field<Object> category    = q.field(annotationTypeName, featureName);
-            Field<Object> begin       = q.field(annotationTypeName, featureNames.get("begin"));
-            Field<Object> end         = q.field(annotationTypeName, featureNames.get("end"));
-            Field<Object> filename    = q.field(annotationTypeName, "filename");
-            Field<Object> sofa        = q.field(annotationTypeName, featureNames.get("sofa"));
-
-            SelectConditionStep<? extends Record> query = q.dsl()
-                    .select(category, begin, end)
-                    .from(table)
-                    .where(filename.equalIgnoreCase(sofaFile).and(sofa.eq(sofaID)));
-            if (categoriesWhitelist != null) query = query.and(category.in(categoriesWhitelist));
-            if (categoriesBlacklist != null) query = query.and(category.notIn(categoriesBlacklist));
-            Result<? extends Record> result = query.fetch();
-
-            for (Record record : result) {
-                int substringBegin = record.get(begin, Integer.class);
-                int substringEnd = record.get(end, Integer.class);
-                String substringCategory = record.get(category, String.class);
-
-                segments.add(new TextFormatting.Dataset.Segment(substringBegin, substringEnd, substringCategory));
+            // Resolve per-type table
+            TypeTableResolver resolver = new TypeTableResolver(dsl, schema);
+            String hash = resolver.tableForType(this.annotationTypeName);
+            if (hash == null) {
+                throw new IllegalStateException("No table registered for UIMA type: " + this.annotationTypeName);
             }
-        }
 
-        return segments;
+            var T          = DSL.table(DSL.name(schema, hash));
+            var DOC_ID     = DSL.field(DSL.name(schema, hash, resolver.sys(hash, "doc_id")),   String.class);
+            var SOFA_ID    = DSL.field(DSL.name(schema, hash, resolver.sys(hash, "sofa_id")),  String.class);
+            var FS_BEGIN   = DSL.field(DSL.name(schema, hash, resolver.sys(hash, "fs_begin")), Integer.class);
+            var FS_END     = DSL.field(DSL.name(schema, hash, resolver.sys(hash, "fs_end")),   Integer.class);
+            org.jooq.Field<String> F_CATEGORY = resolveFeatureField(dsl, schema, hash, featureName, null);
+
+            var S       = DSL.table(DSL.name(schema, "sofas"));
+            var S_DOC   = DSL.field(DSL.name(schema, "sofas", "doc_id"), String.class);
+            var S_SOFA  = DSL.field(DSL.name(schema, "sofas", "sofa_id"), String.class);
+            var S_URI   = DSL.field(DSL.name(schema, "sofas", "sofa_uri"), String.class);
+
+            // Normalize sofaFile and resolve the SOFA row; this also normalizes sofaId if null
+            String[] resolved = dbGetSofa(sofaFile, sofaId);
+            String label     = resolved[0]; // URI or DOC_ID
+            String resolvedId= resolved[1];
+
+            // We need the DOC_ID for the chosen label + sofaId
+            String baseDoc = label.endsWith(".xmi") ? label.substring(0, label.length() - 4) : label;
+            String docForSofa = dsl.select(S_DOC)
+                    .from(S)
+                    .where(S_SOFA.eq(resolvedId)
+                            .and(S_URI.equalIgnoreCase(label).or(S_DOC.equalIgnoreCase(baseDoc))))
+                    .orderBy(S_SOFA.asc())
+                    .limit(1)
+                    .fetchOne(S_DOC);
+
+            if (docForSofa == null) {
+                throw new IllegalArgumentException("Could not resolve DOC_ID for label=" + label + " and sofa_id=" + resolvedId);
+            }
+
+            Condition cond = DOC_ID.eq(docForSofa).and(SOFA_ID.eq(resolvedId));
+            if (categoriesWhitelist != null && !categoriesWhitelist.isEmpty()) {
+                cond = cond.and(F_CATEGORY.in(categoriesWhitelist));
+            }
+            if (categoriesBlacklist != null && !categoriesBlacklist.isEmpty()) {
+                cond = cond.and(F_CATEGORY.notIn(categoriesBlacklist));
+            }
+
+            var recs = dsl
+                    .select(FS_BEGIN, FS_END, F_CATEGORY)
+                    .from(T)
+                    .where(cond)
+                    .orderBy(FS_BEGIN.asc(), FS_END.asc())
+                    .fetch();
+
+            ArrayList<TextFormatting.Dataset.Segment> segments = new ArrayList<>(recs.size());
+            for (Record r : recs) {
+                Integer b = r.get(FS_BEGIN);
+                Integer e = r.get(FS_END);
+                String cat = r.get(F_CATEGORY);
+                if (cat == null || cat.isBlank()) cat = "(null)";
+                if (b != null && e != null && b >= 0 && e >= b) {
+                    segments.add(new TextFormatting.Dataset.Segment(b, e, cat));
+                }
+            }
+            return segments;
+        }
     }
+
+
 
     private Map<String, Color> dbCreateCategoryColorMap(String featureName, Collection<String> sourceFiles, Collection<String> categoriesWhitelist, Collection<String> categoriesBlacklist) throws SQLException {
         return dbCreateCategoryColorMap(featureName, sourceFiles, categoriesWhitelist, categoriesBlacklist, null);
@@ -349,91 +416,148 @@ public class Source implements SourceInterface {
         return totalCategories.keySet().stream().collect(Collectors.toMap(k -> k, k -> singleColor));
     }
 
-    private Map<String, Map<String, Double>> dbCreateCategoryCountMap(String featureName, Collection<String> sourceFiles, Collection<String> categoriesWhitelist, Collection<String> categoriesBlacklist) throws SQLException {
-        if (sourceFiles == null || sourceFiles.isEmpty()) {
-            if (sourceFiles != null) {
-                System.out.println("Warning: Got empty source files list when trying to build a generator for feature \"" + featureName + "\". Defaulting to source files of Source object.");
-            }
-            sourceFiles = this.sourceFiles;
-        }
+    private Map<String, Map<String, Double>> dbCreateCategoryCountMap(String featureName,
+                                                                      Collection<String> wantedSourceFiles,
+                                                                      Collection<String> categoriesWhitelist,
+                                                                      Collection<String> categoriesBlacklist) throws SQLException {
+        final String schema = "public";
 
         try (Connection connection = dbAccess.getDataSource().getConnection()) {
             DSLContext dsl = DSL.using(connection);
-            QueryHelper q = new QueryHelper(dsl);
 
-            Table<?> table = q.table(annotationTypeName);
-            Field<Object> category = q.field(annotationTypeName, featureName);
-            Field<Object> filename = q.field(annotationTypeName, "filename");
-            Field<Integer> count = DSL.count();
+            // Resolve per-type table
+            TypeTableResolver resolver = new TypeTableResolver(dsl, schema);
+            String hash = resolver.tableForType(this.annotationTypeName);
+            if (hash == null) {
+                throw new IllegalStateException("No table registered for UIMA type: " + this.annotationTypeName);
+            }
 
-            SelectConditionStep<? extends Record> query = q.dsl()
-                    .select(filename, category, count)
-                    .from(table)
-                    .where(filename.in(sourceFiles));
-            if (categoriesWhitelist != null) query = query.and(category.in(categoriesWhitelist));
-            if (categoriesBlacklist != null) query = query.and(category.notIn(categoriesBlacklist));
-            Result<? extends Record> result = query.groupBy(filename, category).fetch();
+            var T          = DSL.table(DSL.name(schema, hash));
+            var DOC_ID     = DSL.field(DSL.name(schema, hash, resolver.sys(hash, "doc_id")),   String.class);
+            var SOFA_ID    = DSL.field(DSL.name(schema, hash, resolver.sys(hash, "sofa_id")),  String.class);
+            Field<String> F_CATEGORY = resolveFeatureField(dsl, schema, hash, featureName, null);
 
-            HashMap<String, Map<String, Double>> fileCategoryCountMapping = new HashMap<>();
 
-            result.forEach(record -> {
-                String file = record.getValue(filename).toString();
-                String cat = record.getValue(category).toString();
-                Double number = record.getValue(count).doubleValue();
+            var S       = DSL.table(DSL.name(schema, "sofas"));
+            var S_DOC   = DSL.field(DSL.name(schema, "sofas", "doc_id"), String.class);
+            var S_SOFA  = DSL.field(DSL.name(schema, "sofas", "sofa_id"), String.class);
+            var S_URI   = DSL.field(DSL.name(schema, "sofas", "sofa_uri"), String.class);
 
-                fileCategoryCountMapping
-                        .computeIfAbsent(file, k -> new HashMap<>())
-                        .put(cat, number);
-            });
+            // Label = prefer URI, fallback to DOC_ID
+            Field<String> LABEL = DSL.coalesce(S_URI, S_DOC);
 
-            return fileCategoryCountMapping;
+            // Normalize input list to match LABEL (if ".xmi" -> strip)
+            Collection<String> filesFilter = (wantedSourceFiles == null || wantedSourceFiles.isEmpty())
+                    ? this.sourceFiles
+                    : wantedSourceFiles;
+            Set<String> normalized = new HashSet<>();
+            for (String f : filesFilter) {
+                if (f == null) continue;
+                String s = f.trim();
+                normalized.add(s);
+                if (s.endsWith(".xmi")) normalized.add(s.substring(0, s.length() - 4)); // doc_id form
+            }
+
+            Condition cond = LABEL.in(normalized);
+            if (categoriesWhitelist != null && !categoriesWhitelist.isEmpty()) {
+                cond = cond.and(F_CATEGORY.in(categoriesWhitelist));
+            }
+            if (categoriesBlacklist != null && !categoriesBlacklist.isEmpty()) {
+                cond = cond.and(F_CATEGORY.notIn(categoriesBlacklist));
+            }
+
+            var recs = dsl
+                    .select(LABEL, F_CATEGORY, DSL.count())
+                    .from(T)
+                    .join(S).on(DOC_ID.eq(S_DOC).and(SOFA_ID.eq(S_SOFA)))
+                    .where(cond)
+                    .groupBy(LABEL, F_CATEGORY)
+                    .fetch();
+
+            Map<String, Map<String, Double>> out = new HashMap<>();
+            for (Record r : recs) {
+                String label = r.get(LABEL);
+                String cat   = r.get(F_CATEGORY);
+                if (cat == null || cat.isBlank()) cat = "(null)";
+                Double cnt   = r.get(2, Integer.class).doubleValue();
+
+                out.computeIfAbsent(label, k -> new HashMap<>())
+                        .merge(cat, cnt, Double::sum);
+            }
+            return out;
         }
     }
 
 
-    private String[] dbGetSofa(String sofaFile, String sofaID) throws SQLException {
-        if (sofaFile != null) sofaFile = sofaFile.trim();
-        if (sofaID != null) sofaID = sofaID.trim();
-        String sourceFile = "";
-        if (sourceFiles.size() == 1) {
-            sourceFile = sourceFiles.iterator().next();
-            if (sofaFile != null && !sourceFile.equalsIgnoreCase(sofaFile)) {
-                System.out.println("Warning: User-entered sofaFile " + sofaFile + " does not exist in this source, choosing source's only source-file " + sourceFile + " instead.");
-            }
-        } else if (sourceFiles.size() > 1) {
-            String search = sofaFile;
-            if (sourceFiles.stream().anyMatch(s -> s.equalsIgnoreCase(search))) {
-                sourceFile = sofaFile;
-            } else {
-                throw new IllegalArgumentException("User-entered sofaFile " + sofaFile + " does not exist in this source. Can't decide on SOFA as this source has multiple source-files.");
-            }
-        }
-        // From here we have a sourceFile for our SOFA.
+
+    private String[] dbGetSofa(String wantedSofaFile, String wantedSofaId) throws SQLException {
+        final String schema = "public"; // adjust if needed
+
         try (Connection connection = dbAccess.getDataSource().getConnection()) {
             DSLContext dsl = DSL.using(connection);
-            QueryHelper q = new QueryHelper(dsl);
 
-            Table<?> table = q.table("SOFA");
-            Field<Object> sofastring = q.field("SOFA", "sofastring");
-            Field<Object> filename = q.field("SOFA", "filename");
+            var SOFAS    = DSL.table(DSL.name(schema, "sofas"));
+            var S_DOC    = DSL.field(DSL.name(schema, "sofas", "doc_id"), String.class);
+            var S_SOFAID = DSL.field(DSL.name(schema, "sofas", "sofa_id"), String.class);
+            var S_URI    = DSL.field(DSL.name(schema, "sofas", "sofa_uri"), String.class);
+            var S_STR    = DSL.field(DSL.name(schema, "sofas", "sofa_string"), String.class);
 
-            List<Object> sofastringList = q.dsl()
-                    .select(sofastring)
-                    .from(table)
-                    .where(filename.equalIgnoreCase(sourceFile))
-                    .fetch(sofastring);
+            // Normalize input: accept URI, doc_id, or "ID... .xmi"
+            String in = (wantedSofaFile != null && !wantedSofaFile.isBlank())
+                    ? wantedSofaFile.trim()
+                    : this.sourceFiles.stream().findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("No source files available to resolve SOFA."));
+            String baseDoc = in.endsWith(".xmi") ? in.substring(0, in.length() - 4) : in;
 
-            String sofaString = null;
-            if (sofastringList.isEmpty()) {
-                throw new IllegalArgumentException("No SOFA found in database for file " + sourceFile);
-            } else if (sofastringList.size() == 1) {
-                sofaString = (String) sofastringList.iterator().next();
-            } else {
-                // TODO: Handle multiple SOFAs in one file if sofaID is set
+            // Try to find the row by (uri==in) OR (doc_id==baseDoc)
+            Condition byUriOrDoc = S_URI.equalIgnoreCase(in).or(S_DOC.equalIgnoreCase(baseDoc));
+
+            // If sofaId not provided, pick the first available for that doc/uri
+            String sofaId = wantedSofaId;
+            if (sofaId == null || sofaId.isBlank()) {
+                sofaId = dsl.select(S_SOFAID)
+                        .from(SOFAS)
+                        .where(byUriOrDoc)
+                        .orderBy(S_SOFAID.asc())
+                        .limit(1)
+                        .fetchOne(S_SOFAID);
+                if (sofaId == null) {
+                    throw new IllegalArgumentException("No SOFA found for identifier: " + in + " (tried doc_id=" + baseDoc + ")");
+                }
             }
-            return new String[] {sourceFile, "2", sofaString}; // TODO: don't hardcode sofaID, but use the one from the config if it exists (or find it if there is only one)
+
+            // Load the row and prefer filtering by DOC_ID + SOFA_ID (works even if URI is null)
+            Record r = dsl.select(S_DOC, S_SOFAID, S_URI, S_STR)
+                    .from(SOFAS)
+                    .where(byUriOrDoc.and(S_SOFAID.eq(sofaId)))
+                    .orderBy(S_SOFAID.asc())
+                    .limit(1)
+                    .fetchOne();
+
+            if (r == null) {
+                throw new IllegalArgumentException("SOFA row not found for identifier=" + in + " and sofa_id=" + sofaId);
+            }
+
+            String docId      = r.get(S_DOC);
+            String sofaString = r.get(S_STR);
+            String sofaUri    = r.get(S_URI);
+
+            if (sofaString == null) {
+                throw new IllegalArgumentException("SOFA string is NULL for doc_id=" + docId + ", sofa_id=" + sofaId);
+            }
+
+            // For "file" we return URI if present, else DOC_ID (so downstream labels remain meaningful)
+            String resolvedFileLabel = (sofaUri != null && !sofaUri.isBlank()) ? sofaUri : docId;
+
+            return new String[]{ resolvedFileLabel, sofaId, sofaString };
         }
     }
+
+    private String[] dbGetSofa(String wantedSofaFile) throws SQLException {
+        return dbGetSofa(wantedSofaFile, "_InitialView");
+    }
+
+
 
     private boolean containsOnlyGenerators(Collection<PipelineNode> nodes) {
         return nodes.stream().allMatch(node -> node.getType() == PipelineNodeType.GENERATOR);
@@ -488,4 +612,58 @@ public class Source implements SourceInterface {
     private Set<String> dbGetAllSourceFiles() throws SQLException {
         return dbAccess.getSourceFiles();
     }
+
+    // Lowercase + underscore sanitize like the writer does
+    private static String sanitize(String s) {
+        if (s == null) return "";
+        return s.replaceAll("[^A-Za-z0-9_]", "_").toLowerCase(java.util.Locale.ROOT);
+    }
+
+    /** Return the feature field <schema>.<hash>.<hash>_f_<short> by trying candidates until one exists. */
+    private org.jooq.Field<String> resolveFeatureField(org.jooq.DSLContext dsl,
+                                                       String schema,
+                                                       String tableHash,
+                                                       String desiredShort,
+                                                       java.util.List<String> extraCandidates) {
+        java.util.LinkedHashSet<String> candidates = new java.util.LinkedHashSet<>();
+
+        if (desiredShort != null && !desiredShort.isBlank()) candidates.add(desiredShort.trim());
+
+        if (isPosType()) {
+            // common POS feature short names
+            candidates.add("coarseValue");
+            candidates.add("posValue");
+            candidates.add("value");
+        } else {
+            // NE / Lemma etc.
+            candidates.add("value");
+            candidates.add("identifier");
+            candidates.add("label");
+            candidates.add("lemmaValue");
+        }
+
+        if (extraCandidates != null) {
+            for (String c : extraCandidates) if (c != null && !c.isBlank()) candidates.add(c.trim());
+        }
+
+        for (String shortName : candidates) {
+            String physical = sanitize(tableHash + "_f_" + shortName);
+            boolean exists = dsl.fetchExists(
+                    DSL.selectOne()
+                            .from(DSL.table(DSL.name("information_schema", "columns")))
+                            .where(DSL.field(DSL.name("table_schema"), String.class).eq(schema))
+                            .and(DSL.field(DSL.name("table_name"),  String.class).eq(tableHash))
+                            .and(DSL.field(DSL.name("column_name"), String.class).eq(physical))
+            );
+            if (exists) {
+                return DSL.field(DSL.name(schema, tableHash, physical), String.class);
+            }
+        }
+
+        throw new IllegalStateException(
+                "No matching feature column in " + schema + "." + tableHash +
+                        " for desired '" + desiredShort + "'. Tried: " + candidates
+        );
+    }
+
 }

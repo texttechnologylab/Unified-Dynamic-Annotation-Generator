@@ -123,7 +123,7 @@ public class TextChartHandler implements ChartHandler {
         for (Ev e : evs) {
             if (last < e.idx) {
                 ObjectNode span = mapper.createObjectNode();
-                span.put("text", text.substring(last, e.idx));
+                span.put("TEXT", text.substring(last, e.idx));
                 if (!activeCss.isEmpty()) span.put("style", String.join(" ", activeCss));
                 if (!activeLbl.isEmpty()) span.put("label", String.join(" ", activeLbl));
                 spans.add(span);
@@ -140,7 +140,7 @@ public class TextChartHandler implements ChartHandler {
 
         if (last < N) {
             ObjectNode span = mapper.createObjectNode();
-            span.put("text", text.substring(last));
+            span.put("TEXT", text.substring(last));
             spans.add(span);
         }
 
