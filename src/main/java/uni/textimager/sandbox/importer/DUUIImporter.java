@@ -22,7 +22,7 @@ import java.net.URISyntaxException;
 
 import static org.apache.uima.fit.factory.AnalysisEngineFactory.createEngineDescription;
 
-@Component
+//@Component
 @RequiredArgsConstructor
 public class DUUIImporter implements ApplicationRunner {
     private static final int iWorkers = 2;
