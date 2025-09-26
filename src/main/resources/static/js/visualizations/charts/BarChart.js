@@ -19,7 +19,7 @@ export default class BarChart extends D3Visualization {
     );
 
     this.controls = new ControlsHandler(this.root.select(".dv-sidepanel-body"));
-    this.exports = new ExportHandler(this.root.select(".dv-dropdown"), [
+    this.exports = new ExportHandler(this.root.select(".dv-dropdown-menu"), [
       "svg",
       "png",
       "csv",

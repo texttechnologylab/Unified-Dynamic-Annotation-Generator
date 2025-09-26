@@ -21,7 +21,7 @@
       <i class="bi bi-download"></i>
     </button>
     <div class="dropdown-menu">
-      <div class="dv-dropdown"></div>
+      <div class="dv-dropdown-menu"></div>
     </div>
   </div>
 </#macro>

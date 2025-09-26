@@ -10,7 +10,7 @@ export default class D3Visualization {
 
     this.filter = {};
 
-    this.tooltip = d3.select(".dv-tooltip");
+    this.tooltip = d3.select(".dv-chart-tooltip");
 
     // Add svg
     this.svg = this.root

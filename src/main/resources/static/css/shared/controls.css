@@ -116,26 +116,6 @@
   }
 }
 
-.dv-menu-link {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.375rem 0.75rem;
-  font-size: var(--font-size-lg);
-  color: unset;
-  text-decoration: none;
-
-  i {
-    color: var(--primary);
-  }
-}
-
-.dv-menu-title {
-  font-weight: bold;
-  font-size: var(--font-size-lg);
-  padding-top: 0.5rem;
-}
-
 .dv-date-input {
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
@@ -146,4 +126,47 @@
   &:focus {
     outline: 1px solid var(--primary);
   }
+}
+
+.dv-file-drop-area {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--bg-color-emphasis);
+  padding: 1rem;
+  border: 2px dashed var(--secondary);
+  border-radius: var(--border-radius);
+  margin: 0.5rem;
+  box-shadow: var(--shadow);
+  transition: all 200ms ease;
+  cursor: pointer;
+
+  i {
+    font-size: 2rem;
+    color: var(--primary);
+  }
+
+  input[type="file"] {
+    display: none;
+  }
+}
+
+.dv-file-drop-area.dragover {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary), transparent 90%);
+}
+
+.dv-drop-area-instructions {
+  display: flex;
+  gap: 1rem;
+}
+
+.dv-drop-area-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.dv-drop-area-info {
+  font-size: var(--font-size-sm);
+  color: var(--secondary);
 }

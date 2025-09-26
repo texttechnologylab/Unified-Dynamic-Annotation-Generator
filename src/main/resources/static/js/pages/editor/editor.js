@@ -30,7 +30,9 @@ function init() {
       type: "BarChart",
       title: "Bar Chart",
       generator: {},
-      options: {},
+      options: {
+        horizontal: false,
+      },
       icon: "bi bi-bar-chart",
       content: "Bar Chart",
       minW: 3,
@@ -40,7 +42,9 @@ function init() {
       type: "PieChart",
       title: "Pie Chart",
       generator: {},
-      options: {},
+      options: {
+        hole: 0,
+      },
       icon: "bi bi-pie-chart",
       content: "Pie Chart",
       minW: 2,
@@ -50,7 +54,10 @@ function init() {
       type: "LineChart",
       title: "Line Chart",
       generator: {},
-      options: {},
+      options: {
+        line: true,
+        dots: true,
+      },
       icon: "bi bi-graph-up",
       content: "Line Chart",
       minW: 3,
@@ -70,7 +77,9 @@ function init() {
       type: "Network2D",
       title: "Network 2D",
       generator: {},
-      options: {},
+      options: {
+        radius: 10,
+      },
       icon: "bi bi-diagram-3",
       content: "Network 2D",
       minW: 3,
@@ -112,33 +121,43 @@ function init() {
         .querySelector(".grid-stack-item-content")
         .replaceChildren(createGridItem(item));
 
-      // modal.form(
-      //   item.title + " Settings",
-      //   [
-      //     {
-      //       label: "Title",
-      //       type: "text",
-      //       value: "My " + item.title,
-      //     },
-      //     {
-      //       label: "Select a generator",
-      //       type: "select",
-      //       options: [],
-      //       value: "",
-      //     },
-      //     {
-      //       label: "Orientation",
-      //       type: "select",
-      //       options: ["horizontal", "vertical"],
-      //       value: "vertical",
-      //     },
-      //   ],
-      //   (title, generator, orientation) =>
-      //     console.log(title, generator, orientation)
-      // );
+      const btn = item.el.querySelector(".dv-chart-area>button");
+      btn.addEventListener("click", () => openModal(modal, item.title));
+
+      openModal(modal, item.title);
     });
+  });
+
+  document.querySelector("#save-button").addEventListener("click", () => {
     console.log(grid.save(false));
   });
+}
+
+function openModal(modal, title) {
+  modal.form(
+    title + " Settings",
+    [
+      {
+        label: "Title",
+        type: "text",
+        value: "My " + title,
+      },
+      {
+        label: "Select a generator",
+        type: "select",
+        options: [],
+        value: "",
+      },
+      {
+        label: "Orientation",
+        type: "select",
+        options: ["horizontal", "vertical"],
+        value: "vertical",
+      },
+    ],
+    (title, generator, orientation) =>
+      console.log(title, generator, orientation)
+  );
 }
 
 function createNewWidget(icon, title) {

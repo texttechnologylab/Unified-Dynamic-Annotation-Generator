@@ -32,7 +32,6 @@ public class AppController {
 
 	@GetMapping("/")
 	public String index(Model model) throws Exception {
-		model.addAttribute("title", "Dynamic Visualizations");
 		model.addAttribute("pipelines", "[\"main\", \"example_pipeline\", \"pipeline2\"]");
 
 		return "/pages/index/index";
@@ -40,9 +39,8 @@ public class AppController {
 
 	@GetMapping("/editor")
 	public String editorNew(Model model) throws Exception {
-		String json = "";
+		String json = "{}";
 
-		model.addAttribute("title", "Editor - Dynamic Visualizations");
 		model.addAttribute("json", json);
 
 		return "/pages/editor/editor";
@@ -52,7 +50,6 @@ public class AppController {
 	public String editorFile(@RequestParam("file") MultipartFile file, Model model) throws Exception {
 		String json = new String(file.getBytes(), StandardCharsets.UTF_8);
 
-		model.addAttribute("title", "Editor - Dynamic Visualizations");
 		model.addAttribute("json", json);
 
 		return "/pages/editor/editor";
@@ -62,7 +59,7 @@ public class AppController {
 	public String editorEdit(@PathVariable("id") String id, Model model) throws Exception {
 		String json = this.fetch("http://localhost:8080/api/visualisations?pipelineId=" + id);
 
-		model.addAttribute("title", id + " - Editor - Dynamic Visualizations");
+		model.addAttribute("title", "Editor - Dynamic Visualizations");
 		model.addAttribute("json", json);
 
 		return "/pages/editor/editor";
@@ -73,7 +70,8 @@ public class AppController {
 		String configs = this.fetch("http://localhost:8080/api/visualisations?pipelineId=" + id);
 		String filters = Files.readString(Paths.get("./src/main/resources/pipelines/examples/filters.json"));
 
-		model.addAttribute("pipeline", id);
+		model.addAttribute("id", id);
+		model.addAttribute("pipelines", "[\"main\", \"example_pipeline\", \"pipeline2\"]");
 		model.addAttribute("filters", filters);
 		model.addAttribute("configs", configs);
 

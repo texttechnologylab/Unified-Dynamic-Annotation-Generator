@@ -40,17 +40,26 @@
     flex-grow: 1;
   }
 
-  .dv-btn-delete {
-    padding: 0.375rem 0.75rem;
-    opacity: 0;
+  .dv-btn-hidden {
+    padding: 0.375rem 0.75rem 0.375rem 0.25rem;
   }
 
   &:hover {
     font-weight: bold;
 
-    .dv-btn-delete {
+    .dv-btn-hidden {
       opacity: 1;
     }
+  }
+}
+
+.dv-btn-delete {
+  &:hover {
+    color: #dc3545 !important;
+  }
+
+  &:active {
+    color: #8b0000 !important;
   }
 }
 
@@ -58,47 +67,4 @@
   text-align: center;
   font-size: var(--font-size-lg);
   margin: 1rem;
-}
-
-.dv-file-drop-area {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: var(--bg-color-emphasis);
-  padding: 1rem;
-  border: 2px dashed var(--secondary);
-  border-radius: var(--border-radius);
-  margin: 0.5rem;
-  box-shadow: var(--shadow);
-  transition: all 200ms ease;
-  cursor: pointer;
-
-  i {
-    font-size: 2rem;
-    color: var(--primary);
-  }
-
-  input[type="file"] {
-    display: none;
-  }
-}
-
-.dv-file-drop-area.dragover {
-  border-color: var(--primary);
-  background: color-mix(in srgb, var(--primary), transparent 90%);
-}
-
-.dv-drop-area-instructions {
-  display: flex;
-  gap: 1rem;
-}
-
-.dv-drop-area-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.dv-drop-area-info {
-  font-size: var(--font-size-sm);
-  color: var(--secondary);
 }

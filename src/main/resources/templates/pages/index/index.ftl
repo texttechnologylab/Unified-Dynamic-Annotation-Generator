@@ -3,11 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>${title}</title>
+    <title>Dynamic Visualizations</title>
 
     <link rel="stylesheet" href="/css/variables.css" />
     <link rel="stylesheet" href="/css/pages/index.css" />
-    <link rel="stylesheet" href="/css/shared/global.css" />
+    <link rel="stylesheet" href="/css/shared/globals.css" />
+    <link rel="stylesheet" href="/css/shared/components.css" />
     <link rel="stylesheet" href="/css/shared/controls.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
@@ -15,7 +16,7 @@
   
   <body>
     <#include "/shared/modal.ftl">
-    <#include "/shared/file-input.ftl">
+    <#include "/shared/fileInput.ftl">
 
     <div class="dv-layout">
       <div class="dv-main-title">
@@ -36,8 +37,24 @@
                 <i class="bi bi-clipboard-data"></i>
                 <span>${pipeline}</span>
               </a>
+
+              <a
+                class="dv-btn-hidden"
+                title="Edit configuration"
+                href="/editor/${pipeline}"
+              >
+                <i class="bi bi-pencil"></i>
+              </a>
+              <a
+                class="dv-btn-hidden"
+                title="Export configuration"
+                href="/api/visualisations?pipelineId=${pipeline}&pretty=true"
+                download="config.json"
+              >
+                <i class="bi bi-download"></i>
+              </a>
               <button
-                class="dv-btn-delete"
+                class="dv-btn-hidden dv-btn-delete"
                 title="Delete pipeline"
                 data-dv-toggle="modal"
                 data-pipeline="${pipeline}"
