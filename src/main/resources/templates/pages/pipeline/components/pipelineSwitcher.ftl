@@ -3,7 +3,7 @@
     <a class="dv-pipeline-switcher-trigger">
       <div class="dv-pipeline-switcher-title">
         <i class="bi bi-clipboard-data"></i>
-        <span>${selected}</span>
+        <span class="dv-text-truncate">${selected}</span>
       </div>
       <i class="bi bi-chevron-expand"></i>
     </a>
@@ -17,7 +17,7 @@
           >
             <div class="dv-pipeline-switcher-title">
               <i class="bi bi-clipboard-data"></i>
-              <span>${id}</span>
+              <span class="dv-text-truncate">${id}</span>
             </div>
           </a>
         </#if>

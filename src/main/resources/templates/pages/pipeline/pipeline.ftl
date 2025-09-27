@@ -30,7 +30,7 @@
         <div class="grid-stack">
           <#list configs?eval_json as config>
             <div class="grid-stack-item" gs-id="${config.id}">
-              <div class="grid-stack-item-content dv-chart" data-dv-chart="${config.id}">
+              <div class="grid-stack-item-content dv-chart hide" data-dv-chart="${config.id}">
                 <@toolbar id=config.id title=config.title />
 
                 <div class="dv-chart-area">

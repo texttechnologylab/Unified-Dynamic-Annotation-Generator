@@ -10,7 +10,9 @@
       <i class="bi bi-sliders"></i>
     </button>
 
-    <span class="dv-title dv-bold">${title}</span>
+    <span class="dv-toolbar-title" title="${title}">
+      ${title}
+    </span>
 
     <button
       class="dv-btn dv-btn-toolbar"

@@ -8,6 +8,7 @@
   gap: 0.5rem;
   width: 100%;
   margin-bottom: 1rem;
+  font-size: var(--font-size-sm);
 }
 
 .dv-select {
@@ -15,7 +16,6 @@
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   padding: 0.25rem 2.25rem 0.25rem 0.5rem;
-  font-size: var(--font-size-sm);
   cursor: pointer;
   background-color: var(--bg-color);
   background-image: url("/img/chevron.svg");
@@ -35,7 +35,6 @@
   border-radius: var(--border-radius);
   background-color: var(--bg-color);
   padding: 0.25rem 0.5rem 0.25rem 0.5rem;
-  font-size: var(--font-size-sm);
   width: 100%;
   flex-grow: 1;
 
@@ -62,7 +61,6 @@
 .dv-segment-label {
   border: 1px solid var(--border-color);
   padding: 0.25rem 0.5rem;
-  font-size: var(--font-size-sm);
   cursor: pointer;
 
   &:hover {

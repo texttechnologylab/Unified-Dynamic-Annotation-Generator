@@ -66,6 +66,23 @@ export default class Modal {
     this.element.classList.add("show");
   }
 
+  prompt(title, value, onConfirm) {
+    this.close();
+
+    this.title.textContent = title;
+
+    const textarea = createElement("textarea", { rows: 10, value });
+    this.body.append(textarea);
+
+    this.listener = () => {
+      onConfirm(textarea.value);
+      this.close();
+    };
+    this.buttons[2].addEventListener("click", this.listener);
+
+    this.element.classList.add("show");
+  }
+
   close() {
     this.title.innerHTML = "";
     this.body.innerHTML = "";

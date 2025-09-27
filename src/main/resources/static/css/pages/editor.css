@@ -49,25 +49,5 @@
 }
 
 .grid-stack-item-content {
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow-sm);
   cursor: grab;
-
-  img {
-    width: 100%;
-    height: 100%;
-  }
-}
-
-.dv-toolbar {
-  text-align: center;
-  background-color: var(--bg-color-emphasis);
-}
-
-.dv-chart-area {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: var(--secondary);
 }

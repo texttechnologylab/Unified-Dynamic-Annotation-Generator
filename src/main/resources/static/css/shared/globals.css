@@ -16,6 +16,12 @@
   align-items: center;
 }
 
+.dv-text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .dv-divider {
   padding-bottom: 0.2rem;
   border-bottom: 1px solid var(--border-color);
@@ -118,6 +124,15 @@
   &:active {
     background-color: color-mix(in srgb, var(--primary), #000000 30%);
     color: #ffffff;
+  }
+}
+
+.dv-btn-group {
+  display: flex;
+  gap: 0.5rem;
+
+  button {
+    flex-grow: 1;
   }
 }
 

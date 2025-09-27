@@ -110,6 +110,7 @@
 .dv-pipeline-switcher-title {
   display: flex;
   gap: 0.5rem;
+  overflow: hidden;
 
   i {
     color: var(--primary);

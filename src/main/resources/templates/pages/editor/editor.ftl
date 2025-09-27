@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="/css/shared/globals.css" />
     <link rel="stylesheet" href="/css/shared/components.css" />
     <link rel="stylesheet" href="/css/shared/controls.css" />
+    <link rel="stylesheet" href="/css/shared/chart.css" />
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
@@ -33,20 +34,43 @@
       <div class="dv-main">
         <div class="grid-stack">
           <template id="text-placeholder">
-            <div class="m-2">The quick brown fox jumps over the lazy dog</div>
+            <div class="grid-stack-item-content">
+              The quick brown fox jumps over the lazy dog.
+            </div>
           </template>
 
           <template id="image-placeholder">
-            <img src="https://placehold.co/600x400" alt="Here goes an image" />
+            <div class="grid-stack-item-content">
+              <img
+                src="https://placehold.co/600x400"
+                width="100%"
+                height="100%"
+              />
+            </div>
           </template>
 
           <template id="d3-chart-placeholder">
-            <div class="dv-toolbar">
-              <span class="dv-title dv-bold"></span>
-            </div>
-            <div class="dv-chart-area">
-              <i></i>
-              <button>Options</button>
+            <div class="grid-stack-item-content dv-chart">
+              <div class="dv-toolbar">
+                <button
+                  class="dv-btn dv-btn-toolbar"
+                  type="button"
+                  title="Edit"
+                >
+                  <i class="bi bi-pencil"></i>
+                </button>
+
+                <span class="dv-toolbar-title"></span>
+
+                <button
+                  class="dv-btn dv-btn-toolbar"
+                  type="button"
+                  title="Remove"
+                >
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </div>
+              <div class="dv-chart-area"></div>
             </div>
           </template>
         </div>
@@ -63,7 +87,7 @@
       console.log(json);
 
       accordions.init();
-      editor.init();
+      editor.init(json);
     </script>
   </body>
 </html>
