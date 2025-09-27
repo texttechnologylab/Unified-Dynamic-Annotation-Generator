@@ -56,8 +56,6 @@
         </dependency>
 
 
-
-
         <!-- DevTools REMOVED to avoid restart classloader duplication of javax.ws.rs -->
 
         <!-- Template engine -->
@@ -141,11 +139,11 @@
 
 
         <!-- TextTechnologyLab -->
-<!--        <dependency>-->
-<!--            <groupId>com.github.texttechnologylab</groupId>-->
-<!--            <artifactId>DockerUnifiedUIMAInterface</artifactId>-->
-<!--            <version>0e6ddc8476</version>-->
-<!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>com.github.texttechnologylab</groupId>-->
+        <!--            <artifactId>DockerUnifiedUIMAInterface</artifactId>-->
+        <!--            <version>0e6ddc8476</version>-->
+        <!--        </dependency>-->
         <dependency>
             <groupId>com.github.texttechnologylab</groupId>
             <artifactId>UIMATypeSystem</artifactId>
@@ -207,24 +205,24 @@
                 </configuration>
             </plugin>
 
-            <plugin>
-                <groupId>org.apache.uima</groupId>
-                <artifactId>jcasgen-maven-plugin</artifactId>
-                <version>3.6.0</version>
-                <executions>
-                    <execution>
-                        <id>generate-jcas</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <typeSystemIncludes>src/main/resources/types/PlenumTypeSystem.xml</typeSystemIncludes>
-                    <outputDirectory>src/main/java/</outputDirectory>
-                </configuration>
-            </plugin>
+            <!--            <plugin>-->
+            <!--                <groupId>org.apache.uima</groupId>-->
+            <!--                <artifactId>jcasgen-maven-plugin</artifactId>-->
+            <!--                <version>3.6.0</version>-->
+            <!--                <executions>-->
+            <!--                    <execution>-->
+            <!--                        <id>generate-jcas</id>-->
+            <!--                        <phase>generate-sources</phase>-->
+            <!--                        <goals>-->
+            <!--                            <goal>generate</goal>-->
+            <!--                        </goals>-->
+            <!--                    </execution>-->
+            <!--                </executions>-->
+            <!--                <configuration>-->
+            <!--                    <typeSystemIncludes>src/main/resources/types/PlenumTypeSystem.xml</typeSystemIncludes>-->
+            <!--                    <outputDirectory>src/main/java/</outputDirectory>-->
+            <!--                </configuration>-->
+            <!--            </plugin>-->
         </plugins>
     </build>
 </project>
