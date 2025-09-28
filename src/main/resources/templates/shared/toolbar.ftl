@@ -10,7 +10,9 @@
       <i class="bi bi-sliders"></i>
     </button>
 
-    <span class="dv-title dv-bold">${title}</span>
+    <span class="dv-toolbar-title" title="${title}">
+      ${title}
+    </span>
 
     <button
       class="dv-btn dv-btn-toolbar"
@@ -21,7 +23,7 @@
       <i class="bi bi-download"></i>
     </button>
     <div class="dropdown-menu">
-      <div class="dv-dropdown"></div>
+      <div class="dv-dropdown-menu"></div>
     </div>
   </div>
 </#macro>

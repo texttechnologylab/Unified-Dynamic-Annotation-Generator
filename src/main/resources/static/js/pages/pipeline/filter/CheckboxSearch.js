@@ -8,7 +8,7 @@ export default class CheckboxSearch {
 
     const root = document.getElementById(id);
     this.input = root.querySelector(".dv-autocomplete-input");
-    this.results = root.querySelector(".dv-autocomplete-results");
+    this.results = root.querySelector(".dv-dropdown");
     this.checkboxes = root.querySelector(".dv-filter-checkboxes");
     this.addedIds = [];
 
@@ -24,11 +24,11 @@ export default class CheckboxSearch {
 
     this.input.addEventListener("focus", () => {
       this.autocomplete(this.input.value);
-      this.results.classList.remove("dv-hidden");
+      this.results.classList.add("show");
     });
 
     this.input.addEventListener("blur", () => {
-      this.results.classList.add("dv-hidden");
+      this.results.classList.remove("show");
       this.results.innerHTML = "";
     });
   }

@@ -10,7 +10,7 @@ export default class D3Visualization {
 
     this.filter = {};
 
-    this.tooltip = d3.select(".dv-tooltip");
+    this.tooltip = d3.select(".dv-chart-tooltip");
 
     // Add svg
     this.svg = this.root
@@ -23,7 +23,7 @@ export default class D3Visualization {
       .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
     // Show chart
-    this.root.classed("show", true);
+    this.root.classed("hide", false);
   }
 
   async fetch() {

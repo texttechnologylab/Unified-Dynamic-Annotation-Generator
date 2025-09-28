@@ -1,8 +1,9 @@
 <#include "/shared/accordion.ftl">
-<#include "/pages/pipeline/filter/checkbox-search.ftl">
-<#include "/pages/pipeline/filter/date-range.ftl">
+<#include "/pages/pipeline/components/pipelineSwitcher.ftl">
+<#include "/pages/pipeline/components/checkboxSearch.ftl">
+<#include "/pages/pipeline/components/dateRange.ftl">
 
-<#macro sidebar pipeline filters>
+<#macro sidebar id pipelines filters>
   <aside class="dv-sidebar">
     <div class="dv-sidebar-header">
       <h1 class="dv-bold">Dynamic Visualizations</h1>
@@ -13,26 +14,12 @@
         class="dv-btn dv-menu-link"
         href="/"
       >
-        <i class="bi bi-box-arrow-in-left"></i>
-        <span>Pipeline selection</span>
+        <i class="bi bi-list"></i>
+        <span>Menu</span>
       </a>
       
-      <div class="dv-menu-title">Pipeline: ${pipeline}</div>
-      <a 
-        class="dv-btn dv-menu-link"
-        href="/editor/${pipeline}"
-      >
-        <i class="bi bi-pencil"></i>
-        <span>Edit configuration</span>
-      </a>
-      <a 
-        class="dv-btn dv-menu-link"
-        href="/api/visualisations?pipelineId=${pipeline}&pretty=true"
-        download="pipeline.json"
-      >
-        <i class="bi bi-download"></i>
-        <span>Export configuration</span>
-      </a>
+      <div class="dv-menu-title">Pipeline</div>
+      <@pipelineSwitcher pipelines=pipelines selected=id />
       
       <div class="dv-menu-title">Corpus Filter</div>
       <div class="dv-corpus-filter">
@@ -52,7 +39,7 @@
           </@accordion>
         </#if>
 
-        <div class="d-flex justify-content-center mt-2">
+        <div class="dv-centered mt-2">
           <button
             id="apply-button"
             class="dv-btn-outline"

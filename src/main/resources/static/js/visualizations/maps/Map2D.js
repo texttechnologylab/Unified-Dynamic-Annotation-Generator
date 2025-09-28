@@ -11,7 +11,7 @@ export default class Map2D extends D3Visualization {
       width,
       height
     );
-    this.handler = new ExportHandler(this.root.select(".dv-dropdown"), [
+    this.handler = new ExportHandler(this.root.select(".dv-dropdown-menu"), [
       "svg",
       "png",
       "csv",
