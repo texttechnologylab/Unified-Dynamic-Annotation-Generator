@@ -1,5 +1,6 @@
 package uni.textimager.sandbox.sources;
 
+import lombok.RequiredArgsConstructor;
 import org.jooq.*;
 import org.jooq.Record;
 import org.jooq.impl.DSL;
@@ -26,14 +27,14 @@ import java.util.*;
 import java.util.List;
 
 @Component
-@ConditionalOnProperty(name = "app.database-generator.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(
+        name = "app.source-builder.enabled",
+        havingValue = "true"
+)
+@RequiredArgsConstructor
 public class SourceBuilder implements ApplicationRunner {
 
     private final DataSource dataSource;
-
-    public SourceBuilder(DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
 
     @Override
     public void run(ApplicationArguments args) throws SQLException, IOException {
@@ -288,7 +289,7 @@ public class SourceBuilder implements ApplicationRunner {
         }
 
         // Assemble the joined table
-        Table<?> joined = joinTables.get(0);
+        Table<?> joined = joinTables.getFirst();
         for (int i = 1; i < joinTables.size(); i++) {
             joined = joined.join(joinTables.get(i)).on(joinCondition);
         }
@@ -297,7 +298,7 @@ public class SourceBuilder implements ApplicationRunner {
         List<SelectFieldOrAsterisk> selectFields = new ArrayList<>();
         selectFields.add(DSL.asterisk());
 
-        String firstHash = subtypeHashes.get(0);
+        String firstHash = subtypeHashes.getFirst();
         for (int j = 0; j < joinFieldNames.size(); j++) {
             Field<?> f = mapTableToJoinFields.get(firstHash).get(j);
             String alias = normJoinName(joinFieldNames.get(j));
@@ -338,7 +339,7 @@ public class SourceBuilder implements ApplicationRunner {
     /**
      * Replace the hashed-table prefixes in column names with a single custom-type prefix.
      */
-    private void dbCleanCustomTypeTable(List<String> subtypeHashes, String originalTableName, String newTableName, DSLContext dsl) throws SQLException {
+    private void dbCleanCustomTypeTable(List<String> subtypeHashes, String originalTableName, String newTableName, DSLContext dsl) {
         // Get column names
         List<String> columnNames = new ArrayList<>();
         try (Connection conn = dataSource.getConnection()) {
