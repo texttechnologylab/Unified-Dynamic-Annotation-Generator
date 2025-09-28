@@ -1,22 +1,23 @@
-package uni.textimager.sandbox.api.Handler;
+package uni.textimager.sandbox.api.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import uni.textimager.sandbox.api.DummyDataProvider;
+import uni.textimager.sandbox.api.ValueMode;
 import uni.textimager.sandbox.api.charts.ChartRegistry;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-public class DataQueryHandler {
+public class DataQueryService {
 
     private final ObjectMapper mapper;
     private final DummyDataProvider provider;
     private final ChartRegistry charts;
 
-    public DataQueryHandler(ObjectMapper mapper,
+    public DataQueryService(ObjectMapper mapper,
                             DummyDataProvider provider,
                             ChartRegistry charts) {
         this.mapper = mapper;

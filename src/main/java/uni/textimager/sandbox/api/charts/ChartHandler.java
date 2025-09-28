@@ -1,7 +1,7 @@
 package uni.textimager.sandbox.api.charts;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import uni.textimager.sandbox.api.Handler.ValueMode;
+import uni.textimager.sandbox.api.ValueMode;
 
 import java.util.Map;
 import java.util.Set;

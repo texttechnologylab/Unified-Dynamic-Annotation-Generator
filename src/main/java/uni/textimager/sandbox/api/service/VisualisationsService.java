@@ -1,4 +1,4 @@
-package uni.textimager.sandbox.api.Handler;
+package uni.textimager.sandbox.api.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -6,12 +6,12 @@ import org.springframework.stereotype.Service;
 import uni.textimager.sandbox.api.Repositories.VisualisationsRepository;
 
 @Service
-public class VisualisationsHandler {
+public class VisualisationsService {
 
     private final VisualisationsRepository repo;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public VisualisationsHandler(VisualisationsRepository repo) {
+    public VisualisationsService(VisualisationsRepository repo) {
         this.repo = repo;
     }
 

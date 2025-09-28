@@ -1,4 +1,4 @@
-package uni.textimager.sandbox.api.Handler;
+package uni.textimager.sandbox.api;
 
 import java.util.Locale;
 
@@ -9,7 +9,7 @@ public enum ValueMode {
     ZSCORE,     // (value-mean)/sd
     PER_FILE_AVG;
 
-    static ValueMode from(String s) {
+    public static ValueMode from(String s) {
         if (s == null) return RAW;
         return switch (s.trim().toUpperCase(Locale.ROOT)) {
             case "RAW", "" -> RAW;   // treat aliases as no-op
