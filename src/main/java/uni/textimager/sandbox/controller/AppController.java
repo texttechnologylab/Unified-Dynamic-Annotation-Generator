@@ -14,8 +14,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 @Controller
 public class AppController {
@@ -39,41 +37,39 @@ public class AppController {
 
 	@GetMapping("/editor")
 	public String editorNew(Model model) throws Exception {
-		String json = "{}";
+		String config = "{}";
 
-		model.addAttribute("json", json);
+		model.addAttribute("config", config);
 
 		return "/pages/editor/editor";
 	}
 
 	@PostMapping("/editor")
 	public String editorFile(@RequestParam("file") MultipartFile file, Model model) throws Exception {
-		String json = new String(file.getBytes(), StandardCharsets.UTF_8);
+		String config = new String(file.getBytes(), StandardCharsets.UTF_8);
 
-		model.addAttribute("json", json);
+		model.addAttribute("config", config);
 
 		return "/pages/editor/editor";
 	}
 
 	@GetMapping("/editor/{id}")
 	public String editorEdit(@PathVariable("id") String id, Model model) throws Exception {
-		String json = this.fetch("http://localhost:8080/api/visualisations?pipelineId=" + id);
+		String config = "{\"widgets\": " + this.fetch("http://localhost:8080/api/visualisations?pipelineId=" + id)
+				+ "}";
 
-		model.addAttribute("title", "Editor - Dynamic Visualizations");
-		model.addAttribute("json", json);
+		model.addAttribute("config", config);
 
 		return "/pages/editor/editor";
 	}
 
 	@GetMapping("/pipeline/{id}")
 	public String pipeline(@PathVariable("id") String id, Model model) throws Exception {
-		String configs = this.fetch("http://localhost:8080/api/visualisations?pipelineId=" + id);
-		String filters = Files.readString(Paths.get("./src/main/resources/pipelines/examples/filters.json"));
+		String widgets = this.fetch("http://localhost:8080/api/visualisations?pipelineId=" + id);
 
 		model.addAttribute("id", id);
 		model.addAttribute("pipelines", "[\"main\", \"example_pipeline\", \"pipeline2\"]");
-		model.addAttribute("filters", filters);
-		model.addAttribute("configs", configs);
+		model.addAttribute("widgets", widgets);
 
 		return "/pages/pipeline/pipeline";
 	}

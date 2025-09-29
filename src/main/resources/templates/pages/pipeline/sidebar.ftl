@@ -3,7 +3,7 @@
 <#include "/pages/pipeline/components/checkboxSearch.ftl">
 <#include "/pages/pipeline/components/dateRange.ftl">
 
-<#macro sidebar id pipelines filters>
+<#macro sidebar id pipelines>
   <aside class="dv-sidebar">
     <div class="dv-sidebar-header">
       <h1 class="dv-bold">Dynamic Visualizations</h1>
@@ -27,17 +27,13 @@
             <@checkboxSearch id="files" total=12 />
         </@accordion>
 
-        <#if filters.tags??>
-          <@accordion icon="bi bi-tags" title="Tags">
-            <@checkboxSearch id="tags" total=5 />
-          </@accordion>
-        </#if>
+        <@accordion icon="bi bi-tags" title="Tags">
+          <@checkboxSearch id="tags" total=5 />
+        </@accordion>
 
-        <#if filters.date??>
-          <@accordion icon="bi bi-calendar-week" title="Date">
-              <@dateRange id="date" min=filters.date.min max=filters.date.max />
-          </@accordion>
-        </#if>
+        <@accordion icon="bi bi-calendar-week" title="Date">
+            <@dateRange id="date" min="2017-04-01" max="2017-04-30" />
+        </@accordion>
 
         <div class="dv-centered mt-2">
           <button

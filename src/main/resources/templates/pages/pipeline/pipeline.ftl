@@ -18,28 +18,15 @@
 
   <body>
     <#include "/pages/pipeline/sidebar.ftl"> 
-    <#include "/shared/toolbar.ftl"> 
-    <#include "/shared/sidepanel.ftl">
+    <#include "/pages/pipeline/grid.ftl">
 
     <div class="dv-layout">
-      <@sidebar id=id pipelines=pipelines?eval_json filters=filters?eval_json />
+      <@sidebar id=id pipelines=pipelines?eval_json />
 
       <main class="dv-main">
         <div class="dv-chart-tooltip"></div>
-        
-        <div class="grid-stack">
-          <#list configs?eval_json as config>
-            <div class="grid-stack-item" gs-id="${config.id}">
-              <div class="grid-stack-item-content dv-chart hide" data-dv-chart="${config.id}">
-                <@toolbar id=config.id title=config.title />
 
-                <div class="dv-chart-area">
-                  <@sidepanel id=config.id title="Controls" />
-                </div>
-              </div>
-            </div>
-          </#list>
-        </div>
+        <@grid widgets=widgets?eval_json />
       </main>
     </div>
 
@@ -50,8 +37,8 @@
       import accordions from "/js/shared/modules/accordions.js";
       import dropdowns from "/js/shared/modules/dropdowns.js";
 
-      const configs = JSON.parse("${configs?json_string}");
-      grid.init(configs);
+      const widgets = JSON.parse("${widgets?json_string}");
+      grid.init(widgets);
       corpusFilter.init();
 
       const dropdown = document.querySelector(".dv-dropdown");

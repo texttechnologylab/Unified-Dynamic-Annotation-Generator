@@ -1,60 +1,98 @@
 [
   {
-    "id": "bar-chart",
+    "type": "Text",
+    "title": "header",
+    "options": {
+      "text": "Parts of Speech and Named Entity",
+      "style": "text-center fs-2 fw-bold fst-normal text-decoration-underline"
+    },
+    "icon": "bi bi-fonts",
+    "w": 4,
+    "x": 4,
+    "y": 0,
+    "id": "Text-3ujztrd"
+  },
+  {
+    "type": "Image",
+    "title": "My Logo",
+    "options": {
+      "src": "https://placehold.co/600x400?text=My+Logo"
+    },
+    "icon": "bi bi-image",
+    "x": 3,
+    "y": 0,
+    "id": "Image-zndq9sh"
+  },
+  {
     "type": "BarChart",
-    "title": "BarChart",
+    "title": "Parts of Speech (POS)",
+    "generator": {
+      "id": "POS_Numbers"
+    },
     "options": {
-      "width": 800,
-      "height": 600,
       "horizontal": false
-    }
+    },
+    "icon": "bi bi-bar-chart",
+    "w": 4,
+    "h": 3,
+    "x": 0,
+    "y": 2,
+    "id": "bar-chart"
   },
   {
-    "id": "text",
     "type": "HighlightText",
-    "title": "HighlightText",
-    "options": {
-      "width": 600,
-      "height": 600
-    }
+    "title": "POS & NE in one TextFormatting",
+    "generator": {
+      "id": "Total_Formatting"
+    },
+    "options": {},
+    "icon": "bi bi-card-text",
+    "w": 4,
+    "h": 4,
+    "x": 4,
+    "y": 2,
+    "id": "text"
   },
   {
-    "id": "pie-chart",
-    "type": "PieChart",
-    "title": "PieChart",
+    "type": "BarChart",
+    "title": "Named Entities (NE)",
+    "generator": {
+      "id": "NE_Numbers"
+    },
     "options": {
-      "radius": 300,
-      "hole": 0
-    }
+      "horizontal": true
+    },
+    "icon": "bi bi-bar-chart",
+    "w": 4,
+    "h": 3,
+    "x": 8,
+    "y": 2,
+    "id": "bar-chart2"
   },
   {
-    "id": "line-chart",
-    "type": "LineChart",
-    "title": "LineChart",
+    "type": "Text",
+    "title": "Parts of Speech (POS) Caption",
     "options": {
-      "width": 800,
-      "height": 600,
-      "line": true,
-      "dots": true
-    }
+      "text": "This is a caption to explain something important for the chart above.",
+      "style": "text-end fs-6 fw-normal fst-italic text-decoration-none"
+    },
+    "icon": "bi bi-fonts",
+    "w": 4,
+    "x": 0,
+    "y": 5,
+    "id": "Text-lwq4zbo"
   },
   {
-    "id": "map-2d",
-    "type": "Map2D",
-    "title": "Map2D",
+    "type": "Text",
+    "title": "Named Entities (NE) Caption",
     "options": {
-      "width": 1400,
-      "height": 600
-    }
-  },
-  {
-    "id": "network-2d",
-    "type": "Network2D",
-    "title": "Network2D",
-    "options": {
-      "width": 800,
-      "height": 600,
-      "radius": 10
-    }
+      "text": "This is a caption to explain something important for the chart above.",
+      "style": "text-start fs-6 fw-normal fst-italic text-decoration-none"
+    },
+    "icon": "bi bi-fonts",
+    "w": 4,
+    "x": 8,
+    "y": 5,
+    "id": "Text-2smw5fr"
   }
 ]
