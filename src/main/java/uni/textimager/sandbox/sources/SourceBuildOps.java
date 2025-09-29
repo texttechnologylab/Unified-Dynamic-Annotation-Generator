@@ -58,7 +58,7 @@ public class SourceBuildOps {
 
             for (Pipeline p : pipelines) {
                 String pipelineID = p.getId();
-                String visualizationsJSON = p.getRootJSONView().get("visualizations").toJson(false);
+                String visualizationsJSON = p.getRootJSONView().get("widgets").toJson(false);
 
                 dsl.insertInto(table).columns(fId, fJson)
                         .values(pipelineID, visualizationsJSON)
