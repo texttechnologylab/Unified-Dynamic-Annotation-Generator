@@ -45,21 +45,22 @@ export default class HighlightText extends D3Visualization {
     }
 
     this.div
-      .selectAll("span")
-      .data(data.spans)
-      .join("span")
-      .text((item) => item.text)
-      .attr("style", (d) => (d.style ? d.style : null))
-      .filter((item) => item.label)
-      .on("mouseover", (event) => this.mouseover(event.currentTarget))
-      .on("mousemove", (event, data) =>
-        this.mousemove(
-          event.pageY,
-          event.pageX + 20,
-          `<strong>${data.label}</strong>`
+        .selectAll("span")
+        .data(data.spans)
+        .join("span")
+        .text(d => d.TEXT ?? d.text ?? "")
+        .attr("style", d => d.style || null)
+        .filter(d => d.label)
+        .on("mouseover", (event) => this.mouseover(event.currentTarget))
+        .on("mousemove", (event, d) =>
+            this.mousemove(
+                event.pageY,
+                event.pageX + 20,
+                `<strong>${d.label}</strong>`
+            )
         )
-      )
-      .on("mouseleave", (event) => this.mouseleave(event.currentTarget));
+        .on("mouseleave", (event) => this.mouseleave(event.currentTarget));
+
 
     this.exports.update(this.filter, data.spans, null);
   }

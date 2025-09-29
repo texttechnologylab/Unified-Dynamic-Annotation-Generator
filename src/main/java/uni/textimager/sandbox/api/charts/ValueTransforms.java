@@ -1,6 +1,6 @@
 package uni.textimager.sandbox.api.charts;
 
-import uni.textimager.sandbox.api.Handler.ValueMode;
+import uni.textimager.sandbox.api.ValueMode;
 import uni.textimager.sandbox.api.Repositories.GeneratorDataRepository;
 
 import java.util.*;

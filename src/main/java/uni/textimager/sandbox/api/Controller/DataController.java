@@ -8,7 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import uni.textimager.sandbox.api.Handler.DataQueryHandler;
+import uni.textimager.sandbox.api.service.DataQueryService;
 import uni.textimager.sandbox.api.Repositories.VisualisationsRepository;
 
 import java.util.*;
@@ -17,10 +17,10 @@ import java.util.*;
 @RequestMapping("/api")
 public class DataController {
 
-    private final DataQueryHandler handler;
+    private final DataQueryService handler;
     private final VisualisationsRepository visRepo;
 
-    public DataController(DataQueryHandler handler, VisualisationsRepository visRepo) {
+    public DataController(DataQueryService handler, VisualisationsRepository visRepo) {
         this.handler = handler;
         this.visRepo = visRepo;
     }

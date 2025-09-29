@@ -3,7 +3,9 @@ package uni.textimager.sandbox.generators;
 
 import lombok.Getter;
 import org.jooq.DSLContext;
+import org.jooq.Field;
 import org.jooq.Query;
+import org.jooq.Table;
 import org.jooq.impl.DSL;
 import uni.textimager.sandbox.database.DBConstants;
 import uni.textimager.sandbox.sources.DBAccess;
@@ -105,29 +107,48 @@ public class CategoryNumberMapping extends Generator implements CategoryNumberMa
     protected void saveCategoryNumberMapToDB(DBAccess dbAccess) throws SQLException {
         if (categoryNumberMap == null || categoryNumberMap.isEmpty()) return;
 
+        final String schema = "public"; // or expose dbAccess.getSchema()
+
         try (Connection connection = dbAccess.getDataSource().getConnection()) {
             DSLContext dsl = DSL.using(connection);
 
-            List<Query> inserts = new ArrayList<>();
+            // Table
+            Table<?> T = DSL.table(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_CATEGORYNUMBER));
+
+            // Columns (qualified)
+            Field<String> F_GEN   = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_CATEGORYNUMBER,
+                    DBConstants.TABLEATTR_GENERATORID), String.class);
+            Field<String> F_FILE  = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_CATEGORYNUMBER,
+                    DBConstants.TABLEATTR_FILENAME), String.class);
+            Field<String> F_CAT   = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_CATEGORYNUMBER,
+                    DBConstants.TABLEATTR_GENERATORDATA_CATEGORY), String.class);
+            Field<Double> F_NUM   = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_CATEGORYNUMBER,
+                    DBConstants.TABLEATTR_GENERATORDATA_NUMBER), Double.class);
+
+            List<Query> batch = new ArrayList<>();
+
             for (Map.Entry<String, Map<String, Double>> entry : categoryNumberMap.entrySet()) {
-                String filename = entry.getKey();
-                Map<String, Double> subMap = entry.getValue();
+                String filenameLabel = entry.getKey();               // this is your COALESCE(sofa_uri, doc_id) label
+                Map<String, Double> perCategory = entry.getValue();
+                if (perCategory == null || perCategory.isEmpty()) continue;
 
-                for (Map.Entry<String, Double> subMapEntry : subMap.entrySet()) {
-                    String category = subMapEntry.getKey();
-                    Double value = subMapEntry.getValue();
-                    inserts.add(dsl.insertInto(DSL.table(DBConstants.TABLENAME_GENERATORDATA_CATEGORYNUMBER),
-                                    DSL.field(DBConstants.TABLEATTR_GENERATORID),
-                                    DSL.field(DBConstants.TABLEATTR_FILENAME),
-                                    DSL.field(DBConstants.TABLEATTR_GENERATORDATA_CATEGORY),
-                                    DSL.field(DBConstants.TABLEATTR_GENERATORDATA_NUMBER))
-                            .values(id, filename, category, value));
-
+                for (Map.Entry<String, Double> e : perCategory.entrySet()) {
+                    String category = e.getKey();
+                    Double value    = e.getValue();
+                    batch.add(
+                            dsl.insertInto(T)
+                                    .columns(F_GEN, F_FILE, F_CAT, F_NUM)
+                                    .values(id, filenameLabel, category, value)
+                    );
                 }
             }
-            dsl.batch(inserts).execute();
+
+            if (!batch.isEmpty()) {
+                dsl.batch(batch).execute();
+            }
         }
     }
+
 
     public static Map<String, Map<String, Double>> capitalizeCategoryNumberKeys(Map<String, Map<String, Double>> categoryNumberMap, String capitalization) {
         HashMap<String, Map<String, Double>> resultMap = new HashMap<>();

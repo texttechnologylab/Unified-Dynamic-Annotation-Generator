@@ -7,6 +7,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.texttechnologylab.DockerUnifiedUIMAInterface.DUUIComposer;
 import org.texttechnologylab.DockerUnifiedUIMAInterface.driver.DUUIDockerDriver;
@@ -22,7 +25,9 @@ import java.net.URISyntaxException;
 
 import static org.apache.uima.fit.factory.AnalysisEngineFactory.createEngineDescription;
 
-//@Component
+@Order(Ordered.HIGHEST_PRECEDENCE)
+@ConditionalOnProperty(prefix = "duui.importer", name = "enabled", havingValue = "true")
+@Component
 @RequiredArgsConstructor
 public class DUUIImporter implements ApplicationRunner {
     private static final int iWorkers = 2;

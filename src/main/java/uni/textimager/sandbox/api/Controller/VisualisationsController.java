@@ -3,15 +3,15 @@ package uni.textimager.sandbox.api.Controller;// src/main/java/uni/textimager/sa
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
-import uni.textimager.sandbox.api.Handler.VisualisationsHandler;
+import uni.textimager.sandbox.api.service.VisualisationsService;
 
 @RestController
 @RequestMapping("/api")
 public class VisualisationsController {
 
-    private final VisualisationsHandler handler;
+    private final VisualisationsService handler;
 
-    public VisualisationsController(VisualisationsHandler handler) {
+    public VisualisationsController(VisualisationsService handler) {
         this.handler = handler;
     }
 
