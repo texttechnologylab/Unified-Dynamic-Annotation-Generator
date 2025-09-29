@@ -1,7 +1,7 @@
 import { GridStack } from "https://cdn.jsdelivr.net/npm/gridstack@12.3.3/+esm";
 import getter from "./getter.js";
 
-function init(configs) {
+function init(widgets) {
   const grid = GridStack.init({
     animate: false,
     float: true,
@@ -9,22 +9,26 @@ function init(configs) {
     disableResize: true,
   });
 
-  grid.load(configs);
+  grid.load(widgets);
 
-  setUpCharts(configs);
+  setUpCharts(widgets);
 }
 
-function setUpCharts(configs) {
-  document.querySelectorAll("[data-dv-chart]").forEach((node) => {
-    const id = node.dataset.dvChart;
-    const config = configs.find((conf) => conf.id === id);
+function setUpCharts(widgets) {
+  document.querySelectorAll("[data-dv-widget]").forEach((node) => {
+    const id = node.dataset.dvWidget;
+    const config = widgets.find((conf) => conf.id === id);
 
     const ChartClass = getter[config.type];
-    const endpoint = window.location.origin + "/api/data?id=" + id;
 
-    const options = { ...config.options, ...getDimensions(node) };
+    if (ChartClass) {
+      const endpoint = window.location.origin + "/api/data?id=" + id;
+      const options = { ...config.options, ...getDimensions(node) };
 
-    new ChartClass(node, endpoint, options).render();
+      new ChartClass(node, endpoint, options).render();
+    } else {
+      node.classList.remove("hide");
+    }
   });
 }
 

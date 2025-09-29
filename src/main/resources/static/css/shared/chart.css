@@ -7,10 +7,6 @@
   border-radius: var(--border-radius);
 }
 
-.dv-chart.hide {
-  opacity: 0;
-}
-
 .dv-toolbar {
   display: flex;
   align-items: center;

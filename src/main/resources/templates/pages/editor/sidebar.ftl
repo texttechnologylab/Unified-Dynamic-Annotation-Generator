@@ -18,7 +18,7 @@
       <div class="dv-menu-title">Pipeline Editor</div>
       <label class="dv-label">
         <span>Identifier:</span>
-        <input id="identifier-input" type="text" class="dv-text-input" value="main" />
+        <input id="identifier-input" type="text" class="dv-text-input" value="My Pipeline" />
       </label>
 
       <@accordion icon="bi bi-database" title="Sources">
