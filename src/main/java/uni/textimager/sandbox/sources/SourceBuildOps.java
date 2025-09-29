@@ -1,12 +1,12 @@
 package uni.textimager.sandbox.sources;
 
 import lombok.RequiredArgsConstructor;
-import org.jooq.Record;
 import org.jooq.*;
 import org.jooq.impl.DSL;
 import org.springframework.stereotype.Component;
 import uni.textimager.sandbox.database.DBConstants;
 import uni.textimager.sandbox.database.TypeTableResolver;
+import uni.textimager.sandbox.importer.config.DbProps;
 import uni.textimager.sandbox.pipeline.JSONView;
 import uni.textimager.sandbox.pipeline.Pipeline;
 import uni.textimager.sandbox.pipeline.PipelineNode;
@@ -23,13 +23,18 @@ import java.util.*;
 public class SourceBuildOps {
 
     private final DataSource dataSource;
+    private final DbProps dbProps;   // <-- add this
 
     private static String normJoinName(String raw) {
         return raw == null ? "" : raw.trim().toUpperCase(Locale.ROOT);
     }
 
+    private String schema() {
+        return dbProps.getSchema();
+    }
+
     public void savePipelinesVisualizationsJSONs(Collection<Pipeline> pipelines) throws SQLException {
-        final String schema = System.getenv().getOrDefault("DB_SCHEMA", "public");
+        final String schema = schema();
 
         try (Connection connection = dataSource.getConnection()) {
             DSLContext dsl = DSL.using(connection);
@@ -64,7 +69,7 @@ public class SourceBuildOps {
     }
 
     public void buildGeneratorTables() throws SQLException {
-        final String schema = "public";
+        final String schema = schema();
 
         try (Connection connection = dataSource.getConnection()) {
             DSLContext dsl = DSL.using(connection);
@@ -112,8 +117,6 @@ public class SourceBuildOps {
         }
     }
 
-    /* === Everything below is your custom-type join logic, unchanged except moved here === */
-
     public void buildCustomTypes(Pipeline pipeline) {
         for (PipelineNode n : pipeline.getCustomTypes()) buildCustomType(n);
     }
@@ -121,7 +124,7 @@ public class SourceBuildOps {
     private void buildCustomType(PipelineNode customTypeNode) {
         try (Connection connection = dataSource.getConnection()) {
             DSLContext dsl = DSL.using(connection);
-            final String schema = "public";
+            final String schema = schema();
 
             ArrayList<String> joinCols = null;
             try {
@@ -192,12 +195,13 @@ public class SourceBuildOps {
         }
     }
 
-    private void buildCustomType_customJoinFields(PipelineNode customTypeNode,
-                                                  List<String> subtypeHashes,
-                                                  List<String> joinFieldNames,
-                                                  DSLContext dsl,
-                                                  TypeTableResolver resolver,
-                                                  String schema) {
+    private void buildCustomType_customJoinFields(
+            PipelineNode customTypeNode,
+            List<String> subtypeHashes,
+            List<String> joinFieldNames,
+            DSLContext dsl,
+            TypeTableResolver resolver,
+            String schema) {
 
         String finalTableName = customTypeNode.getConfig().get("id").toString().toUpperCase(Locale.ROOT);
         String outName = finalTableName + "_RAW";
@@ -206,7 +210,7 @@ public class SourceBuildOps {
         Map<String, List<Field<?>>> mapTableToJoinFields = new HashMap<>();
 
         for (String hash : subtypeHashes) {
-            Table<?> t = DSL.table(DSL.name(schema, hash));
+            Table<?> t = DSL.table(DSL.name(schema, hash));           // schema-qualified
             joinTables.add(t);
 
             List<Field<?>> joinFields = new ArrayList<>();
@@ -219,7 +223,7 @@ public class SourceBuildOps {
                     case "FS_END" -> resolver.sys(hash, "fs_end");
                     default -> resolver.feat(hash, norm);
                 };
-                joinFields.add(DSL.field(DSL.name(schema, hash, physical)));
+                joinFields.add(DSL.field(DSL.name(schema, hash, physical))); // schema-qualified
             }
             mapTableToJoinFields.put(hash, joinFields);
         }
@@ -250,10 +254,12 @@ public class SourceBuildOps {
             selectFields.add(f.as(alias));
         }
 
-        Select<Record> select = dsl.select(selectFields).from(joined);
+        // use schema-qualified names for temp and final tables
+        Name OUT = DSL.name(schema, outName);
+        Name FINAL = DSL.name(schema, finalTableName);
 
-        dsl.dropTableIfExists(DSL.name(outName)).execute();
-        dsl.createTable(DSL.name(outName)).as(select).execute();
+        dsl.dropTableIfExists(OUT).execute();
+        dsl.createTable(OUT).as(dsl.select(selectFields).from(joined)).execute();
 
         for (String hash : subtypeHashes) {
             List<String> colsToDrop = new ArrayList<>();
@@ -269,18 +275,20 @@ public class SourceBuildOps {
                 colsToDrop.add(physical.toUpperCase(Locale.ROOT));
             }
             if (!colsToDrop.isEmpty()) {
-                dsl.alterTable(DSL.name(outName)).dropColumns(colsToDrop.toArray(String[]::new)).execute();
+                dsl.alterTable(OUT).dropColumns(colsToDrop.toArray(String[]::new)).execute();
             }
         }
 
-        cleanCustomTypeTable(subtypeHashes, outName, finalTableName, dsl);
+        cleanCustomTypeTable(subtypeHashes, OUT, FINAL, dsl);
     }
 
-    private void cleanCustomTypeTable(List<String> subtypeHashes, String originalTableName, String newTableName, DSLContext dsl) {
+    private void cleanCustomTypeTable(List<String> subtypeHashes, Name originalTableName, Name newTableName, DSLContext dsl) {
+        final String schema = schema();
+
         List<String> columnNames = new ArrayList<>();
         try (Connection conn = dataSource.getConnection()) {
             DatabaseMetaData metaData = conn.getMetaData();
-            try (ResultSet rs = metaData.getColumns(null, null, originalTableName, null)) {
+            try (ResultSet rs = metaData.getColumns(null, schema, originalTableName.last(), null)) { // filter by schema
                 while (rs.next()) {
                     columnNames.add(rs.getString("COLUMN_NAME"));
                 }
@@ -306,20 +314,20 @@ public class SourceBuildOps {
         }
 
         List<Field<?>> selectFields = new ArrayList<>();
-        Table<?> t = DSL.table(DSL.name(originalTableName));
+        Table<?> t = DSL.table(originalTableName);
         for (String col : columnNames) {
             String cleaned = cleanedNames.get(col);
-            Field<Object> f = DSL.field(DSL.name(originalTableName, col), Object.class);
+            Field<Object> f = DSL.field(DSL.name(originalTableName.last(), col), Object.class);
             String alias = (!cleaned.equals(col) && nameCounts.get(cleaned) == 1)
-                    ? (newTableName + "_" + cleaned)
-                    : (newTableName + "_" + col);
+                    ? (newTableName.last() + "_" + cleaned)
+                    : (newTableName.last() + "_" + col);
             selectFields.add(f.as(alias));
         }
 
         dsl.transaction(cfg -> {
             DSLContext tx = DSL.using(cfg);
-            tx.dropTableIfExists(DSL.name(newTableName)).execute();
-            tx.createTable(DSL.name(newTableName)).as(tx.select(selectFields).from(t)).execute();
+            tx.dropTableIfExists(newTableName).execute();
+            tx.createTable(newTableName).as(tx.select(selectFields).from(t)).execute();
         });
     }
 }
