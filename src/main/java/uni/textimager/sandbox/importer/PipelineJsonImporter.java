@@ -23,7 +23,7 @@ import java.util.stream.Stream;
 @ConditionalOnProperty(name = "app.pipeline-json-import.enabled", havingValue = "true")
 public class PipelineJsonImporter implements ApplicationRunner {
 
-    private static final String TABLE = "pipeline_jsons";
+    private static final String TABLE = "pipeline";
     private static final String COL_NAME = "pipeline_name";
     private static final String COL_JSON = "json";
 
