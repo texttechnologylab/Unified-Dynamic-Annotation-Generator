@@ -76,6 +76,23 @@ public class JSONView implements Iterable<JSONView> {
     }
 
     /**
+     * Returns true iff this node is a JSON object (Map) and contains the given key.
+     */
+    public boolean has(String key) {
+        if (key == null) return false;
+        if (!isMap()) return false;
+        return asMap().containsKey(key);
+    }
+
+    /**
+     * Like has(String) but also checks that the value is not null.
+     */
+    public boolean hasNonNull(String key) {
+        if (!has(key)) return false;
+        return asMap().get(key) != null;
+    }
+
+    /**
      * Returns the raw node (could be Map, List, String, Number, Boolean, or null).
      */
     public Object raw() {
