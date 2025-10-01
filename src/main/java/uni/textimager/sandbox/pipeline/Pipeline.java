@@ -238,7 +238,7 @@ public class Pipeline {
             }
 
             // Visualizations
-            JSONView visualizationsView = pipelineView.get("visualizations");
+            JSONView visualizationsView = pipelineView.get("widgets");
             HashMap<String, PipelineNode> visualizations = (HashMap<String, PipelineNode>) generatePipelineVisualizationsFromJSONView(visualizationsView, generators);
 
             // Step 2: Generate customTypes if defined
@@ -278,10 +278,14 @@ public class Pipeline {
                 HashMap<String, PipelineNode> dependencies;
                 String visualizationID = visualizationEntry.get("id").toString();
                 if (visualizationEntry.get("type").toString().equals("combi")) {
-                    dependencies = (HashMap<String, PipelineNode>) generatePipelineVisualizationsFromJSONView(visualizationEntry.get("visualizations"), generators);
+                    dependencies = (HashMap<String, PipelineNode>) generatePipelineVisualizationsFromJSONView(visualizationEntry.get("widgets"), generators);
                     visualizations.putAll(dependencies);
                 } else {
                     dependencies = new HashMap<>();
+                    if (!visualizationEntry.hasNonNull("generator")) {
+                        System.out.println("Visualization \"" + visualizationID + "\" has no generator defined. Skipping.");
+                        continue;
+                    }
                     String generatorID = visualizationEntry.get("generator").get("id").toString();
                     PipelineNode dependency = generators.get(generatorID);
                     if (dependency == null) {
