@@ -13,7 +13,7 @@
           <a
             class="dv-pipeline-switcher-item"
             title="${id}"
-            href="/pipeline/${id}"
+            href="/view/${id}"
           >
             <div class="dv-pipeline-switcher-title">
               <i class="bi bi-clipboard-data"></i>

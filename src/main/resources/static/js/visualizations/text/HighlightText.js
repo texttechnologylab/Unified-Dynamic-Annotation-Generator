@@ -1,6 +1,6 @@
 import D3Visualization from "../D3Visualization.js";
-import ControlsHandler from "../../pages/pipeline/chart/ControlsHandler.js";
-import ExportHandler from "../../pages/pipeline/chart/ExportHandler.js";
+import ControlsHandler from "../../pages/view/chart/ControlsHandler.js";
+import ExportHandler from "../../pages/view/chart/ExportHandler.js";
 
 export default class HighlightText extends D3Visualization {
   constructor(root, endpoint, { width = 800, height = 600 }) {
@@ -45,22 +45,21 @@ export default class HighlightText extends D3Visualization {
     }
 
     this.div
-        .selectAll("span")
-        .data(data.spans)
-        .join("span")
-        .text(d => d.TEXT ?? d.text ?? "")
-        .attr("style", d => d.style || null)
-        .filter(d => d.label)
-        .on("mouseover", (event) => this.mouseover(event.currentTarget))
-        .on("mousemove", (event, d) =>
-            this.mousemove(
-                event.pageY,
-                event.pageX + 20,
-                `<strong>${d.label}</strong>`
-            )
+      .selectAll("span")
+      .data(data.spans)
+      .join("span")
+      .text((d) => d.TEXT ?? d.text ?? "")
+      .attr("style", (d) => d.style || null)
+      .filter((d) => d.label)
+      .on("mouseover", (event) => this.mouseover(event.currentTarget))
+      .on("mousemove", (event, d) =>
+        this.mousemove(
+          event.pageY,
+          event.pageX + 20,
+          `<strong>${d.label}</strong>`
         )
-        .on("mouseleave", (event) => this.mouseleave(event.currentTarget));
-
+      )
+      .on("mouseleave", (event) => this.mouseleave(event.currentTarget));
 
     this.exports.update(this.filter, data.spans, null);
   }

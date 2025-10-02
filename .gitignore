@@ -1,4 +1,5 @@
 .vscode
+.prettierignore
 
 # Compiled class file
 target

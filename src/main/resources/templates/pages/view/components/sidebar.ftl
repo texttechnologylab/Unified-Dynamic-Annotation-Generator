@@ -1,7 +1,7 @@
 <#include "/shared/accordion.ftl">
-<#include "/pages/pipeline/components/pipelineSwitcher.ftl">
-<#include "/pages/pipeline/components/checkboxSearch.ftl">
-<#include "/pages/pipeline/components/dateRange.ftl">
+<#include "/pages/view/components/pipelineSwitcher.ftl">
+<#include "/pages/view/components/checkboxSearch.ftl">
+<#include "/pages/view/components/dateRange.ftl">
 
 <#macro sidebar id pipelines>
   <aside class="dv-sidebar">

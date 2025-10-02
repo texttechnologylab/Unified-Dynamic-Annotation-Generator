@@ -1,7 +1,7 @@
 
 
    
-/* Apache UIMA v3 - First created by JCasGen Sat Sep 27 08:52:26 CEST 2025 */
+/* Apache UIMA v3 - First created by JCasGen Wed Oct 01 17:04:02 CEST 2025 */
 
 package de.uni.type;
  
@@ -20,7 +20,7 @@ import org.apache.uima.jcas.tcas.Annotation;
 
 
 /** 
- * Updated by JCasGen Sat Sep 27 08:52:26 CEST 2025
+ * Updated by JCasGen Wed Oct 01 17:04:02 CEST 2025
  * XML source: C:/Users/Philipp/Uni/Master/4_Semester_SS_25/DLTI/project/dlti-dynamic-visualization/target/jcasgen/typesystem.xml
  * @generated */
 public class Abgeordneter extends Annotation {

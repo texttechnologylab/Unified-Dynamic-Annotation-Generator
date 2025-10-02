@@ -63,14 +63,14 @@ public class AppController {
 		return "/pages/editor/editor";
 	}
 
-	@GetMapping("/pipeline/{id}")
-	public String pipeline(@PathVariable("id") String id, Model model) throws Exception {
+	@GetMapping("/view/{id}")
+	public String view(@PathVariable("id") String id, Model model) throws Exception {
 		String widgets = this.fetch("http://localhost:8080/api/visualisations?pipelineId=" + id);
 
 		model.addAttribute("id", id);
 		model.addAttribute("pipelines", "[\"main\", \"example_pipeline\", \"pipeline2\"]");
 		model.addAttribute("widgets", widgets);
 
-		return "/pages/pipeline/pipeline";
+		return "/pages/view/view";
 	}
 }
