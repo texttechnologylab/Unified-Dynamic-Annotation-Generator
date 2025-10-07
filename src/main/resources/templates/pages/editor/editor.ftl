@@ -32,7 +32,7 @@
     </div>
 
     <script type="module">
-      import Editor from "/js/pages/editor/Editor_.js";
+      import Editor from "/js/pages/editor/Editor.js";
 
       const config = JSON.parse("${config?json_string}");
       const editor = new Editor();
