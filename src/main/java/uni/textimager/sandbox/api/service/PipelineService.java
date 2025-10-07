@@ -4,12 +4,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
-import org.jooq.impl.SQLDataType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.util.List;
@@ -20,6 +18,7 @@ import static org.springframework.http.HttpStatus.*;
 public class PipelineService {
 
     private static final String TABLE = "pipeline";
+    private static final String COL_ID = "pipeline_id";
     private static final String COL_NAME = "pipeline_name";
     private static final String COL_JSON = "json";
 
@@ -31,17 +30,17 @@ public class PipelineService {
         this.objectMapper = objectMapper;
     }
 
-    @PostConstruct
-    void ensureTable() throws Exception {
-        try (Connection c = dataSource.getConnection()) {
-            DSLContext dsl = DSL.using(c);
-            dsl.createTableIfNotExists(TABLE)
-                    .column(COL_NAME, SQLDataType.VARCHAR(255).nullable(false))
-                    .column(COL_JSON, SQLDataType.CLOB.nullable(false)) // switch to JSONB if on Postgres
-                    .constraints(DSL.constraint("PK_" + TABLE).primaryKey(COL_NAME))
-                    .execute();
-        }
-    }
+//    @PostConstruct
+//    void ensureTable() throws Exception {
+//        try (Connection c = dataSource.getConnection()) {
+//            DSLContext dsl = DSL.using(c);
+//            dsl.createTableIfNotExists(TABLE)
+//                    .column(COL_NAME, SQLDataType.VARCHAR(255).nullable(false))
+//                    .column(COL_JSON, SQLDataType.CLOB.nullable(false)) // switch to JSONB if on Postgres
+//                    .constraints(DSL.constraint("PK_" + TABLE).primaryKey(COL_NAME))
+//                    .execute();
+//        }
+//    }
 
     @Transactional(readOnly = true)
     public List<String> listNames(int page, int size, String q) throws Exception {
@@ -61,12 +60,12 @@ public class PipelineService {
     }
 
     @Transactional(readOnly = true)
-    public JsonNode get(String name) throws Exception {
+    public JsonNode get(String id) throws Exception {
         try (Connection c = dataSource.getConnection()) {
             DSLContext dsl = DSL.using(c);
             String json = dsl.select(DSL.field(COL_JSON, String.class))
                     .from(DSL.table(TABLE))
-                    .where(DSL.field(COL_NAME).eq(name))
+                    .where(DSL.field(COL_ID).eq(id))
                     .fetchOneInto(String.class);
             if (json == null) throw new ResponseStatusException(NOT_FOUND, "Pipeline not found");
             return parseJson(json);

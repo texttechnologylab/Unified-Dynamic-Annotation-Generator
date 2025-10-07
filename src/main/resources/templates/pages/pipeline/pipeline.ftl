@@ -17,7 +17,7 @@
   </head>
 
   <body>
-    <#include "/pages/pipeline/sidebar.ftl"> 
+    <#include "/pages/pipeline/sidebar.ftl">
     <#include "/pages/pipeline/grid.ftl">
 
     <div class="dv-layout">

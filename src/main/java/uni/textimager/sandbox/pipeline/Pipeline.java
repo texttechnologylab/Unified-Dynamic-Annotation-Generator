@@ -1,7 +1,12 @@
 package uni.textimager.sandbox.pipeline;
+
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
+import org.jooq.DSLContext;
+import org.jooq.Record1;
+import org.jooq.impl.DSL;
 import uni.textimager.sandbox.generators.CategoryNumberColorMapping;
 import uni.textimager.sandbox.generators.CategoryNumberMapping;
 import uni.textimager.sandbox.generators.Generator;
@@ -9,9 +14,11 @@ import uni.textimager.sandbox.generators.TextFormatting;
 import uni.textimager.sandbox.sources.DBAccess;
 import uni.textimager.sandbox.sources.Source;
 
+import javax.sql.DataSource;
 import java.awt.*;
 import java.io.IOException;
 import java.io.InputStream;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.List;
@@ -28,126 +35,6 @@ public class Pipeline {
 
     private final String id;
     private final JSONView rootJSONView;
-
-
-    public static Pipeline fromJSON(String path) throws IOException {
-        ArrayList<?> pipelines = generateMapFromJSON(path);
-
-        if (pipelines.size() != 1) {
-            String append;
-            if (pipelines.size() > 1) {
-                append = "Multiple pipelines defined. If you want to read multiple pipelines, use function Pipeline.multipleFromJSON().";
-            } else {
-                append = "No pipelines defined.";
-            }
-            throw new IllegalArgumentException("Invalid pipeline JSON: " + append);
-        }
-
-        if (!(pipelines.get(0) instanceof Map<?, ?> pipeline)) {
-            throw new IllegalArgumentException("Invalid pipeline JSON.");
-        }
-
-        JSONView view = new JSONView(pipeline);
-        return generatePipelineFromJSONView(view);
-    }
-
-    public static ArrayList<Pipeline> multipleFromJSON(String path) {
-        // TODO: Implement, using generatePipelineFromJSONView
-        return null;
-    }
-
-
-    public Collection<Generator> generateGenerators(DBAccess dbAccess) throws SQLException {
-        return generateGenerators(dbAccess, true, true);
-    }
-    public Collection<Generator> generateGenerators(DBAccess dbAccess, boolean onlyRelevantSources, boolean onlyRelevantGenerators) throws SQLException {
-        Map<String, PipelineNode> sourceNodes = onlyRelevantSources ? filteredSources : sources;
-        Map<String, PipelineNode> generatorNodes = onlyRelevantGenerators ? filteredGenerators : generators;
-        HashMap<String, Generator> generatedGenerators = new HashMap<>();
-
-        // Source-intrinsic generators
-        for (PipelineNode sourceNode : sourceNodes.values()) {
-            Source s = new Source(dbAccess, sourceNode.getConfig(), generatorNodes, sourceNode.getChildren());
-            System.out.println("Source created: " + s.getConfig().get("id"));
-            Map<String, Generator> sourceGenerators = s.createGenerators();
-            generatedGenerators.putAll(sourceGenerators);
-            System.out.println(sourceGenerators.size() + " Generators created for source " + s.getId());
-        }
-
-        // Derived generators
-        for (PipelineNode generatorNode : generatorNodes.values()) {
-            if (generatorNode.getType() != PipelineNodeType.DERIVED_GENERATOR) continue;
-            String generatorID = generatorNode.getConfig().get("id").toString();
-            HashMap<String, Generator> subGenerators = new HashMap<>();
-            HashMap<String, JSONView> subGeneratorsConfig = new HashMap<>();
-            HashMap<DerivedGeneratorSubtype, Integer> subtypesCounts = new HashMap<>();
-            JSONView subNodes = generatorNode.getConfig().get("fromGenerators");
-            for (JSONView node : subNodes) {
-                String nodeID = node.get("id").toString();
-                Generator subGenerator = generatedGenerators.get(nodeID);
-                subGenerators.put(nodeID, subGenerator);
-                subGeneratorsConfig.put(nodeID, node);
-                if (subGenerator instanceof TextFormatting) {
-                    subtypesCounts.merge(DerivedGeneratorSubtype.TEXT_FORMATTING, 1, Integer::sum);
-                } else if (subGenerator instanceof CategoryNumberMapping) {
-                    subtypesCounts.merge(DerivedGeneratorSubtype.CATEGORY_NUMBER, 1, Integer::sum);
-                }
-            }
-            if (subtypesCounts.size() == 1) {
-                // Single-subtype derived-generator
-                if (subtypesCounts.containsKey(DerivedGeneratorSubtype.TEXT_FORMATTING)) {
-                    ArrayList<TextFormatting.Dataset> datasets = new ArrayList<>();
-                    HashSet<Integer> textLengths = new HashSet<>();
-                    for (Generator s : subGenerators.values()) {
-                        TextFormatting subTextFormatting = (TextFormatting) s;
-                        textLengths.add(subTextFormatting.getText().length());
-                        datasets.addAll(subTextFormatting.getDatasets());
-                    }
-                    if (textLengths.size() == 1) {
-                        TextFormatting anySub = (TextFormatting) subGenerators.values().stream().findAny().orElse(null);
-                        TextFormatting textFormatting = new TextFormatting(generatorID, null, null, anySub.getText(), datasets);
-                        generatedGenerators.put(generatorID, textFormatting);
-                    } else {
-                        System.out.println("Didn't create generator \"" + generatorNode.getConfig().get("id") + "\". There was a text mismatch.");
-                    }
-                } else if (subtypesCounts.containsKey(DerivedGeneratorSubtype.CATEGORY_NUMBER)) {
-                    Map<String, Map<String, Double>> categoryNumberMap = new HashMap<>();
-                    Map<String, Color> categoryColorMap = new HashMap<>();
-                    for (Map.Entry<String, Generator> entry : subGenerators.entrySet()) {
-                        JSONView config = subGeneratorsConfig.get(entry.getKey());
-                        CategoryNumberColorMapping subCategoryNumberMapping = (CategoryNumberColorMapping) entry.getValue();
-                        int keepTop = -1;
-                        try { keepTop = Integer.parseInt(config.get("settings").get("keepTop").toString());
-                        } catch (Exception ignored) {}
-
-                        if (keepTop == -1) {
-                            // Todo: fertig machen, inklusive static color (einfach in color map machen?) und unnötige farben rausschmeißen => Zuerst CategoryNumber(Color)Mappings unifien
-                        } else {
-                            categoryNumberMap.putAll(CategoryNumberMapping.keepTotalTopN(subCategoryNumberMapping.getCategoryNumberMap(), keepTop));
-                        }
-                        categoryColorMap.putAll(subCategoryNumberMapping.getCategoryColorMap());
-                        String capitalization = null;
-                        try {
-                            capitalization = config.get("settings").get("categoryCapitalization").toString();
-                        } catch (Exception ignored) {}
-                        if (capitalization != null) { // Todo: Check for duplicates that exist now due to Lowercase/Uppercase (unify and print warning?)
-                            categoryNumberMap = CategoryNumberMapping.capitalizeCategoryNumberKeys(categoryNumberMap, capitalization);
-                            categoryColorMap = CategoryNumberMapping.capitalizeCategoryKeys(categoryColorMap, capitalization);
-                        }
-                    }
-
-                    CategoryNumberColorMapping categoryNumberMapping = new CategoryNumberColorMapping(generatorID, categoryNumberMap, categoryColorMap);
-                    generatedGenerators.put(generatorID, categoryNumberMapping);
-                }
-            } else if (subtypesCounts.size() > 1) {
-                System.out.println("Didn't create generator \"" + generatorNode.getConfig().get("id") + "\". Sub-generators with different types not supported yet.");
-            } else {
-                System.out.println("Didn't create generator \"" + generatorNode.getConfig().get("id") + "\". This generator didn't have any sub-generators with accepted types.");
-            }
-        }
-
-        return generatedGenerators.values();
-    }
 
 
     private Pipeline(String id, Map<String, PipelineNode> visualizations, Map<String, PipelineNode> generators, Map<String, PipelineNode> sources, List<PipelineNode> customTypes, JSONView rootJSONView) {
@@ -173,13 +60,145 @@ public class Pipeline {
         this.filteredSources = filteredSources;
     }
 
+    public static Pipeline fromJSON(String path) throws IOException {
+        try (InputStream in = Pipeline.class.getClassLoader().getResourceAsStream(path)) {
+            if (in == null) {
+                throw new IllegalArgumentException("File not found: " + path);
+            }
+
+            ObjectMapper mapper = new ObjectMapper();
+            // Read the root and accept either:
+            //  A) {"pipelines":[ { ... } ]}
+            //  B) { ... }  // a single pipeline object
+            JsonNode root = mapper.readTree(in);
+
+            JsonNode pipelineNode;
+            if (root.has("pipelines")) {                    // old format
+                JsonNode arr = root.get("pipelines");
+                if (!arr.isArray()) {
+                    throw new IllegalArgumentException("Invalid pipeline JSON: \"pipelines\" must be an array.");
+                }
+                if (arr.size() != 1) {
+                    String append = (arr.size() > 1)
+                            ? "Multiple pipelines defined. If you want to read multiple pipelines, use function Pipeline.multipleFromJSON()."
+                            : "No pipelines defined.";
+                    throw new IllegalArgumentException("Invalid pipeline JSON: " + append);
+                }
+                pipelineNode = arr.get(0);
+            } else {                                        // new format (single object)
+                pipelineNode = root;
+            }
+
+            if (!pipelineNode.isObject()) {
+                throw new IllegalArgumentException("Invalid pipeline JSON.");
+            }
+
+            Map<String, Object> pipelineMap = mapper.convertValue(pipelineNode, new TypeReference<>() {
+            });
+            JSONView view = new JSONView(pipelineMap);
+            return generatePipelineFromJSONView(view);
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid pipeline JSON.");
+        }
+    }
+
+    /**
+     * Load a pipeline by name from the DB.
+     * Expects table: pipeline(pipeline_name TEXT/VARCHAR PRIMARY KEY, json CLOB/TEXT).
+     * JSON can be either:
+     * (A) {"pipelines":[ { ...the pipeline... } ]}
+     * (B) { ...the pipeline... }   // single object without the "pipelines" wrapper
+     */
+    public static Pipeline fromDB(DataSource dataSource, String pipelineName) {
+        if (dataSource == null) {
+            throw new IllegalArgumentException("dataSource must not be null");
+        }
+        if (pipelineName == null || pipelineName.isBlank()) {
+            throw new IllegalArgumentException("pipelineName must not be null/blank");
+        }
+
+        // 1) Read JSON string from DB
+        final String json;
+        try (Connection c = dataSource.getConnection()) {
+            DSLContext dsl = DSL.using(c);
+            Record1<String> row = dsl
+                    .select(DSL.field("json", String.class))
+                    .from(DSL.table("pipeline"))
+                    .where(DSL.field("pipeline_name").eq(pipelineName))
+                    .fetchOne();
+
+            if (row == null || row.value1() == null) {
+                throw new IllegalArgumentException("No pipeline found with name \"" + pipelineName + "\".");
+            }
+            json = row.value1();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to load pipeline \"" + pipelineName + "\" from DB.", e);
+        }
+
+        // 2) Parse JSON and normalize to the same structure as fromJSON(...)
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+
+            // Accept both a single object or a { "pipelines": [...] } envelope
+            Map<String, Object> root;
+            Object parsed = mapper.readValue(json, new TypeReference<Object>() {
+            });
+            if (parsed instanceof Map<?, ?> m) {
+                //noinspection unchecked
+                root = (Map<String, Object>) m;
+            } else {
+                throw new IllegalArgumentException("Invalid pipeline JSON: root must be an object.");
+            }
+
+            List<?> pipelines;
+            Object maybePipelines = root.get("pipelines");
+
+            if (maybePipelines instanceof List<?> list) {
+                pipelines = list;
+            } else {
+                // treat the whole root as a single pipeline object
+                pipelines = List.of(root);
+            }
+
+            if (pipelines.size() != 1) {
+                String append = (pipelines.size() > 1)
+                        ? "Multiple pipelines found in DB JSON. Store a single pipeline or use a selector."
+                        : "No pipeline object found in DB JSON.";
+                throw new IllegalArgumentException("Invalid pipeline JSON: " + append);
+            }
+
+            Object first = pipelines.get(0);
+            if (!(first instanceof Map<?, ?> pipelineMap)) {
+                throw new IllegalArgumentException("Invalid pipeline JSON: pipeline entry is not an object.");
+            }
+
+            JSONView view = new JSONView(pipelineMap);
+            Pipeline pipeline = generatePipelineFromJSONView(view);
+
+            // Sanity check: if the DB row was envelope-form with a different id, warn but continue
+            String loadedId = pipeline.getId();
+            if (!pipelineName.equals(loadedId)) {
+                System.out.println("Warning: DB pipeline_name = \"" + pipelineName + "\" but JSON id = \"" + loadedId + "\".");
+            }
+
+            return pipeline;
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid pipeline JSON loaded from DB.", e);
+        }
+    }
+
     private static ArrayList<?> generateMapFromJSON(String path) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         try (InputStream in = Pipeline.class.getClassLoader().getResourceAsStream(path)) {
             if (in == null) {
                 throw new IllegalArgumentException("File not found: " + path);
             }
-            Map<String, Object> data = mapper.readValue(in, new TypeReference<>() {});
+            Map<String, Object> data = mapper.readValue(in, new TypeReference<>() {
+            });
             if (!(data.get("pipelines") instanceof ArrayList<?> pipelines)) {
                 throw new IllegalArgumentException("Invalid pipeline JSON.");
             }
@@ -321,5 +340,101 @@ public class Pipeline {
             }
         }
         return uniqueKeys.toArray(new String[0]);
+    }
+
+    public Collection<Generator> generateGenerators(DBAccess dbAccess) throws SQLException {
+        return generateGenerators(dbAccess, true, true);
+    }
+
+    public Collection<Generator> generateGenerators(DBAccess dbAccess, boolean onlyRelevantSources, boolean onlyRelevantGenerators) throws SQLException {
+        Map<String, PipelineNode> sourceNodes = onlyRelevantSources ? filteredSources : sources;
+        Map<String, PipelineNode> generatorNodes = onlyRelevantGenerators ? filteredGenerators : generators;
+        HashMap<String, Generator> generatedGenerators = new HashMap<>();
+
+        // Source-intrinsic generators
+        for (PipelineNode sourceNode : sourceNodes.values()) {
+            Source s = new Source(dbAccess, sourceNode.getConfig(), generatorNodes, sourceNode.getChildren());
+            System.out.println("Source created: " + s.getConfig().get("id"));
+            Map<String, Generator> sourceGenerators = s.createGenerators();
+            generatedGenerators.putAll(sourceGenerators);
+            System.out.println(sourceGenerators.size() + " Generators created for source " + s.getId());
+        }
+
+        // Derived generators
+        for (PipelineNode generatorNode : generatorNodes.values()) {
+            if (generatorNode.getType() != PipelineNodeType.DERIVED_GENERATOR) continue;
+            String generatorID = generatorNode.getConfig().get("id").toString();
+            HashMap<String, Generator> subGenerators = new HashMap<>();
+            HashMap<String, JSONView> subGeneratorsConfig = new HashMap<>();
+            HashMap<DerivedGeneratorSubtype, Integer> subtypesCounts = new HashMap<>();
+            JSONView subNodes = generatorNode.getConfig().get("fromGenerators");
+            for (JSONView node : subNodes) {
+                String nodeID = node.get("id").toString();
+                Generator subGenerator = generatedGenerators.get(nodeID);
+                subGenerators.put(nodeID, subGenerator);
+                subGeneratorsConfig.put(nodeID, node);
+                if (subGenerator instanceof TextFormatting) {
+                    subtypesCounts.merge(DerivedGeneratorSubtype.TEXT_FORMATTING, 1, Integer::sum);
+                } else if (subGenerator instanceof CategoryNumberMapping) {
+                    subtypesCounts.merge(DerivedGeneratorSubtype.CATEGORY_NUMBER, 1, Integer::sum);
+                }
+            }
+            if (subtypesCounts.size() == 1) {
+                // Single-subtype derived-generator
+                if (subtypesCounts.containsKey(DerivedGeneratorSubtype.TEXT_FORMATTING)) {
+                    ArrayList<TextFormatting.Dataset> datasets = new ArrayList<>();
+                    HashSet<Integer> textLengths = new HashSet<>();
+                    for (Generator s : subGenerators.values()) {
+                        TextFormatting subTextFormatting = (TextFormatting) s;
+                        textLengths.add(subTextFormatting.getText().length());
+                        datasets.addAll(subTextFormatting.getDatasets());
+                    }
+                    if (textLengths.size() == 1) {
+                        TextFormatting anySub = (TextFormatting) subGenerators.values().stream().findAny().orElse(null);
+                        TextFormatting textFormatting = new TextFormatting(generatorID, null, null, anySub.getText(), datasets);
+                        generatedGenerators.put(generatorID, textFormatting);
+                    } else {
+                        System.out.println("Didn't create generator \"" + generatorNode.getConfig().get("id") + "\". There was a text mismatch.");
+                    }
+                } else if (subtypesCounts.containsKey(DerivedGeneratorSubtype.CATEGORY_NUMBER)) {
+                    Map<String, Map<String, Double>> categoryNumberMap = new HashMap<>();
+                    Map<String, Color> categoryColorMap = new HashMap<>();
+                    for (Map.Entry<String, Generator> entry : subGenerators.entrySet()) {
+                        JSONView config = subGeneratorsConfig.get(entry.getKey());
+                        CategoryNumberColorMapping subCategoryNumberMapping = (CategoryNumberColorMapping) entry.getValue();
+                        int keepTop = -1;
+                        try {
+                            keepTop = Integer.parseInt(config.get("settings").get("keepTop").toString());
+                        } catch (Exception ignored) {
+                        }
+
+                        if (keepTop == -1) {
+                            // Todo: fertig machen, inklusive static color (einfach in color map machen?) und unnötige farben rausschmeißen => Zuerst CategoryNumber(Color)Mappings unifien
+                        } else {
+                            categoryNumberMap.putAll(CategoryNumberMapping.keepTotalTopN(subCategoryNumberMapping.getCategoryNumberMap(), keepTop));
+                        }
+                        categoryColorMap.putAll(subCategoryNumberMapping.getCategoryColorMap());
+                        String capitalization = null;
+                        try {
+                            capitalization = config.get("settings").get("categoryCapitalization").toString();
+                        } catch (Exception ignored) {
+                        }
+                        if (capitalization != null) { // Todo: Check for duplicates that exist now due to Lowercase/Uppercase (unify and print warning?)
+                            categoryNumberMap = CategoryNumberMapping.capitalizeCategoryNumberKeys(categoryNumberMap, capitalization);
+                            categoryColorMap = CategoryNumberMapping.capitalizeCategoryKeys(categoryColorMap, capitalization);
+                        }
+                    }
+
+                    CategoryNumberColorMapping categoryNumberMapping = new CategoryNumberColorMapping(generatorID, categoryNumberMap, categoryColorMap);
+                    generatedGenerators.put(generatorID, categoryNumberMapping);
+                }
+            } else if (subtypesCounts.size() > 1) {
+                System.out.println("Didn't create generator \"" + generatorNode.getConfig().get("id") + "\". Sub-generators with different types not supported yet.");
+            } else {
+                System.out.println("Didn't create generator \"" + generatorNode.getConfig().get("id") + "\". This generator didn't have any sub-generators with accepted types.");
+            }
+        }
+
+        return generatedGenerators.values();
     }
 }

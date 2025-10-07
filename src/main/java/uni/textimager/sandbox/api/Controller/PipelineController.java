@@ -32,10 +32,10 @@ public class PipelineController {
     }
 
     // Get full JSON by name
-    @GetMapping("/{name}")
-    public ResponseEntity<PipelineResponse> get(@PathVariable String name) throws Exception {
-        JsonNode json = service.get(name);
-        return ResponseEntity.ok(new PipelineResponse(name, json));
+    @GetMapping("/{id}")
+    public ResponseEntity<PipelineResponse> get(@PathVariable String id) throws Exception {
+        JsonNode json = service.get(id);
+        return ResponseEntity.ok(new PipelineResponse(id, json));
     }
 
     // Create new pipeline

@@ -9,8 +9,9 @@ import uni.textimager.sandbox.sources.DBAccess;
 import uni.textimager.sandbox.sources.SourceBuildOps;
 
 import javax.sql.DataSource;
+import java.sql.Array;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -41,15 +42,17 @@ public class SourceBuildService {
         }
     }
 
-    private void doBuild(@Nullable String pipelinePath) throws Exception {
-        String path = (pipelinePath != null && !pipelinePath.isBlank())
-                ? pipelinePath
-                : "pipelines/pipelineUseCase2.json";
+    private void doBuild(@Nullable String pipelineId) throws Exception {
 
-        Pipeline pipeline = Pipeline.fromJSON(path);
-        System.out.println("Pipeline loaded: " + pipeline.getId());
+        if (pipelineId == null || pipelineId.isBlank()) {
+            pipelineId = "pipelineUseCase2";
+        }
 
-        ops.savePipelinesVisualizationsJSONs(List.of(pipeline));
+        Pipeline pipeline = Pipeline.fromDB(dataSource, pipelineId);
+
+        Collection<Pipeline> coll = new ArrayList<>();
+        coll.add(pipeline);
+        ops.savePipelinesVisualizationsJSONs(coll);
         ops.buildCustomTypes(pipeline);
         ops.buildGeneratorTables();
 

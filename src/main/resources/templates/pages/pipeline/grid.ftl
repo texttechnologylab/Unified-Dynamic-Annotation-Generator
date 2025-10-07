@@ -1,14 +1,14 @@
-<#include "/shared/toolbar.ftl"> 
+<#include "/shared/toolbar.ftl">
 <#include "/shared/sidepanel.ftl">
 
 <#macro grid widgets>
   <div class="grid-stack">
     <#list widgets as widget>
       <div class="grid-stack-item" gs-id="${widget.id}">
-        
+
         <#if widget.type == "Text">
-          <div 
-            class="grid-stack-item-content ${widget.options.style} hide" 
+          <div
+            class="grid-stack-item-content ${widget.options.style} hide"
             title="${widget.title}"
             data-dv-widget="${widget.id}"
           >
@@ -16,15 +16,15 @@
           </div>
 
         <#elseif widget.type == "Image">
-          <div 
+          <div
             class="grid-stack-item-content hide"
             title="${widget.title}"
-            data-dv-widget="${widget.id}" 
+            data-dv-widget="${widget.id}"
           >
-            <img 
-              src="${widget.options.src}" 
-              width="100%" 
-              height="100%" 
+            <img
+              src="${widget.options.src}"
+              width="100%"
+              height="100%"
             >
           </div>
 
