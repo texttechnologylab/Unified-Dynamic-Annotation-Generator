@@ -18,8 +18,8 @@
 
   <body>
     <#include "/shared/modal.ftl"> 
-    <#include "/pages/editor/sidebar.ftl">
-    <#include "/pages/editor/grid.ftl">
+    <#include "/pages/editor/components/sidebar.ftl">
+    <#include "/pages/editor/components/grid.ftl">
 
     <div class="dv-layout">
       <@sidebar />
@@ -32,13 +32,11 @@
     </div>
 
     <script type="module">
-      import accordions from "/js/shared/modules/accordions.js";
-      import editor from "/js/pages/editor/editor.js";
+      import Editor from "/js/pages/editor/Editor.js";
 
       const config = JSON.parse("${config?json_string}");
-      console.log(config);
+      const editor = new Editor();
 
-      accordions.init();
       editor.init(config);
     </script>
   </body>

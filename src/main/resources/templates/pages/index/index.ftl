@@ -32,7 +32,7 @@
               <a
                 class="dv-menu-link"
                 title="Select pipeline"
-                href="/pipeline/${pipeline}"
+                href="/view/${pipeline}"
               >
                 <i class="bi bi-clipboard-data"></i>
                 <span>${pipeline}</span>
