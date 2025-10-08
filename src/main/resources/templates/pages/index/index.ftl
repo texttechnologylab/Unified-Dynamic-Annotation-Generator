@@ -27,42 +27,44 @@
       <div class="dv-menu-container">
         <div class="dv-title">Select a pipeline</div>
         <div class="dv-menu">
-          <#list pipelines?eval_json as pipeline>
-            <div class="dv-btn dv-menu-item">
-              <a
-                class="dv-menu-link"
-                title="Select pipeline"
-                href="/view/${pipeline}"
-              >
-                <i class="bi bi-clipboard-data"></i>
-                <span>${pipeline}</span>
-              </a>
+          <div class="dv-menu-item-list">
+            <#list pipelines?eval_json as pipeline>
+              <div class="dv-btn dv-menu-item">
+                <a
+                  class="dv-menu-link"
+                  title="Select pipeline"
+                  href="/view/${pipeline}"
+                >
+                  <i class="bi bi-clipboard-data"></i>
+                  <span>${pipeline}</span>
+                </a>
 
-              <a
-                class="dv-btn-hidden"
-                title="Edit configuration"
-                href="/editor/${pipeline}"
-              >
-                <i class="bi bi-pencil"></i>
-              </a>
-              <a
-                class="dv-btn-hidden"
-                title="Export configuration"
-                href="/api/visualisations?pipelineId=${pipeline}&pretty=true"
-                download="config.json"
-              >
-                <i class="bi bi-download"></i>
-              </a>
-              <button
-                class="dv-btn-hidden dv-btn-delete"
-                title="Delete pipeline"
-                data-dv-toggle="modal"
-                data-pipeline="${pipeline}"
-              >
-                <i class="bi bi-trash"></i>
-              </button>
-            </div>
-          </#list>
+                <a
+                  class="dv-btn-hidden"
+                  title="Edit configuration"
+                  href="/editor/${pipeline}"
+                >
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <a
+                  class="dv-btn-hidden"
+                  title="Export configuration"
+                  href="/api/pipelines/${pipeline}?pretty=true"
+                  download="config.json"
+                >
+                  <i class="bi bi-download"></i>
+                </a>
+                <button
+                  class="dv-btn-hidden dv-btn-delete"
+                  title="Delete pipeline"
+                  data-dv-toggle="modal"
+                  data-pipeline="${pipeline}"
+                >
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </#list>
+          </div>
 
           <#if pipelines?eval_json?size != 0>
             <div class="dv-divider"></div>

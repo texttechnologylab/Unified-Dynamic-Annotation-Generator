@@ -33,6 +33,11 @@
   box-shadow: var(--shadow);
 }
 
+.dv-menu-item-list {
+  max-height: 15rem;
+  overflow-y: auto;
+}
+
 .dv-menu-item {
   display: flex;
 
