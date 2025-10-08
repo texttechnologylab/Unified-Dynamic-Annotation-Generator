@@ -43,16 +43,16 @@ public class PipelineService {
 //    }
 
     @Transactional(readOnly = true)
-    public List<String> listNames(int page, int size, String q) throws Exception {
+    public List<String> listIds(int page, int size, String q) throws Exception {
         try (Connection c = dataSource.getConnection()) {
             DSLContext dsl = DSL.using(c);
             var cond = (q == null || q.isBlank())
                     ? DSL.noCondition()
-                    : DSL.field(COL_NAME, String.class).likeIgnoreCase("%" + q + "%");
-            return dsl.select(DSL.field(COL_NAME, String.class))
+                    : DSL.field(COL_ID, String.class).likeIgnoreCase("%" + q + "%");
+            return dsl.select(DSL.field(COL_ID, String.class))
                     .from(DSL.table(TABLE))
                     .where(cond)
-                    .orderBy(DSL.field(COL_NAME).asc())
+                    .orderBy(DSL.field(COL_ID).asc())
                     .offset(Math.max(0, page) * Math.max(1, size))
                     .limit(Math.max(1, size))
                     .fetchInto(String.class);

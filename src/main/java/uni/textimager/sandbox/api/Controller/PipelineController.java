@@ -28,7 +28,7 @@ public class PipelineController {
             @RequestParam(defaultValue = "100") int size,
             @RequestParam(required = false) String q
     ) throws Exception {
-        return ResponseEntity.ok(service.listNames(page, size, q));
+        return ResponseEntity.ok(service.listIds(page, size, q));
     }
 
     // Get full JSON by name
