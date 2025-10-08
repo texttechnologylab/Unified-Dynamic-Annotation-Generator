@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uni.textimager.sandbox.api.dto.CreatePipelineRequest;
-import uni.textimager.sandbox.api.dto.PipelineResponse;
 import uni.textimager.sandbox.api.dto.UpdatePipelineRequest;
 import uni.textimager.sandbox.api.service.PipelineService;
 
@@ -33,9 +32,9 @@ public class PipelineController {
 
     // Get full JSON by name
     @GetMapping("/{id}")
-    public ResponseEntity<PipelineResponse> get(@PathVariable String id) throws Exception {
+    public ResponseEntity<JsonNode> get(@PathVariable String id) throws Exception {
         JsonNode json = service.get(id);
-        return ResponseEntity.ok(new PipelineResponse(id, json));
+        return ResponseEntity.ok(json);
     }
 
     // Create new pipeline
