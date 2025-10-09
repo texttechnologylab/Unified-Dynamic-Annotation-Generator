@@ -3,7 +3,6 @@ package uni.textimager.sandbox.api.Controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import uni.textimager.sandbox.api.dto.UpdatePipelineRequest;
 import uni.textimager.sandbox.api.service.PipelineService;
 
 import javax.validation.Valid;
@@ -56,7 +55,7 @@ public class PipelineController {
 
     // Delete by name
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable String id) throws Exception {
+    public ResponseEntity<Void> delete(@PathVariable String id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
     }

@@ -8,7 +8,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Component;
 import uni.textimager.sandbox.importer.dialect.SqlDialect;
 import uni.textimager.sandbox.importer.service.DataInserterService;
 import uni.textimager.sandbox.importer.service.NameSanitizer;

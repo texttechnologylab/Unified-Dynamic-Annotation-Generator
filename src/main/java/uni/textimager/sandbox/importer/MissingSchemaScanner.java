@@ -1,6 +1,5 @@
 package uni.textimager.sandbox.importer;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jooq.*;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
@@ -19,7 +18,6 @@ public class MissingSchemaScanner implements ApplicationRunner {
 
     private final DataSource dataSource;
     private final PipelineProcessor processor;
-    private final ObjectMapper mapper;
 
     // ---- Configure your table/column names (or inject DBConstants) ----
     @Value("${app.db.schema:public}")
@@ -39,11 +37,9 @@ public class MissingSchemaScanner implements ApplicationRunner {
     private int maxPerRun;
 
     public MissingSchemaScanner(DataSource dataSource,
-                                PipelineProcessor processor,
-                                ObjectMapper mapper) {
+                                PipelineProcessor processor) {
         this.dataSource = dataSource;
         this.processor = processor;
-        this.mapper = mapper;
     }
 
     @Override
@@ -58,7 +54,6 @@ public class MissingSchemaScanner implements ApplicationRunner {
             // app data table (in your app's schema)
             Table<?> P = DSL.table(DSL.name(schema, PIPELINE_TABLE));
             Field<String> P_ID = DSL.field(DSL.name(schema, PIPELINE_TABLE, COL_PIPELINE_ID), String.class);
-            Field<String> P_JSON = DSL.field(DSL.name(schema, PIPELINE_TABLE, COL_PIPELINE_JSON), String.class);
 
             // catalog view for schemas
             Table<?> SCHEMATA = DSL.table(DSL.name("information_schema", "schemata"));
