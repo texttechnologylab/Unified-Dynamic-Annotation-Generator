@@ -2,10 +2,14 @@ package uni.textimager.sandbox.importer;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.jooq.*;
+import org.jooq.DSLContext;
+import org.jooq.Field;
 import org.jooq.Record;
+import org.jooq.Table;
 import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -15,9 +19,9 @@ import uni.textimager.sandbox.api.service.SourceBuildService;
 
 import javax.sql.DataSource;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -33,13 +37,12 @@ public class PipelineJsonImporter implements ApplicationRunner {
     private static final String COL_NAME = "pipeline_name";
     private static final String COL_JSON = "json";
     private static final String PIPELINE_ID = "pipeline_id";
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(PipelineJsonImporter.class);
     private final DataSource dataSource;
     private final Path folder;
     private final boolean replaceIfDifferent;
     private final ObjectMapper mapper = new ObjectMapper();
     private final SourceBuildService sourceBuildService;
-
     @Value("${app.db.schema:public}")
     private String schema;
 
@@ -58,7 +61,7 @@ public class PipelineJsonImporter implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) throws Exception {
         if (!Files.exists(folder) || !Files.isDirectory(folder)) {
-            System.out.println("[PipelineJsonImporter] Folder missing or not a directory: " + folder.toAbsolutePath());
+            LOGGER.warn("Pipeline folder does not exist or is not a directory: {}", folder.toAbsolutePath());
             return;
         }
 
@@ -71,16 +74,16 @@ public class PipelineJsonImporter implements ApplicationRunner {
             Table<Record> T = table(name(schema, TABLE));
             Field<String> F_NAME = field(name(schema, TABLE, COL_NAME), String.class);
             Field<String> F_JSON = field(name(schema, TABLE, COL_JSON), String.class);
-            Field<String> F_ID   = field(name(schema, TABLE, PIPELINE_ID), String.class);
+            Field<String> F_ID = field(name(schema, TABLE, PIPELINE_ID), String.class);
 
             dsl.createTableIfNotExists(T)
                     .column(F_NAME, SQLDataType.VARCHAR(255).nullable(false))
                     .column(F_JSON, SQLDataType.CLOB.nullable(false))
-                    .column(F_ID,   SQLDataType.VARCHAR(255).nullable(false))
+                    .column(F_ID, SQLDataType.VARCHAR(255).nullable(false))
                     .constraints(constraint("PK_" + TABLE).primaryKey(F_ID))
                     .execute();
 
-            System.out.printf("[PipelineJsonImporter] Ensured %s.%s exists%n", schema, TABLE);
+            LOGGER.info("Ensured schema and table exist: {}.{}", schema, TABLE);
 
             try (Stream<Path> files = Files.list(folder)) {
                 files.filter(p -> Files.isRegularFile(p) && p.toString().endsWith(".json"))
@@ -104,7 +107,7 @@ public class PipelineJsonImporter implements ApplicationRunner {
             String pipelineName = filenameWithoutExt(p.getFileName().toString());
 
             if (pipelineNameExists(dsl, T, F_NAME, pipelineName)) {
-                System.out.printf("[PipelineJsonImporter] Skipped (filename already imported) file=%s%n", pipelineName);
+                LOGGER.warn("Pipeline with name {} already exists.", pipelineName);
                 return;
             }
 
@@ -116,10 +119,8 @@ public class PipelineJsonImporter implements ApplicationRunner {
                         .values(pipelineName, canonicalJson, pipelineIdOriginal)
                         .execute();
 
-                System.out.printf("[PipelineJsonImporter] Inserted (id=%s, file=%s)%n", pipelineIdOriginal, pipelineName);
+                LOGGER.info("Pipeline with name {} and id {} has been inserted.", pipelineName, pipelineIdOriginal);
 
-                // 🔧 build sources for this pipeline in this schema
-                System.out.println(pipelineIdOriginal);
                 sourceBuildService.startBuild(pipelineIdOriginal, pipelineIdOriginal);
                 return;
             }
@@ -131,7 +132,7 @@ public class PipelineJsonImporter implements ApplicationRunner {
                 String newCanon = canonicalize(canonicalJson);
 
                 if (existingCanon != null && existingCanon.equals(newCanon)) {
-                    System.out.printf("[PipelineJsonImporter] Skipped (unchanged) id=%s%n", pipelineIdOriginal);
+                    LOGGER.warn("Skipped {} (unchanged)", pipelineIdOriginal);
                     return;
                 }
 
@@ -141,8 +142,8 @@ public class PipelineJsonImporter implements ApplicationRunner {
                         .where(F_ID.eq(pipelineIdOriginal))
                         .execute();
 
-                System.out.printf("[PipelineJsonImporter] %s id=%s (updated from file=%s)%n",
-                        updated == 1 ? "Updated" : "No update for", pipelineIdOriginal, pipelineName);
+                LOGGER.info("Pipeline with id {} has been {} from file {}.", pipelineIdOriginal,
+                        updated == 1 ? "updated" : "not updated", pipelineName);
 
                 // 🔧 build sources for this pipeline in this schema
                 sourceBuildService.startBuild(pipelineIdOriginal, pipelineIdOriginal);
@@ -156,15 +157,12 @@ public class PipelineJsonImporter implements ApplicationRunner {
                     .values(pipelineName, canonicalJson, uniqueId)
                     .execute();
 
-            System.out.printf("[PipelineJsonImporter] Inserted duplicate as id=%s (original=%s, file=%s)%n",
-                    uniqueId, pipelineIdOriginal, pipelineName);
+            LOGGER.info("Inserted duplicate pipeline as id={} (original id {}, file {})", uniqueId, pipelineIdOriginal, pipelineName);
 
-            // 🔧 build sources for this pipeline in this schema
-            System.out.println(uniqueId);
             sourceBuildService.startBuild(uniqueId, uniqueId);
 
         } catch (Exception e) {
-            System.err.printf("[PipelineJsonImporter] Failed for %s: %s%n", p.getFileName(), e.getMessage());
+            LOGGER.error("Failed to import pipeline from file {}: {}", p.getFileName(), e.getMessage());
         }
     }
 
@@ -211,7 +209,10 @@ public class PipelineJsonImporter implements ApplicationRunner {
         Matcher m = Pattern.compile("^(.*?)-(\\d+)$").matcher(id);
         if (m.matches()) {
             base = m.group(1);
-            try { counter = Integer.parseInt(m.group(2)) + 1; } catch (NumberFormatException ignored) {}
+            try {
+                counter = Integer.parseInt(m.group(2)) + 1;
+            } catch (NumberFormatException ignored) {
+            }
         }
 
         while (true) {
@@ -237,5 +238,6 @@ public class PipelineJsonImporter implements ApplicationRunner {
         return mapper.writeValueAsString(node);
     }
 
-    private record ParsedPipeline(String canonicalJson, String pipelineId) {}
+    private record ParsedPipeline(String canonicalJson, String pipelineId) {
+    }
 }

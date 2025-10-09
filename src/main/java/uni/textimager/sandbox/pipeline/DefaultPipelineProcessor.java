@@ -1,7 +1,7 @@
 package uni.textimager.sandbox.pipeline;
 
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import uni.textimager.sandbox.api.service.SourceBuildService;
 
