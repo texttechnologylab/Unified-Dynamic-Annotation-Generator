@@ -28,7 +28,8 @@ public class DataQueryService {
     public String buildArrayJson(String id, String type,
                                  Map<String, String> filters,
                                  Map<String, String> corpus,
-                                 boolean pretty) {
+                                 boolean pretty,
+                                 String schema) {
 
         Set<String> files = Optional.ofNullable(corpus)
                 .map(m -> m.get("files"))
@@ -40,7 +41,7 @@ public class DataQueryService {
 
         // Prefer handler if present
         if (charts.has(type)) {
-            JsonNode node = charts.get(type).render(id, filters, files, vm);
+            JsonNode node = charts.get(type).render(id, filters, files, vm, schema);
             try {
                 return pretty ? mapper.writerWithDefaultPrettyPrinter().writeValueAsString(node)
                         : mapper.writeValueAsString(node);
