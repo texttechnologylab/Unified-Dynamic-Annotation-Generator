@@ -47,17 +47,17 @@ public class PipelineController {
     }
 
     // Update/replace JSON of an existing pipeline
-    @PutMapping("/{name}")
-    public ResponseEntity<Void> update(@PathVariable String name,
-                                       @Valid @RequestBody UpdatePipelineRequest req) throws Exception {
-        service.update(name, req.json());
+    @PutMapping("/{id}")
+    public ResponseEntity<Void> update(@PathVariable String id,
+                                       @Valid @RequestBody JsonNode json) throws Exception {
+        service.update(id, json);
         return ResponseEntity.noContent().build();
     }
 
     // Delete by name
-    @DeleteMapping("/{name}")
-    public ResponseEntity<Void> delete(@PathVariable String name) throws Exception {
-        service.delete(name);
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable String id) throws Exception {
+        service.delete(id);
         return ResponseEntity.noContent().build();
     }
 }
