@@ -19,17 +19,17 @@ import static org.jooq.impl.DSL.*;
 public class VisualisationsRepository {
 
     private final DSLContext dsl;
-
-    private final Table<?> V = table(name(DBConstants.TABLENAME_VISUALIZATIONJSONS)).as("v");
-    private final Field<String> PIPELINEID = field(name("v", DBConstants.TABLEATTR_PIPELINEID), String.class);
-    private final Field<String> JSONSTR = field(name("v", DBConstants.TABLEATTR_JSONSTR), String.class);
     private final ObjectMapper mapper = new ObjectMapper();
 
     public VisualisationsRepository(DSLContext dsl) {
         this.dsl = dsl;
     }
 
-    public java.util.Optional<String> loadJsonByPipelineId(String pipelineId) {
+    public Optional<String> loadJsonByPipelineId(String schema, String pipelineId) {
+        var V = V(schema);
+        var PIPELINEID = F_PIPELINEID(schema);
+        var JSONSTR = F_JSONSTR(schema);
+
         return dsl.select(JSONSTR)
                 .from(V)
                 .where(PIPELINEID.eq(pipelineId))
@@ -37,17 +37,33 @@ public class VisualisationsRepository {
                 .fetchOptional(JSONSTR);
     }
 
+    // ----- helpers to build schema-qualified objects per call -----
+    private Table<?> V(String schema) {
+        return table(name(schema, DBConstants.TABLENAME_VISUALIZATIONJSONS));
+    }
+
+    private Field<String> F_PIPELINEID(String schema) {
+        return field(name(schema, DBConstants.TABLENAME_VISUALIZATIONJSONS, DBConstants.TABLEATTR_PIPELINEID), String.class);
+    }
+
+    private Field<String> F_JSONSTR(String schema) {
+        return field(name(schema, DBConstants.TABLENAME_VISUALIZATIONJSONS, DBConstants.TABLEATTR_JSONSTR), String.class);
+    }
+
     /**
      * Create only. Throws DuplicateKeyException if already exists (requires UNIQUE on PIPELINEID).
      */
-    public void insertNew(String pipelineId, String json) {
+    public void insertNew(String schema, String pipelineId, String json) {
+        var V = V(schema);
+        var PIPELINEID = F_PIPELINEID(schema);
+        var JSONSTR = F_JSONSTR(schema);
+
         try {
             dsl.insertInto(V)
                     .columns(PIPELINEID, JSONSTR)
                     .values(pipelineId, json)
                     .execute();
         } catch (DataAccessException e) {
-            // Best-effort mapping to 409 conflict; alternatively check exists() beforehand.
             throw new DuplicateKeyException("Pipeline already exists: " + pipelineId, e);
         }
     }
@@ -55,7 +71,11 @@ public class VisualisationsRepository {
     /**
      * Replace only. Returns true if updated, false if missing.
      */
-    public boolean replaceExisting(String pipelineId, String json) {
+    public boolean replaceExisting(String schema, String pipelineId, String json) {
+        var V = V(schema);
+        var PIPELINEID = F_PIPELINEID(schema);
+        var JSONSTR = F_JSONSTR(schema);
+
         int updated = dsl.update(V)
                 .set(JSONSTR, json)
                 .where(PIPELINEID.eq(pipelineId))
@@ -67,7 +87,11 @@ public class VisualisationsRepository {
      * Lookup a single visualization meta by pipelineId + visualizationId.
      * Returns empty if not found.
      */
-    public Optional<VisualizationMeta> findMeta(String pipelineId, String visualizationId) {
+    public Optional<VisualizationMeta> findMeta(String schema, String pipelineId, String visualizationId) {
+        var V = V(schema);
+        var PIPELINEID = F_PIPELINEID(schema);
+        var JSONSTR = F_JSONSTR(schema);
+
         String json = dsl.select(JSONSTR)
                 .from(V)
                 .where(PIPELINEID.eq(pipelineId))
@@ -81,21 +105,6 @@ public class VisualisationsRepository {
             throw new DataAccessException("Failed to parse visualization JSON for pipeline " + pipelineId, e) {
             };
         }
-    }
-
-    /**
-     * Fallback: search across all pipelines if caller does not know the pipelineId.
-     * First match wins.
-     */
-    public Optional<VisualizationMeta> findMeta(String visualizationId) {
-        return dsl.select(PIPELINEID, JSONSTR).from(V).fetchStream().map(rec -> {
-            String json = rec.get(JSONSTR);
-            try {
-                return getVisualizationMeta(visualizationId, json);
-            } catch (Exception e) {
-                return Optional.<VisualizationMeta>empty();
-            }
-        }).filter(visualizationMeta -> false).map(Optional::get).findFirst();
     }
 
     private Optional<VisualizationMeta> getVisualizationMeta(String visualizationId, String json) throws JsonProcessingException {

@@ -16,7 +16,7 @@ public class VisualisationsService {
     }
 
     public String getVisualisationsJson(String pipelineId, boolean pretty) {
-        String raw = repo.loadJsonByPipelineId(pipelineId).orElse("[]");
+        String raw = repo.loadJsonByPipelineId(pipelineId, pipelineId).orElse("[]");
         try {
             JsonNode node = mapper.readTree(raw);
             return pretty
@@ -47,7 +47,7 @@ public class VisualisationsService {
      */
     public void create(String pipelineId, String jsonArray) {
         String normalized = normalizeArrayJson(jsonArray);
-        repo.insertNew(pipelineId, normalized);
+        repo.insertNew(pipelineId, pipelineId, normalized);
     }
 
     /**
@@ -55,6 +55,6 @@ public class VisualisationsService {
      */
     public boolean replace(String pipelineId, String jsonArray) {
         String normalized = normalizeArrayJson(jsonArray);
-        return repo.replaceExisting(pipelineId, normalized);
+        return repo.replaceExisting(pipelineId, pipelineId, normalized);
     }
 }
