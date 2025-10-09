@@ -109,8 +109,6 @@ public class DataController {
             @RequestBody FilterEnvelope body
     ) throws Exception {
 
-        System.out.println(pipelineService.get(pipelineId).get("widgets"));
-
         JsonNode widgets = pipelineService.get(pipelineId).get("widgets");
         JsonNode widget = null;
 
