@@ -21,11 +21,12 @@ public class PipelineService {
     private static final String COL_ID = "pipeline_id";
     private static final String COL_NAME = "pipeline_name";
     private static final String COL_JSON = "json";
-
+    private final SourceBuildService sourceBuildService;
     private final DataSource dataSource;
     private final ObjectMapper objectMapper;
 
-    public PipelineService(DataSource dataSource, ObjectMapper objectMapper) {
+    public PipelineService(SourceBuildService sourceBuildService, DataSource dataSource, ObjectMapper objectMapper) {
+        this.sourceBuildService = sourceBuildService;
         this.dataSource = dataSource;
         this.objectMapper = objectMapper;
     }
@@ -73,8 +74,8 @@ public class PipelineService {
     }
 
     @Transactional
-    public void create(String name, JsonNode json) throws Exception {
-        validateName(name);
+    public String create(JsonNode json) throws Exception {
+        String id = json.get("id").asText("main");
         String jsonStr = toString(json);
         try (Connection c = dataSource.getConnection()) {
             DSLContext dsl = DSL.using(c);
@@ -82,16 +83,21 @@ public class PipelineService {
             boolean exists = dsl.fetchExists(
                     dsl.selectOne()
                             .from(DSL.table(TABLE))
-                            .where(DSL.field(COL_NAME).eq(name))
+                            .where(DSL.field(COL_ID).eq(id))
             );
             if (exists) throw new ResponseStatusException(CONFLICT, "Pipeline already exists");
 
             dsl.insertInto(DSL.table(TABLE),
+                            DSL.field(COL_ID),
                             DSL.field(COL_NAME),
                             DSL.field(COL_JSON))
-                    .values(name, jsonStr)
+                    .values(id, id, jsonStr)
                     .execute();
+
+            sourceBuildService.startBuild(id, id);
         }
+
+        return id;
     }
 
     @Transactional
