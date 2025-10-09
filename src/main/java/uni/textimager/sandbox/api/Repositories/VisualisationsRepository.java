@@ -16,6 +16,7 @@ import java.util.Optional;
 import static org.jooq.impl.DSL.*;
 
 @Repository
+@Deprecated
 public class VisualisationsRepository {
 
     private final DSLContext dsl;

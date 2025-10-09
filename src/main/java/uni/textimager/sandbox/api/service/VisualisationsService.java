@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import uni.textimager.sandbox.api.Repositories.VisualisationsRepository;
 
 @Service
+@Deprecated
 public class VisualisationsService {
 
     private final VisualisationsRepository repo;

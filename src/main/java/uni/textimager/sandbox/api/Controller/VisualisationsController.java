@@ -7,6 +7,7 @@ import uni.textimager.sandbox.api.service.VisualisationsService;
 
 @RestController
 @RequestMapping("/api")
+@Deprecated
 public class VisualisationsController {
 
     private final VisualisationsService handler;
