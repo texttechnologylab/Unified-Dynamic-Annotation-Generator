@@ -43,7 +43,7 @@ export default class View {
       const ChartClass = getter[config.type];
 
       if (ChartClass) {
-        const endpoint = window.location.origin + "/api/data?id=" + id;
+        const endpoint = "/api/data?id=" + id;
         const options = { ...config.options, ...this.getDimensions(node) };
 
         new ChartClass(node, endpoint, options).render();

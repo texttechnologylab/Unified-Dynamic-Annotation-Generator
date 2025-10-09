@@ -12,14 +12,15 @@ const input = document.querySelector("#identifier-input");
 const modal = new Modal(document.querySelector(".dv-modal").parentElement);
 
 export default class Editor {
-  constructor() {
+  constructor(config = {}) {
     accordions.init();
 
-    this.sources = [];
-    this.derivedGenerators = [];
+    this.sources = config.sources || [];
+    this.derivedGenerators = config.derivedGenerators || [];
+    this.grid = this.createGrid(config.widgets || []);
   }
 
-  init(json) {
+  init() {
     const container = document.querySelector(".dv-widgets-container");
 
     // Create all widgets
@@ -30,6 +31,54 @@ export default class Editor {
     });
 
     // Create grid
+    this.createGrid();
+
+    document
+      .querySelector("#save-button")
+      .addEventListener("click", () => this.onSave());
+  }
+
+  async onSave() {
+    const pipelines = await fetch("/api/pipelines").then((response) =>
+      response.json()
+    );
+
+    if (input.value.trim() === "") {
+      modal.alert(
+        "Missing Identifier",
+        "Please provide an identifier for the pipeline."
+      );
+    } else if (pipelines.includes(input.value)) {
+      modal.confirm(
+        `Overwrite "${input.value}"`,
+        "This pipeline already exists. Do you want to overwrite it?",
+        () => this.sendConfig("UPDATE")
+      );
+    } else {
+      this.sendConfig("PUT");
+    }
+  }
+
+  sendConfig(method) {
+    const config = {
+      id: input.value,
+      sources: this.sources,
+      derivedGenerators: this.derivedGenerators,
+      widgets: this.grid.save(false),
+    };
+
+    const options = {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(config),
+    };
+
+    fetch("/api/pipelines", options).then(() => window.open("/", "_self"));
+  }
+
+  createGrid(widgets) {
     const grid = GridStack.init({
       minRow: 6,
       float: true,
@@ -41,8 +90,8 @@ export default class Editor {
       defaults
     );
 
-    if (json.visualizations) {
-      grid.load(json.visualizations);
+    if (widgets) {
+      grid.load(widgets);
     }
 
     grid.on("added", (event, items) => {
@@ -54,62 +103,7 @@ export default class Editor {
       });
     });
 
-    document
-      .querySelector("#sources-button")
-      .addEventListener("click", () =>
-        modal.prompt(
-          "Sources",
-          JSON.stringify(this.sources, null, 2),
-          (value) => (this.sources = JSON.parse(value))
-        )
-      );
-    document
-      .querySelector("#generators-button")
-      .addEventListener("click", () =>
-        modal.prompt(
-          "DerivedGenerators",
-          JSON.stringify(this.derivedGenerators, null, 2),
-          (value) => (this.derivedGenerators = JSON.parse(value))
-        )
-      );
-
-    document.querySelector("#save-button").addEventListener("click", () => {
-      const config = {
-        id: input.value,
-        sources: this.sources,
-        derivedGenerators: this.derivedGenerators,
-        visualizations: grid.save(false),
-      };
-
-      console.log(config);
-    });
-  }
-
-  openModal() {
-    modal.form(
-      "Options",
-      [
-        {
-          label: "Title",
-          type: "text",
-          value: "My ",
-        },
-        {
-          label: "Select a generator",
-          type: "select",
-          options: [],
-          value: "",
-        },
-        {
-          label: "Orientation",
-          type: "select",
-          options: ["horizontal", "vertical"],
-          value: "vertical",
-        },
-      ],
-      (title, generator, orientation) =>
-        console.log(title, generator, orientation)
-    );
+    return grid;
   }
 
   createNewWidget(icon, title) {

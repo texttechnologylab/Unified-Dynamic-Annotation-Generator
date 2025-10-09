@@ -13,12 +13,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import uni.textimager.sandbox.api.service.PipelineService;
 
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 
 @Controller
 public class AppController {
-	private final PipelineService service;
 	private final ObjectMapper mapper = new ObjectMapper();
+	private final PipelineService service;
 
 	public AppController(PipelineService service) {
 		this.service = service;
@@ -33,7 +32,7 @@ public class AppController {
 	}
 
 	public String getConfigById(String id) throws Exception {
-		return service.get(id).get("pipelines").get(0).toString();
+		return service.get(id).toString();
 	}
 
 	@GetMapping("/")

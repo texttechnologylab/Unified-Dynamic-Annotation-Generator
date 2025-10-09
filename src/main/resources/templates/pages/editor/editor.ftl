@@ -22,7 +22,7 @@
     <#include "/pages/editor/components/grid.ftl">
 
     <div class="dv-layout">
-      <@sidebar />
+      <@sidebar id=config?eval_json.id!"New Pipeline" />
 
       <main class="dv-main">
         <@grid widgets=config?eval_json.widgets![] />
@@ -35,9 +35,9 @@
       import Editor from "/js/pages/editor/Editor.js";
 
       const config = JSON.parse("${config?json_string}");
-      const editor = new Editor();
+      const editor = new Editor(config);
 
-      editor.init(config);
+      editor.init();
     </script>
   </body>
 </html>

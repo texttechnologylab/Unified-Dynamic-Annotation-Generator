@@ -1,6 +1,6 @@
 <#include "/shared/accordion.ftl">
 
-<#macro sidebar>
+<#macro sidebar id>
   <aside class="dv-sidebar">
     <div class="dv-sidebar-header">
       <h1 class="dv-bold">Dynamic Visualizations</h1>
@@ -18,23 +18,17 @@
       <div class="dv-menu-title">Pipeline Editor</div>
       <label class="dv-label">
         <span>Identifier:</span>
-        <input id="identifier-input" type="text" class="dv-text-input" value="My Pipeline" />
+        <input id="identifier-input" type="text" class="dv-text-input" value="${id}" />
       </label>
 
       <@accordion icon="bi bi-database" title="Sources">
         <p>Sources are the basic annotation types for the charts.</p>
-        <button id="sources-button" class="dv-btn-outline" type="button">
-          <span>Edit</span>
-          <i class="bi bi-pencil"></i>
-        </button>
+
       </@accordion>
 
       <@accordion icon="bi bi-archive" title="DerivedGenerators">
         <p>Generators are data representations for the charts. They keep record of all the data that is relevant for the final charts.</p>
-        <button id="generators-button" class="dv-btn-outline" type="button">
-          <span>Edit</span>
-          <i class="bi bi-pencil"></i>
-        </button>
+
       </@accordion>
 
       <@accordion icon="bi bi-grid" title="Widgets">
@@ -58,8 +52,7 @@
           Cancel
         </button>
         <button id="save-button" type="button" class="dv-btn-primary">
-          <i class="bi bi-floppy"></i>
-          <span>Save</span>
+          Save
         </button>
       </div>
     </div>

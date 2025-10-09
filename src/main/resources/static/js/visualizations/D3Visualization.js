@@ -27,7 +27,6 @@ export default class D3Visualization {
   }
 
   async fetch() {
-    const url = new URL(this.endpoint);
     const options = {
       method: "POST",
       headers: {
@@ -39,7 +38,9 @@ export default class D3Visualization {
       }),
     };
 
-    return await fetch(url, options).then((response) => response.json());
+    return await fetch(this.endpoint, options).then((response) =>
+      response.json()
+    );
   }
 
   clear() {
