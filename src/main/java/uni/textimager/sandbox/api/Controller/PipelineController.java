@@ -3,7 +3,6 @@ package uni.textimager.sandbox.api.Controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import uni.textimager.sandbox.api.dto.CreatePipelineRequest;
 import uni.textimager.sandbox.api.dto.UpdatePipelineRequest;
 import uni.textimager.sandbox.api.service.PipelineService;
 
@@ -39,11 +38,11 @@ public class PipelineController {
 
     // Create new pipeline
     @PostMapping
-    public ResponseEntity<Void> create(@Valid @RequestBody CreatePipelineRequest req) throws Exception {
-        service.create(req.name(), req.json());
+    public ResponseEntity<Void> create(@Valid @RequestBody JsonNode json) throws Exception {
+        String id = service.create(json);
         return ResponseEntity.created(
                 // location header: /api/pipelines/{name}
-                java.net.URI.create("/api/pipelines/" + req.name())
+                java.net.URI.create("/api/pipelines/" + id)
         ).build();
     }
 
