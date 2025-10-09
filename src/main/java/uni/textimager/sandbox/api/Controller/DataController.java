@@ -64,6 +64,9 @@ public class DataController {
             @RequestParam Map<String, String> allParams,
             @RequestParam(value = "pretty", defaultValue = "false") boolean pretty
     ) {
+
+        String schema = sanitizeSchema(pipelineId);
+
         // Extract legacy "filters=" style params into a LinkedHashMap to preserve order
         Map<String, String> filters = new LinkedHashMap<>();
         for (Map.Entry<String, String> e : allParams.entrySet()) {
@@ -75,7 +78,7 @@ public class DataController {
             filters.put(k, e.getValue());
         }
 
-        Optional<VisualisationsRepository.VisualizationMeta> meta = visRepo.findMeta(pipelineId, visId);
+        Optional<VisualisationsRepository.VisualizationMeta> meta = visRepo.findMeta(schema, pipelineId, visId);
         if (meta.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body("{\"error\":\"visualization not found\",\"id\":\"" + visId + "\"}");
@@ -84,7 +87,7 @@ public class DataController {
         String generatorId = meta.get().generatorId();
         String chartType = meta.get().type();
 
-        String json = handler.buildArrayJson(generatorId, chartType, filters, null, pretty);
+        String json = handler.buildArrayJson(generatorId, chartType, filters, null, pretty, schema);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .body(json);
@@ -109,7 +112,10 @@ public class DataController {
             @RequestParam(value = "pretty", defaultValue = "false") boolean pretty,
             @RequestBody FilterEnvelope body
     ) {
-        Optional<VisualisationsRepository.VisualizationMeta> meta = visRepo.findMeta(pipelineId, visId);
+
+        String schema = sanitizeSchema(pipelineId);
+
+        Optional<VisualisationsRepository.VisualizationMeta> meta = visRepo.findMeta(schema, pipelineId, visId);
         if (meta.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body("{\"error\":\"visualization not found\",\"id\":\"" + visId + "\"}");
@@ -121,7 +127,7 @@ public class DataController {
         String generatorId = meta.get().generatorId();
         String chartType = meta.get().type();
 
-        String json = handler.buildArrayJson(generatorId, chartType, filterValues, corpusValues, pretty);
+        String json = handler.buildArrayJson(generatorId, chartType, filterValues, corpusValues, pretty, schema);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .body(json);
@@ -143,5 +149,11 @@ public class DataController {
             return chart;
         }
 
+    }
+
+    private static String sanitizeSchema(String s) {
+        String x = s == null ? "public" : s.trim().toLowerCase(Locale.ROOT);
+        if (!x.matches("[a-z0-9_]+")) throw new IllegalArgumentException("Invalid schema");
+        return x;
     }
 }
