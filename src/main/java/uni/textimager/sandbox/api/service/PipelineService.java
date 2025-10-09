@@ -4,12 +4,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 
 import static org.springframework.http.HttpStatus.*;
@@ -24,6 +27,8 @@ public class PipelineService {
     private final SourceBuildService sourceBuildService;
     private final DataSource dataSource;
     private final ObjectMapper objectMapper;
+
+    Logger LOGGER = LoggerFactory.getLogger(PipelineService.class);
 
     public PipelineService(SourceBuildService sourceBuildService, DataSource dataSource, ObjectMapper objectMapper) {
         this.sourceBuildService = sourceBuildService;
@@ -95,40 +100,59 @@ public class PipelineService {
                     .execute();
 
             sourceBuildService.startBuild(id, id);
+
+            LOGGER.info("Created new pipeline: {}", id);
         }
 
         return id;
     }
 
     @Transactional
-    public void update(String name, JsonNode json) throws Exception {
+    public void update(String id, JsonNode json) throws Exception {
         String jsonStr = toString(json);
         try (Connection c = dataSource.getConnection()) {
             DSLContext dsl = DSL.using(c);
             int updated = dsl.update(DSL.table(TABLE))
                     .set(DSL.field(COL_JSON), jsonStr)
-                    .where(DSL.field(COL_NAME).eq(name))
+                    .where(DSL.field(COL_ID).eq(id))
                     .execute();
             if (updated == 0) throw new ResponseStatusException(NOT_FOUND, "Pipeline not found");
+            sourceBuildService.startBuild(id, id);
+
+            LOGGER.info("Updated pipeline: {}", id);
         }
     }
 
     @Transactional
-    public void delete(String name) throws Exception {
+    public void delete(String id) {
+        // (optional) validate schema name to avoid weird/injection-y ids
+        if (!id.matches("[A-Za-z_][A-Za-z0-9_]*")) {
+            throw new ResponseStatusException(BAD_REQUEST, "Invalid schema name");
+        }
+
         try (Connection c = dataSource.getConnection()) {
             DSLContext dsl = DSL.using(c);
-            int deleted = dsl.deleteFrom(DSL.table(TABLE))
-                    .where(DSL.field(COL_NAME).eq(name))
-                    .execute();
-            if (deleted == 0) throw new ResponseStatusException(NOT_FOUND, "Pipeline not found");
-        }
-    }
 
-    private void validateName(String name) {
-        if (name == null || name.isBlank())
-            throw new ResponseStatusException(BAD_REQUEST, "Name must not be blank");
-        if (!name.matches("[A-Za-z0-9._-]{1,255}"))
-            throw new ResponseStatusException(BAD_REQUEST, "Invalid name (allowed: letters, digits, ., _, -)");
+            // 1) Delete the pipeline row
+            int deleted = dsl.deleteFrom(DSL.table(TABLE))
+                    .where(DSL.field(COL_ID).eq(id))
+                    .execute();
+            if (deleted == 0) {
+                throw new ResponseStatusException(NOT_FOUND, "Pipeline not found");
+            }
+
+            // 2) Drop the schema + everything inside it
+            int ignored = dsl.dropSchema(DSL.name(id))
+                    .cascade()
+                    .execute();
+
+            LOGGER.info("Deleted pipeline: {}", id);
+
+        } catch (org.jooq.exception.DataAccessException e) {
+            throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "Failed to drop schema: " + id, e);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private JsonNode parseJson(String json) {
