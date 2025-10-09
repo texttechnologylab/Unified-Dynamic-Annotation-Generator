@@ -15,13 +15,7 @@ public class SourceBuildController {
 
     @PostMapping
     public ResponseEntity<?> trigger(@RequestParam(required = false) String pipeline) {
-        return service.startBuild(pipeline)
-                ? ResponseEntity.accepted().body("Build started")
-                : ResponseEntity.status(409).body("Already running");
-    }
-
-    @GetMapping("/status")
-    public Map<String, Object> status() {
-        return Map.of("running", service.isRunning());
+        service.startBuild(pipeline, pipeline);
+        return ResponseEntity.accepted().body("Build started");
     }
 }

@@ -9,11 +9,8 @@ import uni.textimager.sandbox.sources.DBAccess;
 import uni.textimager.sandbox.sources.SourceBuildOps;
 
 import javax.sql.DataSource;
-import java.sql.Array;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.ReentrantLock;
 
 @Service
 @RequiredArgsConstructor
@@ -22,46 +19,43 @@ public class SourceBuildService {
     private final DataSource dataSource;
     private final SourceBuildOps ops;
 
-    private final ReentrantLock lock = new ReentrantLock();
-    private final AtomicBoolean running = new AtomicBoolean(false);
-
-    public boolean startBuild(@Nullable String pipelinePath) {
-        if (!lock.tryLock()) return false;
-        if (!running.compareAndSet(false, true)) {
-            lock.unlock();
-            return false;
-        }
+    /**
+     * Build all sources for a given schema + pipeline.
+     * This version runs synchronously and is not concurrency-guarded.
+     */
+    public void startBuild(String schema, @Nullable String pipelineId) {
         try {
-            doBuild(pipelinePath);
-            return true;
+            doBuild(schema, pipelineId);
         } catch (Exception e) {
+            e.printStackTrace();
             throw new RuntimeException("Source build failed", e);
-        } finally {
-            running.set(false);
-            lock.unlock();
         }
     }
 
-    private void doBuild(@Nullable String pipelineId) throws Exception {
-
+    private void doBuild(String schema, @Nullable String pipelineId) throws Exception {
         if (pipelineId == null || pipelineId.isBlank()) {
-            pipelineId = "pipelineUseCase2";
+            pipelineId = "main";
         }
 
+        // Load pipeline from DB
         Pipeline pipeline = Pipeline.fromDB(dataSource, pipelineId);
+        String id = pipeline.getId();
+        System.out.println(id);
 
+        // Persist visualization JSONs and build types/tables
         Collection<Pipeline> coll = new ArrayList<>();
         coll.add(pipeline);
-        ops.savePipelinesVisualizationsJSONs(coll);
-        ops.buildCustomTypes(pipeline);
-        ops.buildGeneratorTables();
+        ops.savePipelinesVisualizationsJSONs(coll, id);
+        ops.buildCustomTypes(pipeline, id);
+        ops.buildGeneratorTables(id);
 
-        DBAccess dbAccess = new DBAccess(dataSource, "public");
+        // Generate & save generator data
+        DBAccess dbAccess = new DBAccess(dataSource, id);
         Collection<Generator> generators = pipeline.generateGenerators(dbAccess);
-        for (Generator g : generators) g.saveToDB(dbAccess);
-    }
+        for (Generator g : generators) {
+            g.saveToDB(dbAccess);
+        }
 
-    public boolean isRunning() {
-        return running.get();
+        System.out.printf("[SourceBuildService] Build completed for schema=%s, pipeline=%s%n", schema, id);
     }
 }

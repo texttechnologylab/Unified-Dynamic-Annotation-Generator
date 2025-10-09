@@ -6,7 +6,6 @@ import org.jooq.impl.DSL;
 import org.springframework.stereotype.Component;
 import uni.textimager.sandbox.database.DBConstants;
 import uni.textimager.sandbox.database.TypeTableResolver;
-import uni.textimager.sandbox.importer.config.DbProps;
 import uni.textimager.sandbox.pipeline.JSONView;
 import uni.textimager.sandbox.pipeline.Pipeline;
 import uni.textimager.sandbox.pipeline.PipelineNode;
@@ -23,18 +22,12 @@ import java.util.*;
 public class SourceBuildOps {
 
     private final DataSource dataSource;
-    private final DbProps dbProps;   // <-- add this
 
     private static String normJoinName(String raw) {
         return raw == null ? "" : raw.trim().toUpperCase(Locale.ROOT);
     }
 
-    private String schema() {
-        return dbProps.getSchema();
-    }
-
-    public void savePipelinesVisualizationsJSONs(Collection<Pipeline> pipelines) throws SQLException {
-        final String schema = schema();
+    public void savePipelinesVisualizationsJSONs(Collection<Pipeline> pipelines, String schema) throws SQLException {
 
         try (Connection connection = dataSource.getConnection()) {
             DSLContext dsl = DSL.using(connection);
@@ -54,8 +47,6 @@ public class SourceBuildOps {
                             .primaryKey(DBConstants.TABLEATTR_PIPELINEID))
                     .execute();
 
-            System.out.println("Creating table " + T + " (if not exists) and saving visualization JSONs...");
-
             Table<?> table = DSL.table(T);
             Field<String> fId = DSL.field(C1, String.class);
             Field<String> fJson = DSL.field(C2, String.class);
@@ -72,8 +63,7 @@ public class SourceBuildOps {
         }
     }
 
-    public void buildGeneratorTables() throws SQLException {
-        final String schema = schema();
+    public void buildGeneratorTables(String schema) throws SQLException {
 
         try (Connection connection = dataSource.getConnection()) {
             DSLContext dsl = DSL.using(connection);
@@ -127,14 +117,13 @@ public class SourceBuildOps {
         }
     }
 
-    public void buildCustomTypes(Pipeline pipeline) {
-        for (PipelineNode n : pipeline.getCustomTypes()) buildCustomType(n);
+    public void buildCustomTypes(Pipeline pipeline, String schema) {
+        for (PipelineNode n : pipeline.getCustomTypes()) buildCustomType(n, schema);
     }
 
-    private void buildCustomType(PipelineNode customTypeNode) {
+    private void buildCustomType(PipelineNode customTypeNode, String schema) {
         try (Connection connection = dataSource.getConnection()) {
             DSLContext dsl = DSL.using(connection);
-            final String schema = schema();
 
             ArrayList<String> joinCols = null;
             try {
@@ -289,11 +278,10 @@ public class SourceBuildOps {
             }
         }
 
-        cleanCustomTypeTable(subtypeHashes, OUT, FINAL, dsl);
+        cleanCustomTypeTable(subtypeHashes, OUT, FINAL, dsl, schema);
     }
 
-    private void cleanCustomTypeTable(List<String> subtypeHashes, Name originalTableName, Name newTableName, DSLContext dsl) {
-        final String schema = schema();
+    private void cleanCustomTypeTable(List<String> subtypeHashes, Name originalTableName, Name newTableName, DSLContext dsl, String schema) {
 
         List<String> columnNames = new ArrayList<>();
         try (Connection conn = dataSource.getConnection()) {
