@@ -2,27 +2,30 @@
 
 package uni.textimager.sandbox.api.Controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Setter;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uni.textimager.sandbox.api.service.DataQueryService;
-import uni.textimager.sandbox.api.Repositories.VisualisationsRepository;
+import uni.textimager.sandbox.api.service.PipelineService;
 
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api")
 public class DataController {
 
+    private final PipelineService pipelineService;
     private final DataQueryService handler;
-    private final VisualisationsRepository visRepo;
 
-    public DataController(DataQueryService handler, VisualisationsRepository visRepo) {
+    public DataController(PipelineService pipelineService, DataQueryService handler) {
+        this.pipelineService = pipelineService;
         this.handler = handler;
-        this.visRepo = visRepo;
     }
 
     private static Map<String, String> toStringMap(Map<String, Object> src) {
@@ -60,12 +63,10 @@ public class DataController {
     @GetMapping(value = "/data", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> getData(
             @RequestParam("id") String visId,
-            @RequestParam(value = "pipelineId", defaultValue = "main") String pipelineId,
+            @RequestParam(value = "pipelineId", defaultValue = "main-9") String pipelineId,
             @RequestParam Map<String, String> allParams,
             @RequestParam(value = "pretty", defaultValue = "false") boolean pretty
-    ) {
-
-        String schema = sanitizeSchema(pipelineId);
+    ) throws Exception {
 
         // Extract legacy "filters=" style params into a LinkedHashMap to preserve order
         Map<String, String> filters = new LinkedHashMap<>();
@@ -77,17 +78,12 @@ public class DataController {
             if (kn.equals("id") || kn.equals("pretty") || kn.equals("pipelineid")) continue;
             filters.put(k, e.getValue());
         }
+        JsonNode widget = pipelineService.get(pipelineId).get("widgets").get(visId);
 
-        Optional<VisualisationsRepository.VisualizationMeta> meta = visRepo.findMeta(schema, pipelineId, visId);
-        if (meta.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("{\"error\":\"visualization not found\",\"id\":\"" + visId + "\"}");
-        }
+        String generatorId = widget.get("generator").get("id").asText();
+        String chartType = widget.get("type").asText();
 
-        String generatorId = meta.get().generatorId();
-        String chartType = meta.get().type();
-
-        String json = handler.buildArrayJson(generatorId, chartType, filters, null, pretty, schema);
+        String json = handler.buildArrayJson(generatorId, chartType, filters, null, pretty, pipelineId);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .body(json);
@@ -96,7 +92,7 @@ public class DataController {
     // ---- helpers & DTO ----
 
     /**
-     * New JSON-driven endpoint.
+     * JSON-driven endpoint.
      * Expects a body of the shape:
      * {
      * "corpus": { ... },   // reserved for future: files, tags, date (not yet implemented)
@@ -108,26 +104,37 @@ public class DataController {
     @PostMapping(value = "/data", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> postData(
             @RequestParam("id") String visId,
-            @RequestParam(value = "pipelineId", defaultValue = "main") String pipelineId,
+            @RequestParam(value = "pipelineId", defaultValue = "main-9") String pipelineId,
             @RequestParam(value = "pretty", defaultValue = "false") boolean pretty,
             @RequestBody FilterEnvelope body
-    ) {
+    ) throws Exception {
 
-        String schema = sanitizeSchema(pipelineId);
+        System.out.println(pipelineService.get(pipelineId).get("widgets"));
 
-        Optional<VisualisationsRepository.VisualizationMeta> meta = visRepo.findMeta(schema, pipelineId, visId);
-        if (meta.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("{\"error\":\"visualization not found\",\"id\":\"" + visId + "\"}");
+        JsonNode widgets = pipelineService.get(pipelineId).get("widgets");
+        JsonNode widget = null;
+
+        if (widgets != null && widgets.isArray()) {
+            for (JsonNode node : widgets) {
+                JsonNode idNode = node.get("id");
+                if (idNode != null && visId.equals(idNode.asText())) {
+                    widget = node;
+                    break;
+                }
+            }
+        }
+
+        if (widget == null) {
+            return ResponseEntity.status(404).body("{\"error\":\"Visualization ID not found in pipeline\"}");
         }
 
         Map<String, String> filterValues = toStringMap(body.chart());
         Map<String, String> corpusValues = toStringMap(body.corpus());
 
-        String generatorId = meta.get().generatorId();
-        String chartType = meta.get().type();
+        String generatorId = widget.get("generator").get("id").asText();
+        String chartType = widget.get("type").asText();
 
-        String json = handler.buildArrayJson(generatorId, chartType, filterValues, corpusValues, pretty, schema);
+        String json = handler.buildArrayJson(generatorId, chartType, filterValues, corpusValues, pretty, pipelineId);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .body(json);
@@ -149,11 +156,5 @@ public class DataController {
             return chart;
         }
 
-    }
-
-    private static String sanitizeSchema(String s) {
-        String x = s == null ? "public" : s.trim().toLowerCase(Locale.ROOT);
-        if (!x.matches("[a-z0-9_]+")) throw new IllegalArgumentException("Invalid schema");
-        return x;
     }
 }
