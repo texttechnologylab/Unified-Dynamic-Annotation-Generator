@@ -2,7 +2,8 @@ package uni.textimager.sandbox.importer;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.jooq.DSLContext;
+import org.jooq.*;
+import org.jooq.Record;
 import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,12 +11,13 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+import uni.textimager.sandbox.api.service.SourceBuildService;
 
 import javax.sql.DataSource;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.sql.Connection;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -36,16 +38,19 @@ public class PipelineJsonImporter implements ApplicationRunner {
     private final Path folder;
     private final boolean replaceIfDifferent;
     private final ObjectMapper mapper = new ObjectMapper();
+    private final SourceBuildService sourceBuildService;
 
     @Value("${app.db.schema:public}")
     private String schema;
 
     public PipelineJsonImporter(
             DataSource dataSource,
+            SourceBuildService sourceBuildService,
             @Value("${app.pipeline-json-import.folder:pipelines}") String folderPath,
             @Value("${app.pipeline-json-import.replace-if-different:false}") boolean replaceIfDifferent
     ) {
         this.dataSource = dataSource;
+        this.sourceBuildService = sourceBuildService;
         this.folder = Paths.get(folderPath);
         this.replaceIfDifferent = replaceIfDifferent;
     }
@@ -60,28 +65,36 @@ public class PipelineJsonImporter implements ApplicationRunner {
         try (Connection connection = dataSource.getConnection()) {
             DSLContext dsl = DSL.using(connection);
 
-            // 1) Ensure schema exists (Postgres)
-            dsl.execute("CREATE SCHEMA IF NOT EXISTS " + schema);
+            // Ensure schema + table
+            dsl.createSchemaIfNotExists(DSL.name(schema)).execute();
 
-            // 2) Create table in that schema (PRIMARY KEY on id)
-            dsl.createTableIfNotExists(name(schema, TABLE))
-                    .column(name(COL_NAME), SQLDataType.VARCHAR(255).nullable(false))
-                    .column(name(COL_JSON), SQLDataType.CLOB.nullable(false))
-                    .column(name(PIPELINE_ID), SQLDataType.VARCHAR(255).nullable(false))
-                    .constraints(constraint("PK_" + TABLE).primaryKey(name(PIPELINE_ID)))
+            Table<Record> T = table(name(schema, TABLE));
+            Field<String> F_NAME = field(name(schema, TABLE, COL_NAME), String.class);
+            Field<String> F_JSON = field(name(schema, TABLE, COL_JSON), String.class);
+            Field<String> F_ID   = field(name(schema, TABLE, PIPELINE_ID), String.class);
+
+            dsl.createTableIfNotExists(T)
+                    .column(F_NAME, SQLDataType.VARCHAR(255).nullable(false))
+                    .column(F_JSON, SQLDataType.CLOB.nullable(false))
+                    .column(F_ID,   SQLDataType.VARCHAR(255).nullable(false))
+                    .constraints(constraint("PK_" + TABLE).primaryKey(F_ID))
                     .execute();
 
             System.out.printf("[PipelineJsonImporter] Ensured %s.%s exists%n", schema, TABLE);
 
-            // 3) Import files
             try (Stream<Path> files = Files.list(folder)) {
                 files.filter(p -> Files.isRegularFile(p) && p.toString().endsWith(".json"))
-                        .forEach(p -> importOne(dsl, p));
+                        .forEach(p -> importOne(dsl, T, F_NAME, F_JSON, F_ID, p));
             }
         }
     }
 
-    private void importOne(DSLContext dsl, Path p) {
+    private void importOne(DSLContext dsl,
+                           Table<Record> T,
+                           Field<String> F_NAME,
+                           Field<String> F_JSON,
+                           Field<String> F_ID,
+                           Path p) {
         try {
             String raw = Files.readString(p, StandardCharsets.UTF_8);
             ParsedPipeline parsed = parseAndCanonicalize(raw);
@@ -90,32 +103,29 @@ public class PipelineJsonImporter implements ApplicationRunner {
             String pipelineIdOriginal = parsed.pipelineId();
             String pipelineName = filenameWithoutExt(p.getFileName().toString());
 
-            if (pipelineNameExists(dsl, pipelineName)) {
+            if (pipelineNameExists(dsl, T, F_NAME, pipelineName)) {
                 System.out.printf("[PipelineJsonImporter] Skipped (filename already imported) file=%s%n", pipelineName);
                 return;
             }
 
-            boolean idExists = pipelineIdExists(dsl, pipelineIdOriginal);
+            boolean idExists = pipelineIdExists(dsl, T, F_ID, pipelineIdOriginal);
 
             if (!idExists) {
-                // Either insert new, or (if replace==true and the same id exists) update — but it doesn't exist, so insert.
-                dsl.insertInto(table(TABLE),
-                                field(COL_NAME),
-                                field(COL_JSON),
-                                field(PIPELINE_ID))
+                dsl.insertInto(T)
+                        .columns(F_NAME, F_JSON, F_ID)
                         .values(pipelineName, canonicalJson, pipelineIdOriginal)
                         .execute();
+
                 System.out.printf("[PipelineJsonImporter] Inserted (id=%s, file=%s)%n", pipelineIdOriginal, pipelineName);
+
+                // 🔧 build sources for this pipeline in this schema
+                System.out.println(pipelineIdOriginal);
+                sourceBuildService.startBuild(pipelineIdOriginal, pipelineIdOriginal);
                 return;
             }
 
-            // Same id already exists
             if (replaceIfDifferent) {
-                // Update the existing row with SAME id
-                String existingCanonical = dsl.select(field(COL_JSON, String.class))
-                        .from(table(TABLE))
-                        .where(field(PIPELINE_ID).eq(pipelineIdOriginal))
-                        .fetchOneInto(String.class);
+                String existingCanonical = dsl.select(F_JSON).from(T).where(F_ID.eq(pipelineIdOriginal)).fetchOne(F_JSON);
 
                 String existingCanon = (existingCanonical == null) ? null : canonicalize(existingCanonical);
                 String newCanon = canonicalize(canonicalJson);
@@ -125,47 +135,48 @@ public class PipelineJsonImporter implements ApplicationRunner {
                     return;
                 }
 
-                int updated = dsl.update(table(TABLE))
-                        .set(field(COL_JSON), canonicalJson)
-                        .set(field(COL_NAME), pipelineName) // optional: keep last filename seen
-                        .where(field(PIPELINE_ID).eq(pipelineIdOriginal))
+                int updated = dsl.update(T)
+                        .set(F_JSON, canonicalJson)
+                        .set(F_NAME, pipelineName)
+                        .where(F_ID.eq(pipelineIdOriginal))
                         .execute();
+
                 System.out.printf("[PipelineJsonImporter] %s id=%s (updated from file=%s)%n",
                         updated == 1 ? "Updated" : "No update for", pipelineIdOriginal, pipelineName);
+
+                // 🔧 build sources for this pipeline in this schema
+                sourceBuildService.startBuild(pipelineIdOriginal, pipelineIdOriginal);
                 return;
             }
 
-            // replace-if-different = false → generate a new unique id with numeric prefix and INSERT
-            String uniqueId = ensureUniquePipelineId(dsl, pipelineIdOriginal);
-            dsl.insertInto(table(TABLE),
-                            field(COL_NAME),
-                            field(COL_JSON),
-                            field(PIPELINE_ID))
+            // duplicate id, create a unique one and insert
+            String uniqueId = ensureUniquePipelineId(dsl, T, F_ID, pipelineIdOriginal);
+            dsl.insertInto(T)
+                    .columns(F_NAME, F_JSON, F_ID)
                     .values(pipelineName, canonicalJson, uniqueId)
                     .execute();
+
             System.out.printf("[PipelineJsonImporter] Inserted duplicate as id=%s (original=%s, file=%s)%n",
                     uniqueId, pipelineIdOriginal, pipelineName);
+
+            // 🔧 build sources for this pipeline in this schema
+            System.out.println(uniqueId);
+            sourceBuildService.startBuild(uniqueId, uniqueId);
 
         } catch (Exception e) {
             System.err.printf("[PipelineJsonImporter] Failed for %s: %s%n", p.getFileName(), e.getMessage());
         }
     }
 
-// --- Helpers ---------------------------------------------------------------
+    // --- Helpers (unchanged logic, but schema-qualified versions for existence checks) ---
 
-    /**
-     * Parse JSON once, return canonical string and extracted id (old & new format).
-     */
     private ParsedPipeline parseAndCanonicalize(String raw) throws Exception {
-        JsonNode root = mapper.readTree(raw);            // validate + parse
-        String pipelineId = extractPipelineId(root);     // throws if missing
+        JsonNode root = mapper.readTree(raw);
+        String pipelineId = extractPipelineId(root);
         String canonical = mapper.writeValueAsString(root);
         return new ParsedPipeline(canonical, pipelineId);
     }
 
-    /**
-     * Extracts the pipeline id from either {"pipelines":[{...}]} or single-object {...}.
-     */
     private String extractPipelineId(JsonNode root) {
         JsonNode pipelineNode = root;
         if (root.has("pipelines")) {
@@ -182,57 +193,34 @@ public class PipelineJsonImporter implements ApplicationRunner {
         return idNode.asText();
     }
 
-    /**
-     * Check if a pipeline_id already exists.
-     */
-    private boolean pipelineIdExists(DSLContext dsl, String pipelineId) {
-        String hit = dsl.select(field(PIPELINE_ID, String.class))
-                .from(table(TABLE))
-                .where(field(PIPELINE_ID).eq(pipelineId))
-                .fetchOneInto(String.class);
-        return hit != null;
+    private boolean pipelineIdExists(DSLContext dsl, Table<Record> T, Field<String> F_ID, String pipelineId) {
+        return dsl.fetchExists(selectOne().from(T).where(F_ID.eq(pipelineId)));
     }
 
-    private boolean pipelineNameExists(DSLContext dsl, String pipelineName) {
-        return dsl.fetchExists(
-                selectOne()
-                        .from(table(name(schema, TABLE)))
-                        .where(field(name(COL_NAME)).eq(pipelineName))
-        );
+    private boolean pipelineNameExists(DSLContext dsl, Table<Record> T, Field<String> F_NAME, String pipelineName) {
+        return dsl.fetchExists(selectOne().from(T).where(F_NAME.eq(pipelineName)));
     }
 
-    /**
-     * If 'id' exists, returns "id-2", "id-3", ... until free.
-     * If the given id already ends with "-N", continue from N+1.
-     * Ensures <= 255 chars by truncating the BASE (left part) to fit the suffix.
-     */
-    private String ensureUniquePipelineId(DSLContext dsl, String id) {
-        if (!pipelineIdExists(dsl, id)) return id;
+    private String ensureUniquePipelineId(DSLContext dsl, Table<Record> T, Field<String> F_ID, String id) {
+        if (!pipelineIdExists(dsl, T, F_ID, id)) return id;
 
         final int maxLen = 255;
-
-        // If id already ends with -number, keep its base and bump the number
         String base = id;
         int counter = 2;
+
         Matcher m = Pattern.compile("^(.*?)-(\\d+)$").matcher(id);
         if (m.matches()) {
             base = m.group(1);
-            try {
-                counter = Integer.parseInt(m.group(2)) + 1;
-            } catch (NumberFormatException ignored) {
-            }
+            try { counter = Integer.parseInt(m.group(2)) + 1; } catch (NumberFormatException ignored) {}
         }
 
         while (true) {
             String suffix = "-" + counter;
-
-            // How many chars can the base keep?
-            int keep = Math.max(1, maxLen - suffix.length()); // keep at least 1 char for base
+            int keep = Math.max(1, maxLen - suffix.length());
             String trimmedBase = base.length() > keep ? base.substring(0, keep) : base;
-
             String candidate = trimmedBase + suffix;
 
-            if (!pipelineIdExists(dsl, candidate)) {
+            if (!pipelineIdExists(dsl, T, F_ID, candidate)) {
                 return candidate;
             }
             counter++;
@@ -245,13 +233,9 @@ public class PipelineJsonImporter implements ApplicationRunner {
     }
 
     private String canonicalize(String json) throws Exception {
-        JsonNode node = mapper.readTree(json);   // validate + parse
-        return mapper.writeValueAsString(node);  // minified canonical form
+        JsonNode node = mapper.readTree(json);
+        return mapper.writeValueAsString(node);
     }
 
-    /**
-     * Parsed result container
-     */
-    private record ParsedPipeline(String canonicalJson, String pipelineId) {
-    }
+    private record ParsedPipeline(String canonicalJson, String pipelineId) {}
 }
