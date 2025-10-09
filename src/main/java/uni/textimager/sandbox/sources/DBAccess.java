@@ -24,12 +24,16 @@ public class DBAccess {
 
     @Getter
     private final DataSource dataSource;
-
+    @Getter
     private final String schema;
 
     public DBAccess(DataSource dataSource, String schema) {
         this.dataSource = dataSource;
         this.schema = (schema == null || schema.isBlank()) ? "public" : schema;
+    }
+
+    public DBAccess(DataSource dataSource) {
+        this(dataSource, "public");
     }
 
     /**
