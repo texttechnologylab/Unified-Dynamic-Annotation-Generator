@@ -40,17 +40,16 @@ public class SourceBuildService {
         // Load pipeline from DB
         Pipeline pipeline = Pipeline.fromDB(dataSource, pipelineId);
         String id = pipeline.getId();
-        System.out.println(id);
 
         // Persist visualization JSONs and build types/tables
         Collection<Pipeline> coll = new ArrayList<>();
         coll.add(pipeline);
-        ops.savePipelinesVisualizationsJSONs(coll, id);
-        ops.buildCustomTypes(pipeline, id);
-        ops.buildGeneratorTables(id);
+        ops.savePipelinesVisualizationsJSONs(coll, schema);
+        ops.buildCustomTypes(pipeline, schema);
+        ops.buildGeneratorTables(schema);
 
         // Generate & save generator data
-        DBAccess dbAccess = new DBAccess(dataSource, id);
+        DBAccess dbAccess = new DBAccess(dataSource, schema);
         Collection<Generator> generators = pipeline.generateGenerators(dbAccess);
         for (Generator g : generators) {
             g.saveToDB(dbAccess);
