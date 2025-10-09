@@ -1,6 +1,8 @@
 package uni.textimager.sandbox.api.service;
 
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import uni.textimager.sandbox.generators.Generator;
@@ -16,6 +18,7 @@ import java.util.Collection;
 @RequiredArgsConstructor
 public class SourceBuildService {
 
+    private static final Logger logger = LoggerFactory.getLogger(SourceBuildService.class);
     private final DataSource dataSource;
     private final SourceBuildOps ops;
 
@@ -27,8 +30,8 @@ public class SourceBuildService {
         try {
             doBuild(schema, pipelineId);
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Source build failed", e);
+            logger.error(e.getMessage());
+            logger.warn("Build failed for pipeline={}", pipelineId);
         }
     }
 
@@ -55,6 +58,6 @@ public class SourceBuildService {
             g.saveToDB(dbAccess);
         }
 
-        System.out.printf("[SourceBuildService] Build completed for schema=%s, pipeline=%s%n", schema, id);
+        logger.info("Build completed for schema=" + schema + ", pipeline=" + id);
     }
 }
