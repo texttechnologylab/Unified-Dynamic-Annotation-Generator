@@ -34,6 +34,7 @@ import java.util.*;
 //@Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @ConditionalOnProperty(name = "app.database-generator.enabled", havingValue = "true", matchIfMissing = true)
+@Deprecated
 public class DatabaseGenerator implements ApplicationRunner {
     private final JdbcTemplate jdbc;
     private final SqlDialect dialect;
