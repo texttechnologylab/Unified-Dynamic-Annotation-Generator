@@ -3,94 +3,111 @@ package uni.textimager.sandbox.api.charts.impl;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import uni.textimager.sandbox.api.ValueMode;
 import uni.textimager.sandbox.api.Repositories.GeneratorDataRepository;
+import uni.textimager.sandbox.api.ValueMode;
 import uni.textimager.sandbox.api.charts.ChartHandler;
 import uni.textimager.sandbox.api.charts.ValueTransforms;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Component
+@Component("PieChart")
+@RequiredArgsConstructor
 public class PieChartHandler implements ChartHandler {
 
-    private final ObjectMapper mapper;
     private final GeneratorDataRepository repo;
+    private final ObjectMapper mapper;
 
-    public PieChartHandler(ObjectMapper mapper, GeneratorDataRepository repo) {
-        this.mapper = mapper;
-        this.repo = repo;
-    }
-
-    // small local utils
-    private static Set<String> parseCsv(String csv) {
+    // ---- small local utils ----
+    private static Set<String> parseCsvSet(String csv) {
         if (csv == null || csv.isBlank()) return Collections.emptySet();
-        return Arrays.stream(csv.split(",")).map(String::trim)
-                .filter(s -> !s.isEmpty()).collect(Collectors.toCollection(LinkedHashSet::new));
+        return Arrays.stream(csv.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
-    private static Integer parseInt(String s) {
+    private static Double parseDoubleOrNull(String s) {
+        if (s == null) return null;
         try {
-            return (s == null || s.isBlank()) ? null : Integer.parseInt(s);
-        } catch (Exception e) {
+            return Double.parseDouble(s.trim());
+        } catch (NumberFormatException e) {
             return null;
         }
     }
 
-    private static Double parseDouble(String s) {
+    private static Integer parseIntOrNull(String s) {
+        if (s == null) return null;
         try {
-            return (s == null || s.isBlank()) ? null : Double.parseDouble(s);
-        } catch (Exception e) {
+            return Integer.parseInt(s.trim());
+        } catch (NumberFormatException e) {
             return null;
         }
-    }
-
-    @Override
-    public String getName() {
-        return "PieChart";
     }
 
     @Override
     public JsonNode render(String generatorId,
                            Map<String, String> filters,
-                           Set<String> corpusFiles,
-                           ValueMode valueMode) {
+                           Set<String> files,
+                           ValueMode valueMode,
+                           String schema) {
 
-        // attrs
-        LinkedHashSet<String> attrs = Arrays.stream(
-                        Optional.ofNullable(filters.get("attrs")).orElse("").split(","))
-                .map(String::trim).filter(s -> !s.isEmpty())
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+        // Which fields to emit (default: label,value,color)
+        LinkedHashSet<String> attrs = parseCsvSet(filters.getOrDefault("attrs", "label,value,color"))
+                .stream().collect(Collectors.toCollection(LinkedHashSet::new));
         if (attrs.isEmpty()) attrs = new LinkedHashSet<>(List.of("label", "value", "color"));
 
-        // filter params
-        Set<String> keepLabels = parseCsv(filters.getOrDefault("label", filters.getOrDefault("labels", "")));
-        Double min = parseDouble(filters.get("min"));
-        Double max = parseDouble(filters.get("max"));
-        String sort = Optional.ofNullable(filters.get("sort")).orElse("value");
-        boolean desc = Optional.ofNullable(filters.get("desc"))
-                .map(v -> v.equalsIgnoreCase("true") || v.equals("1")).orElse(true);
-        Integer limit = parseInt(filters.get("limit"));
+        // Optional: restrict labels via filter "label" or "labels"
+        Set<String> keepLabels = parseCsvSet(
+                filters.getOrDefault("label", filters.getOrDefault("labels", ""))
+        );
 
-        // RAW: DB does min/max/sort/limit; else: pull full, transform client-side
-        List<GeneratorDataRepository.BarPieRow> rows =
-                (valueMode == ValueMode.RAW)
-                        ? repo.loadBarPie(generatorId, keepLabels, corpusFiles, min, max, sort, desc, limit)
-                        : repo.loadBarPie(generatorId, keepLabels, corpusFiles, null, null, "value", true, null);
+        // Sorting / filtering controls
+        String sort = filters.getOrDefault("sort", "value");
+        boolean desc = Boolean.parseBoolean(filters.getOrDefault("desc", "true"));
+        Double min = parseDoubleOrNull(filters.get("min"));
+        Double max = parseDoubleOrNull(filters.get("max"));
+        Integer limit = parseIntOrNull(filters.get("limit"));
 
-        if (valueMode != ValueMode.RAW) {
-            rows = ValueTransforms.apply(rows, valueMode, repo, generatorId, keepLabels, corpusFiles);
-            rows = ValueTransforms.sortLimitFilter(rows, sort, desc, min, max, limit);
+        // Optional: chart-specific type (for type-specific colors)
+        String typeForColors = filters.getOrDefault("type", null);
+
+        // Load base category values + colors
+        var data = repo.loadCategoryNumber(schema, generatorId, files, typeForColors);
+        Map<String, Double> values = new LinkedHashMap<>(data.values());
+
+        // Apply optional label restriction BEFORE transforms
+        if (!keepLabels.isEmpty()) {
+            values.keySet().retainAll(keepLabels);
         }
 
+        // For PER_FILE_AVG only: load per-file breakdown to average over files (optionally restricted by 'files')
+        Map<String, Map<String, Double>> perFile = null;
+        if (valueMode == ValueMode.PER_FILE_AVG) {
+            perFile = repo.loadCategoryNumberPerFile(schema, generatorId, typeForColors);
+        }
+
+        // Transform values (RAW, SHARE, MAX1, ZSCORE, PER_FILE_AVG)
+        Map<String, Double> valuesTx = ValueTransforms.apply(values, valueMode, perFile, files);
+
+        // Optional min/max/sort/limit
+        var rows = ValueTransforms.sortLimitFilter(valuesTx, sort, desc, min, max, limit);
+
+        // Build [{label,value,color}] (or subset per 'attrs')
         ArrayNode out = mapper.createArrayNode();
-        for (var r : rows) {
-            ObjectNode o = mapper.createObjectNode();
-            if (attrs.contains("label")) o.put("label", r.label());
-            if (attrs.contains("value")) o.put("value", r.value());
-            if (attrs.contains("color")) o.put("color", r.color() == null ? "#999999" : r.color());
+        for (var entry : rows) {
+            String label = entry.getKey();
+            Double value = entry.getValue();
+
+            var o = mapper.createObjectNode();
+            if (attrs.contains("label")) o.put("label", label);
+            if (attrs.contains("value")) o.put("value", value);
+            if (attrs.contains("color")) {
+                String color = data.colors().get(label);
+                o.put("color", color == null ? "#999999" : color);
+            }
             out.add(o);
         }
         return out;

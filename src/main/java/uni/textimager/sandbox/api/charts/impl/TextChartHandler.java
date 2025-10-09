@@ -4,36 +4,34 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import uni.textimager.sandbox.api.ValueMode;
 import uni.textimager.sandbox.api.Repositories.GeneratorDataRepository;
+import uni.textimager.sandbox.api.ValueMode;
 import uni.textimager.sandbox.api.charts.ChartHandler;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Component
+@Component("HighlightText")
+@RequiredArgsConstructor
 public class TextChartHandler implements ChartHandler {
+
     private final ObjectMapper mapper;
     private final GeneratorDataRepository repo;
 
-    public TextChartHandler(ObjectMapper mapper, GeneratorDataRepository repo) {
-        this.mapper = mapper;
-        this.repo = repo;
-    }
-
+    // ---- utils ----
     private static Set<String> csvSet(String csv) {
         if (csv == null || csv.isBlank()) return Collections.emptySet();
-        Set<String> s = new LinkedHashSet<>();
-        for (String p : csv.split(",")) {
-            String v = p.trim();
-            if (!v.isEmpty()) s.add(v);
-        }
-        return s;
+        return Arrays.stream(csv.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     private static String toCss(String styleName, String color) {
-        return switch (styleName == null ? "" : styleName.toLowerCase(Locale.ROOT)) {
+        String s = styleName == null ? "" : styleName.toLowerCase(Locale.ROOT);
+        return switch (s) {
             case "bold" -> "color: " + color + "; font-weight: bold;";
             case "underline" -> "text-decoration: underline 2px " + color + ";";
             case "highlight" -> "background-color: " + color + ";";
@@ -42,59 +40,65 @@ public class TextChartHandler implements ChartHandler {
     }
 
     @Override
-    public String getName() {
-        return "HighlightText";
-    }
+    public JsonNode render(String generatorId,
+                           Map<String, String> filters,
+                           Set<String> files,          // not used for text yet, kept for symmetry
+                           ValueMode vm,               // not used (text is not numerically transformed)
+                           String schema) {
 
-    @Override
-    public JsonNode render(String generatorId, Map<String, String> filters, Set<String> corpusFiles, ValueMode vm) {
-        // Toggles: include lists
+        // Optional include filters
         boolean typesProvided = filters.containsKey("types");
         boolean categoriesProvided = filters.containsKey("categories");
-        boolean stylesProvided = filters.containsKey("styles"); // optional
+        boolean stylesProvided = filters.containsKey("styles");
 
         Set<String> includeTypes = csvSet(filters.get("types"));
         Set<String> includeCategories = csvSet(filters.get("categories"));
-        Set<String> includeStyles = csvSet(filters.get("styles")).stream()
-                .map(s -> s.toLowerCase(Locale.ROOT)).collect(Collectors.toCollection(LinkedHashSet::new));
+        Set<String> includeStyles = csvSet(filters.get("styles"))
+                .stream().map(s -> s.toLowerCase(Locale.ROOT))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
 
-        String text = repo.getText(generatorId);
-        Map<String, String> typeStyles = repo.getTypeStyles(generatorId); // type -> styleName
-        Map<String, Map<String, String>> colors = repo.getTypeCategoryColors(generatorId); // type -> (category -> color)
+        // Load base data (schema-aware)
+        String text = repo.loadText(schema, generatorId).orElse("");
+        Map<String, String> typeStyles = repo.loadTypeStyles(schema, generatorId); // type -> styleName
+        Map<String, Map<String, String>> typeCategoryColors = repo.loadTypeCategoryColors(schema, generatorId); // type -> (category -> color)
 
-        // DB include filter for type/category where possible
-        Set<String> typeDbFilter = typesProvided && includeTypes.isEmpty() ? Set.of("__NONE__") : (typesProvided ? includeTypes : null);
-        Set<String> catDbFilter = categoriesProvided && includeCategories.isEmpty() ? Set.of("__NONE__") : (categoriesProvided ? includeCategories : null);
-
-        List<GeneratorDataRepository.Segment> segs = (typeDbFilter == null && catDbFilter == null)
-                ? repo.getSegments(generatorId, null, null)
-                : repo.getSegments(generatorId,
-                (typeDbFilter == null || typeDbFilter.contains("__NONE__")) ? Set.of() : typeDbFilter,
-                (catDbFilter == null || catDbFilter.contains("__NONE__")) ? Set.of() : catDbFilter);
+        // Load all segments once; we'll filter in-memory (keeps repo simple)
+        var segs = repo.loadSegments(schema, generatorId, null);
 
         // If key existed but list is empty → no segments
         if ((typesProvided && includeTypes.isEmpty()) || (categoriesProvided && includeCategories.isEmpty())) {
             segs = Collections.emptyList();
+        } else {
+            // Filter by type / category if provided
+            if (typesProvided && !includeTypes.isEmpty()) {
+                Set<String> tset = includeTypes;
+                segs = segs.stream().filter(s -> tset.contains(s.type())).collect(Collectors.toList());
+            }
+            if (categoriesProvided && !includeCategories.isEmpty()) {
+                Set<String> cset = includeCategories;
+                segs = segs.stream().filter(s -> cset.contains(s.category())).collect(Collectors.toList());
+            }
+            // Optional style filter
+            if (stylesProvided && !includeStyles.isEmpty()) {
+                Set<String> sset = includeStyles;
+                segs = segs.stream()
+                        .filter(s -> sset.contains(
+                                Optional.ofNullable(typeStyles.get(s.type()))
+                                        .orElse("")
+                                        .toLowerCase(Locale.ROOT)))
+                        .collect(Collectors.toList());
+            }
         }
 
-        // Optional style filter
-        if (stylesProvided && !includeStyles.isEmpty()) {
-            segs = segs.stream()
-                    .filter(s -> includeStyles.contains(
-                            Optional.ofNullable(typeStyles.get(s.type()))
-                                    .orElse("").toLowerCase(Locale.ROOT)))
-                    .collect(Collectors.toList());
-        }
-
-        int N = text.length();
-
+        // Build event list
+        final int N = text.length();
         record Ev(int idx, boolean start, String styleCss, String labelHtml) {
         }
         List<Ev> evs = new ArrayList<>(segs.size() * 2);
 
         for (var s : segs) {
             String styleName = typeStyles.getOrDefault(s.type(), "");
-            String color = Optional.ofNullable(colors.get(s.type()))
+            String color = Optional.ofNullable(typeCategoryColors.get(s.type()))
                     .map(m -> m.get(s.category()))
                     .orElse("#000000");
 
@@ -113,8 +117,11 @@ public class TextChartHandler implements ChartHandler {
             evs.add(new Ev(e, false, css, labelHtml));
         }
 
-        evs.sort(Comparator.<Ev>comparingInt(e -> e.idx).thenComparing(e -> e.start ? 1 : 0)); // end before start
+        // Sort by index; at the same idx, end before start
+        evs.sort(Comparator.<Ev>comparingInt(Ev::idx)
+                .thenComparing(ev -> ev.start ? 1 : 0));
 
+        // Sweep line to build spans
         List<String> activeCss = new ArrayList<>();
         List<String> activeLbl = new ArrayList<>();
         int last = 0;
@@ -137,31 +144,27 @@ public class TextChartHandler implements ChartHandler {
             }
             last = e.idx;
         }
-
         if (last < N) {
             ObjectNode span = mapper.createObjectNode();
             span.put("TEXT", text.substring(last));
+            if (!activeCss.isEmpty()) span.put("style", String.join(" ", activeCss));
+            if (!activeLbl.isEmpty()) span.put("label", String.join(" ", activeLbl));
             spans.add(span);
         }
 
+        // Optional "datasets" section per type (basic skeleton)
         ArrayNode datasets = mapper.createArrayNode();
-        typeStyles.keySet().forEach(t -> {
+        for (String t : typeStyles.keySet()) {
             ObjectNode d = mapper.createObjectNode();
             d.put("name", t);
             datasets.add(d);
-        });
+        }
 
         ObjectNode root = mapper.createObjectNode();
         root.put("generatorId", generatorId);
         root.put("textLength", N);
         root.set("spans", spans);
         root.set("datasets", datasets);
-
-        root.put("generatorId", generatorId);
-        root.put("textLength", text.length());
-        root.set("spans", spans);
-        root.set("datasets", mapper.createArrayNode());
         return root;
     }
 }
-

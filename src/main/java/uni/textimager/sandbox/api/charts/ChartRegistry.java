@@ -1,25 +1,26 @@
+// /charts/ChartRegistry.java
 package uni.textimager.sandbox.api.charts;
 
-import org.springframework.stereotype.Service;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
-@Service
+// ChartRegistry.java
+@Component
+@RequiredArgsConstructor
 public class ChartRegistry {
+
     private final Map<String, ChartHandler> handlers;
 
-    public ChartRegistry(List<ChartHandler> handlerList) {
-        this.handlers = handlerList.stream()
-                .collect(Collectors.toMap(ChartHandler::getName, h -> h));
+    public boolean has(String type) {
+        return handlers.containsKey(type);
     }
 
-    public ChartHandler get(String shape) {
-        return handlers.get(shape);
-    }
-
-    public boolean has(String shape) {
-        return handlers.containsKey(shape);
+    public ChartHandler get(String type) {
+        ChartHandler h = handlers.get(type);
+        if (h == null) throw new IllegalArgumentException("Unknown chart type: " + type);
+        return h;
     }
 }
+
