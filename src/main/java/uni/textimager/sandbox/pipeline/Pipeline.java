@@ -5,7 +5,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import org.jooq.DSLContext;
-import org.jooq.Record1;
+import org.jooq.Field;
+import org.jooq.Table;
 import org.jooq.impl.DSL;
 import uni.textimager.sandbox.generators.CategoryNumberColorMapping;
 import uni.textimager.sandbox.generators.CategoryNumberMapping;
@@ -105,36 +106,36 @@ public class Pipeline {
     }
 
     /**
-     * Load a pipeline by name from the DB.
-     * Expects table: pipeline(pipeline_name TEXT/VARCHAR PRIMARY KEY, json CLOB/TEXT).
+     * Load a pipeline by id from the DB.
+     * Expects table: pipeline(pipeline_id TEXT/VARCHAR PRIMARY KEY, json CLOB/TEXT).
      * JSON can be either:
      * (A) {"pipelines":[ { ...the pipeline... } ]}
      * (B) { ...the pipeline... }   // single object without the "pipelines" wrapper
      */
-    public static Pipeline fromDB(DataSource dataSource, String pipelineName) {
-        if (dataSource == null) {
-            throw new IllegalArgumentException("dataSource must not be null");
-        }
-        if (pipelineName == null || pipelineName.isBlank()) {
-            throw new IllegalArgumentException("pipelineName must not be null/blank");
-        }
+    public static Pipeline fromDB(DataSource dataSource, String pipelineId) {
+        if (dataSource == null) throw new IllegalArgumentException("dataSource must not be null");
+        if (pipelineId == null || pipelineId.isBlank()) throw new IllegalArgumentException("pipelineId must not be null/blank");
 
-        // 1) Read JSON string from DB
         final String json;
         try (Connection c = dataSource.getConnection()) {
             DSLContext dsl = DSL.using(c);
-            Record1<String> row = dsl
-                    .select(DSL.field("json", String.class))
-                    .from(DSL.table("pipeline"))
-                    .where(DSL.field("pipeline_name").eq(pipelineName))
-                    .fetchOne();
 
-            if (row == null || row.value1() == null) {
-                throw new IllegalArgumentException("No pipeline found with name \"" + pipelineName + "\".");
+            // qualify everything with public
+            Table<?> T = DSL.table(DSL.name("public", "pipeline"));
+            Field<String> F_JSON = DSL.field(DSL.name("public", "pipeline", "json"), String.class);
+            Field<String> F_ID = DSL.field(DSL.name("public", "pipeline", "pipeline_id"), String.class);
+
+            String val = dsl.select(F_JSON)
+                    .from(T)
+                    .where(F_ID.eq(pipelineId))
+                    .fetchOne(F_JSON);
+
+            if (val == null) {
+                throw new IllegalArgumentException("No pipeline found with id \"" + pipelineId + "\".");
             }
-            json = row.value1();
+            json = val;
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to load pipeline \"" + pipelineName + "\" from DB.", e);
+            throw new IllegalStateException("Failed to load pipeline \"" + pipelineId + "\" from DB.", e);
         }
 
         // 2) Parse JSON and normalize to the same structure as fromJSON(...)
@@ -179,8 +180,8 @@ public class Pipeline {
 
             // Sanity check: if the DB row was envelope-form with a different id, warn but continue
             String loadedId = pipeline.getId();
-            if (!pipelineName.equals(loadedId)) {
-                System.out.println("Warning: DB pipeline_name = \"" + pipelineName + "\" but JSON id = \"" + loadedId + "\".");
+            if (!pipelineId.equals(loadedId)) {
+                System.out.println("Warning: DB pipeline_name = \"" + pipelineId + "\" but JSON id = \"" + loadedId + "\".");
             }
 
             return pipeline;

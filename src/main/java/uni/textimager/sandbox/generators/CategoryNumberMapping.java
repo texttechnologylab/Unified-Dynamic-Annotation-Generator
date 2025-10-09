@@ -40,6 +40,85 @@ public class CategoryNumberMapping extends Generator implements CategoryNumberMa
         this.fixedColor = copyOf.fixedColor;
     }
 
+    public static Map<String, Map<String, Double>> capitalizeCategoryNumberKeys(Map<String, Map<String, Double>> categoryNumberMap, String capitalization) {
+        HashMap<String, Map<String, Double>> resultMap = new HashMap<>();
+        for (Map.Entry<String, Map<String, Double>> entry : categoryNumberMap.entrySet()) {
+            resultMap.put(entry.getKey(), capitalizeCategoryKeys(entry.getValue(), capitalization));
+        }
+        return resultMap;
+    }
+
+    public static <V> Map<String, V> capitalizeCategoryKeys(Map<String, V> categoryMap, String capitalization) {
+        if (capitalization == null) {
+            return new HashMap<>(categoryMap);
+        }
+        HashMap<String, V> resultMap = new HashMap<>();
+        for (Map.Entry<String, V> entry : categoryMap.entrySet()) {
+            if (capitalization.equalsIgnoreCase("Uppercase")) {
+                resultMap.put(entry.getKey().toUpperCase(), entry.getValue());
+            } else if (capitalization.equalsIgnoreCase("Lowercase")) {
+                resultMap.put(entry.getKey().toLowerCase(), entry.getValue());
+            } else if (capitalization.equalsIgnoreCase("Titlecase")) {
+                resultMap.put(entry.getKey().substring(0, 1).toUpperCase() + entry.getKey().substring(1).toLowerCase(), entry.getValue());
+            } else {
+                return new HashMap<>(categoryMap);
+            }
+        }
+        return resultMap;
+    }
+
+    public static Map<String, Double> calculateTotalFromCategoryCountMap(Map<String, Map<String, Double>> categoryCountMap) {
+        HashMap<String, Double> totals = new HashMap<>();
+
+        for (Map<String, Double> innerMap : categoryCountMap.values()) {
+            for (Map.Entry<String, Double> entry : innerMap.entrySet()) {
+                String category = entry.getKey();
+                Double count = entry.getValue();
+                totals.merge(category, count, Double::sum);
+            }
+        }
+
+        return totals;
+    }
+
+    public static Map<String, Map<String, Double>> keepTotalTopN(Map<String, Map<String, Double>> categoryCountMap, int n) {
+        Set<String> topN = keepTopN(calculateTotalFromCategoryCountMap(categoryCountMap), n).keySet();
+        HashMap<String, Map<String, Double>> resultMap = new HashMap<>();
+        for (Map.Entry<String, Map<String, Double>> entry : categoryCountMap.entrySet()) {
+            resultMap.put(entry.getKey(), keepKeys(entry.getValue(), topN));
+        }
+        return resultMap;
+    }
+
+    public static Map<String, Double> keepTopN(Map<String, Double> categoryCountMap, int n) {
+        if (n < 1) {
+            return new HashMap<>(categoryCountMap);
+        }
+        if (categoryCountMap == null) {
+            return new HashMap<>();
+        }
+        return categoryCountMap.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .limit(n)
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue
+                ));
+    }
+
+    private static <K, V> Map<K, V> keepKeys(Map<K, V> original, Set<K> allowedKeys) {
+        if (original == null || allowedKeys == null) {
+            return Collections.emptyMap();
+        }
+
+        return original.entrySet().stream()
+                .filter(entry -> allowedKeys.contains(entry.getKey()))
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue
+                ));
+    }
+
     @Override
     public void add(double num) {
         categoryNumberMap.replaceAll((file, innerMap) -> {
@@ -103,11 +182,10 @@ public class CategoryNumberMapping extends Generator implements CategoryNumberMa
         }
     }
 
-
     protected void saveCategoryNumberMapToDB(DBAccess dbAccess) throws SQLException {
         if (categoryNumberMap == null || categoryNumberMap.isEmpty()) return;
 
-        final String schema = "public"; // or expose dbAccess.getSchema()
+        final String schema = dbAccess.getSchema();
 
         try (Connection connection = dbAccess.getDataSource().getConnection()) {
             DSLContext dsl = DSL.using(connection);
@@ -116,13 +194,13 @@ public class CategoryNumberMapping extends Generator implements CategoryNumberMa
             Table<?> T = DSL.table(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_CATEGORYNUMBER));
 
             // Columns (qualified)
-            Field<String> F_GEN   = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_CATEGORYNUMBER,
+            Field<String> F_GEN = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_CATEGORYNUMBER,
                     DBConstants.TABLEATTR_GENERATORID), String.class);
-            Field<String> F_FILE  = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_CATEGORYNUMBER,
+            Field<String> F_FILE = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_CATEGORYNUMBER,
                     DBConstants.TABLEATTR_FILENAME), String.class);
-            Field<String> F_CAT   = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_CATEGORYNUMBER,
+            Field<String> F_CAT = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_CATEGORYNUMBER,
                     DBConstants.TABLEATTR_GENERATORDATA_CATEGORY), String.class);
-            Field<Double> F_NUM   = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_CATEGORYNUMBER,
+            Field<Double> F_NUM = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_CATEGORYNUMBER,
                     DBConstants.TABLEATTR_GENERATORDATA_NUMBER), Double.class);
 
             List<Query> batch = new ArrayList<>();
@@ -134,7 +212,7 @@ public class CategoryNumberMapping extends Generator implements CategoryNumberMa
 
                 for (Map.Entry<String, Double> e : perCategory.entrySet()) {
                     String category = e.getKey();
-                    Double value    = e.getValue();
+                    Double value = e.getValue();
                     batch.add(
                             dsl.insertInto(T)
                                     .columns(F_GEN, F_FILE, F_CAT, F_NUM)
@@ -147,84 +225,5 @@ public class CategoryNumberMapping extends Generator implements CategoryNumberMa
                 dsl.batch(batch).execute();
             }
         }
-    }
-
-
-    public static Map<String, Map<String, Double>> capitalizeCategoryNumberKeys(Map<String, Map<String, Double>> categoryNumberMap, String capitalization) {
-        HashMap<String, Map<String, Double>> resultMap = new HashMap<>();
-        for (Map.Entry<String, Map<String, Double>> entry : categoryNumberMap.entrySet()) {
-            resultMap.put(entry.getKey(), capitalizeCategoryKeys(entry.getValue(), capitalization));
-        }
-        return resultMap;
-    }
-
-    public static <V> Map<String, V> capitalizeCategoryKeys(Map<String, V> categoryMap, String capitalization) {
-        if (capitalization == null) { return new HashMap<>(categoryMap); }
-        HashMap<String, V> resultMap = new HashMap<>();
-        for (Map.Entry<String, V> entry : categoryMap.entrySet()) {
-            if (capitalization.equalsIgnoreCase("Uppercase")) {
-                resultMap.put(entry.getKey().toUpperCase(), entry.getValue());
-            } else if (capitalization.equalsIgnoreCase("Lowercase")) {
-                resultMap.put(entry.getKey().toLowerCase(), entry.getValue());
-            } else if (capitalization.equalsIgnoreCase("Titlecase")) {
-                resultMap.put(entry.getKey().substring(0, 1).toUpperCase() + entry.getKey().substring(1).toLowerCase(), entry.getValue());
-            } else {
-                return new HashMap<>(categoryMap);
-            }
-        }
-        return resultMap;
-    }
-
-
-    public static Map<String, Double> calculateTotalFromCategoryCountMap(Map<String, Map<String, Double>> categoryCountMap) {
-        HashMap<String, Double> totals = new HashMap<>();
-
-        for (Map<String, Double> innerMap : categoryCountMap.values()) {
-            for (Map.Entry<String, Double> entry : innerMap.entrySet()) {
-                String category = entry.getKey();
-                Double count = entry.getValue();
-                totals.merge(category, count, Double::sum);
-            }
-        }
-
-        return totals;
-    }
-
-    public static Map<String, Map<String, Double>> keepTotalTopN(Map<String, Map<String, Double>> categoryCountMap, int n) {
-        Set<String> topN = keepTopN(calculateTotalFromCategoryCountMap(categoryCountMap), n).keySet();
-        HashMap<String, Map<String, Double>> resultMap = new HashMap<>();
-        for (Map.Entry<String, Map<String, Double>> entry : categoryCountMap.entrySet()) {
-            resultMap.put(entry.getKey(), keepKeys(entry.getValue(), topN));
-        }
-        return resultMap;
-    }
-
-    public static Map<String, Double> keepTopN(Map<String, Double> categoryCountMap, int n) {
-        if (n < 1) {
-            return new HashMap<>(categoryCountMap);
-        }
-        if (categoryCountMap == null) {
-            return new HashMap<>();
-        }
-        return categoryCountMap.entrySet().stream()
-                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
-                .limit(n)
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue
-                ));
-    }
-
-    private static <K, V> Map<K, V> keepKeys(Map<K, V> original, Set<K> allowedKeys) {
-        if (original == null || allowedKeys == null) {
-            return Collections.emptyMap();
-        }
-
-        return original.entrySet().stream()
-                .filter(entry -> allowedKeys.contains(entry.getKey()))
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue
-                ));
     }
 }

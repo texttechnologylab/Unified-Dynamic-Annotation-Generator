@@ -43,70 +43,6 @@ public class CategoryNumberColorMapping extends CategoryNumberMapping implements
         }
     }
 
-    @Override
-    public void multiplyByColor(@NonNull Color color) {
-
-    }
-
-    @Override
-    public CategoryNumberColorMapping copy(String id) {
-        return new CategoryNumberColorMapping(id, this);
-    }
-
-    @Override
-    public void saveToDB(DBAccess dbAccess) throws SQLException {
-        if (categoryNumberMap == null || categoryNumberMap.isEmpty()) return;
-        if (fixedColor != null) {
-            super.saveToDB(dbAccess);
-        } else {
-            saveCategoryNumberMapToDB(dbAccess);
-            saveCategoryColorMapToDB(dbAccess);
-        }
-    }
-
-
-    private void saveCategoryColorMapToDB(DBAccess dbAccess) throws SQLException {
-        if (categoryColorMap == null || categoryColorMap.isEmpty()) return;
-
-        final String schema = "public"; // or get from dbAccess
-
-        try (Connection connection = dbAccess.getDataSource().getConnection()) {
-            DSLContext dsl = DSL.using(connection);
-
-            // Table reference
-            Table<?> T = DSL.table(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_CATEGORYCOLOR));
-
-            // Column references
-            Field<String> F_GEN = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_CATEGORYCOLOR,
-                    DBConstants.TABLEATTR_GENERATORID), String.class);
-            Field<String> F_CAT = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_CATEGORYCOLOR,
-                    DBConstants.TABLEATTR_GENERATORDATA_CATEGORY), String.class);
-            Field<String> F_COL = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_CATEGORYCOLOR,
-                    DBConstants.TABLEATTR_GENERATORDATA_COLOR), String.class);
-
-            List<Query> batch = new ArrayList<>();
-
-            for (Map.Entry<String, Color> entry : categoryColorMap.entrySet()) {
-                String category = entry.getKey();
-                Color colorObj  = entry.getValue();
-                String color    = String.format("#%02x%02x%02x", colorObj.getRed(), colorObj.getGreen(), colorObj.getBlue());
-
-                batch.add(
-                        dsl.insertInto(T)
-                                .columns(F_GEN, F_CAT, F_COL)
-                                .values(id, category, color)
-                );
-            }
-
-            if (!batch.isEmpty()) {
-                dsl.batch(batch).execute();
-            }
-        }
-    }
-
-
-
-
     public static Map<String, Color> categoryColorMapFromCategoriesNumberMap(Map<String, Double> categoryNumberMap) {
         List<Color> distinctColors = Arrays.asList(
                 Color.RED,
@@ -144,11 +80,71 @@ public class CategoryNumberColorMapping extends CategoryNumberMapping implements
                 color = colorIterator.next();
             } else {
                 // Random colors if we run out of predefined colors
-                color = new Color((int)(Math.random() * 0x1000000));
+                color = new Color((int) (Math.random() * 0x1000000));
             }
             categoryColorMap.put(category, color);
         }
 
         return categoryColorMap;
+    }
+
+    @Override
+    public void multiplyByColor(@NonNull Color color) {
+
+    }
+
+    @Override
+    public CategoryNumberColorMapping copy(String id) {
+        return new CategoryNumberColorMapping(id, this);
+    }
+
+    @Override
+    public void saveToDB(DBAccess dbAccess) throws SQLException {
+        if (categoryNumberMap == null || categoryNumberMap.isEmpty()) return;
+        if (fixedColor != null) {
+            super.saveToDB(dbAccess);
+        } else {
+            saveCategoryNumberMapToDB(dbAccess);
+            saveCategoryColorMapToDB(dbAccess);
+        }
+    }
+
+    private void saveCategoryColorMapToDB(DBAccess dbAccess) throws SQLException {
+        if (categoryColorMap == null || categoryColorMap.isEmpty()) return;
+
+        final String schema = dbAccess.getSchema();
+
+        try (Connection connection = dbAccess.getDataSource().getConnection()) {
+            DSLContext dsl = DSL.using(connection);
+
+            // Table reference
+            Table<?> T = DSL.table(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_CATEGORYCOLOR));
+
+            // Column references
+            Field<String> F_GEN = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_CATEGORYCOLOR,
+                    DBConstants.TABLEATTR_GENERATORID), String.class);
+            Field<String> F_CAT = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_CATEGORYCOLOR,
+                    DBConstants.TABLEATTR_GENERATORDATA_CATEGORY), String.class);
+            Field<String> F_COL = DSL.field(DSL.name(schema, DBConstants.TABLENAME_GENERATORDATA_CATEGORYCOLOR,
+                    DBConstants.TABLEATTR_GENERATORDATA_COLOR), String.class);
+
+            List<Query> batch = new ArrayList<>();
+
+            for (Map.Entry<String, Color> entry : categoryColorMap.entrySet()) {
+                String category = entry.getKey();
+                Color colorObj = entry.getValue();
+                String color = String.format("#%02x%02x%02x", colorObj.getRed(), colorObj.getGreen(), colorObj.getBlue());
+
+                batch.add(
+                        dsl.insertInto(T)
+                                .columns(F_GEN, F_CAT, F_COL)
+                                .values(id, category, color)
+                );
+            }
+
+            if (!batch.isEmpty()) {
+                dsl.batch(batch).execute();
+            }
+        }
     }
 }
