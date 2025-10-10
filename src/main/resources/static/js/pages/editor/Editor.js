@@ -30,9 +30,6 @@ export default class Editor {
       container.append(element);
     });
 
-    // Create grid
-    this.createGrid();
-
     document
       .querySelector("#save-button")
       .addEventListener("click", () => this.onSave());
@@ -52,10 +49,10 @@ export default class Editor {
       modal.confirm(
         `Overwrite "${input.value}"`,
         "This pipeline already exists. Do you want to overwrite it?",
-        () => this.sendConfig("UPDATE")
+        () => this.sendConfig("PUT")
       );
     } else {
-      this.sendConfig("PUT");
+      this.sendConfig("POST");
     }
   }
 

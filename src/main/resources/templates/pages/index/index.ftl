@@ -102,7 +102,9 @@
           modal.confirm(
             "Delete " + node.dataset.pipeline,
             "Do you want to delete this pipeline?",
-            () => console.log(node.dataset.pipeline)
+            () => fetch("/api/pipelines/" + node.dataset.pipeline, {
+              method: "DELETE",
+            }).then(() => window.open("/", "_self"))
           );
         });
       });
