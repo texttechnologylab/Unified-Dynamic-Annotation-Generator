@@ -125,11 +125,6 @@ public class PipelineService {
 
     @Transactional
     public void delete(String id) {
-        // (optional) validate schema name to avoid weird/injection-y ids
-        if (!id.matches("[A-Za-z_][A-Za-z0-9_]*")) {
-            throw new ResponseStatusException(BAD_REQUEST, "Invalid schema name");
-        }
-
         try (Connection c = dataSource.getConnection()) {
             DSLContext dsl = DSL.using(c);
 
