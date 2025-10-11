@@ -8,7 +8,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import uni.textimager.sandbox.api.service.DataQueryService;
+import uni.textimager.sandbox.api.service.DataService;
 import uni.textimager.sandbox.api.service.PipelineService;
 
 import java.util.LinkedHashMap;
@@ -21,9 +21,9 @@ import java.util.Objects;
 public class DataController {
 
     private final PipelineService pipelineService;
-    private final DataQueryService handler;
+    private final DataService handler;
 
-    public DataController(PipelineService pipelineService, DataQueryService handler) {
+    public DataController(PipelineService pipelineService, DataService handler) {
         this.pipelineService = pipelineService;
         this.handler = handler;
     }

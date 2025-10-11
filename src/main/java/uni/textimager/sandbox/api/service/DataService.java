@@ -11,15 +11,15 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-public class DataQueryService {
+public class DataService {
 
     private final ObjectMapper mapper;
     private final DummyDataProvider provider;
     private final ChartRegistry charts;
 
-    public DataQueryService(ObjectMapper mapper,
-                            DummyDataProvider provider,
-                            ChartRegistry charts) {
+    public DataService(ObjectMapper mapper,
+                       DummyDataProvider provider,
+                       ChartRegistry charts) {
         this.mapper = mapper;
         this.provider = provider;
         this.charts = charts;
