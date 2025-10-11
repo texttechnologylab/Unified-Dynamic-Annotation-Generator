@@ -5,14 +5,14 @@
         
         <#if widget.type == "Text">
           <div 
-            class="grid-stack-item-content ${widget.options.style}" 
+            class="grid-stack-item-content ${widget.options.style} hide" 
           >
             ${widget.options.text}
           </div>
 
         <#elseif widget.type == "Image">
           <div 
-            class="grid-stack-item-content" 
+            class="grid-stack-item-content hide" 
           >
             <img 
               src="${widget.options.src}" 
@@ -22,7 +22,7 @@
           </div>
 
         <#else>
-          <div class="grid-stack-item-content dv-chart">
+          <div class="grid-stack-item-content dv-chart hide">
             <div class="dv-toolbar">
               <button
                 class="dv-btn dv-btn-toolbar"
@@ -44,7 +44,9 @@
                 <i class="bi bi-x-lg"></i>
               </button>
             </div>
-            <div class="dv-chart-area"></div>
+            <div class="dv-chart-area dv-chart-icon">
+              <i></i>
+            </div>
           </div>
         </#if>
 
@@ -89,7 +91,9 @@
           <i class="bi bi-x-lg"></i>
         </button>
       </div>
-      <div class="dv-chart-area"></div>
+      <div class="dv-chart-area dv-chart-icon">
+        <i></i>
+      </div>
     </div>
   </template>
 </#macro>

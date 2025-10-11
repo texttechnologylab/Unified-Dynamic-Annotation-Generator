@@ -35,9 +35,9 @@
       import Editor from "/js/pages/editor/Editor.js";
 
       const config = JSON.parse("${config?json_string}");
-      const editor = new Editor(config);
+      const editor = new Editor();
 
-      editor.init();
+      editor.init(config);
     </script>
   </body>
 </html>

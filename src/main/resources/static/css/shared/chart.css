@@ -1,3 +1,7 @@
+.grid-stack-item-content.hide {
+  opacity: 0;
+}
+
 /* Chart */
 .dv-chart {
   display: flex;
@@ -38,6 +42,14 @@
   background-color: var(--bg-color);
   border-bottom-left-radius: inherit;
   border-bottom-right-radius: inherit;
+}
+
+.dv-chart-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 5rem;
+  color: var(--border-color);
 }
 
 .dv-chart-tooltip {

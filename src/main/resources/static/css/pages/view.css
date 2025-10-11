@@ -9,10 +9,6 @@
   background-color: var(--bg-color);
 }
 
-.grid-stack-item-content.hide {
-  opacity: 0;
-}
-
 .dv-dropdown-container {
   position: relative;
 }

@@ -48,7 +48,7 @@
 
     <div class="dv-sidebar-footer">
       <div class="dv-btn-group">
-        <button type="button" class="dv-btn-outline" onclick="window.open('/','_self')">
+        <button id="cancel-button" type="button" class="dv-btn-outline">
           Cancel
         </button>
         <button id="save-button" type="button" class="dv-btn-primary">
