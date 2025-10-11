@@ -1,2 +1,20 @@
 # Unified-Dynamic-Annotation-Generator
-WELCOME TO MY GITHUB PAGE
+Short introduction
+
+## Features
+- Feature 1
+- Feature 2
+
+## Getting Started
+Instructions to get started
+
+## Contributing
+Guidelines for contributing
+
+## Contributors
+List of contributors
+- Contributor 1 
+- Contributor 2
+
+## License
+License information
