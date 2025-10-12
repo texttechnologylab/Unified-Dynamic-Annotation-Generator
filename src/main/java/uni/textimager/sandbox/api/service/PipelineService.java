@@ -108,7 +108,11 @@ public class PipelineService {
     }
 
     @Transactional
-    public void update(String id, JsonNode json) throws Exception {
+    public void update(JsonNode json) throws Exception {
+        String id = json.get("id").asText(null);
+        if (id == null || id.isBlank()) {
+            throw new ResponseStatusException(BAD_REQUEST, "Missing or empty pipeline id");
+        }
         String jsonStr = toString(json);
         try (Connection c = dataSource.getConnection()) {
             DSLContext dsl = DSL.using(c);

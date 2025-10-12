@@ -46,10 +46,9 @@ public class PipelineController {
     }
 
     // Update/replace JSON of an existing pipeline
-    @PutMapping("/{id}")
-    public ResponseEntity<Void> update(@PathVariable String id,
-                                       @Valid @RequestBody JsonNode json) throws Exception {
-        service.update(id, json);
+    @PutMapping()
+    public ResponseEntity<Void> update(@Valid @RequestBody JsonNode json) throws Exception {
+        service.update(json);
         return ResponseEntity.noContent().build();
     }
 
