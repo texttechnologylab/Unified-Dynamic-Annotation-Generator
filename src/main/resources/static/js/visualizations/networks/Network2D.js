@@ -20,12 +20,13 @@ export default class Network2D extends D3Visualization {
     this.radius = radius;
   }
 
-  async render(data) {
-    this.clear();
+  async init() {
+    const data = await this.fetch();
+    this.render(data);
+  }
 
-    if (!data) {
-      data = await this.fetch();
-    }
+  render(data) {
+    this.clear();
 
     // Initialize zoom functionality
     const zoom = d3.zoom().on("zoom", (event) => {

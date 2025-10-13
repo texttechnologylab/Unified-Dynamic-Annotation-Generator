@@ -22,14 +22,12 @@ export default class CorpusFilter {
         this.filter[id] = {};
       }
     });
+  }
 
-    this.root.querySelector("#apply-button").addEventListener("click", () => {
-      for (const [key, Component] of Object.entries(this.components)) {
-        this.filter[key] = Component.get();
-      }
-
-      console.log(this.filter);
-    });
+  apply() {
+    for (const [key, Component] of Object.entries(this.components)) {
+      this.filter[key] = Component.get();
+    }
   }
 }
 

@@ -30,7 +30,10 @@ export default class PieChart extends D3Visualization {
     this.hole = hole;
   }
 
-  init(data) {
+  async init() {
+    const data = await this.fetch();
+    this.render(data);
+
     const min = minOf(data.map((d) => d.value));
     const max = maxOf(data.map((d) => d.value));
 
@@ -63,13 +66,8 @@ export default class PieChart extends D3Visualization {
     });
   }
 
-  async render(data) {
+  render(data) {
     this.clear();
-
-    if (!data) {
-      data = await this.fetch();
-      this.init(data);
-    }
 
     // Create a color scale
     const color = d3.scaleOrdinal().range(data.map((item) => item.color));

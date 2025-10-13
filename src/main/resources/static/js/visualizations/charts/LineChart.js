@@ -29,7 +29,10 @@ export default class LineChart extends D3Visualization {
     this.dots = dots;
   }
 
-  init(data) {
+  async init() {
+    const data = await this.fetch();
+    this.render(data);
+
     // Add controls
     for (const item of data) {
       this.controls.appendSwitch(item.name, (value) => {
@@ -39,13 +42,8 @@ export default class LineChart extends D3Visualization {
     }
   }
 
-  async render(data) {
+  render(data) {
     this.clear();
-
-    if (!data) {
-      data = await this.fetch();
-      this.init(data);
-    }
 
     const coordinates = flatData(data, "coordinates");
 

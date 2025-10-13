@@ -12,6 +12,7 @@ export default class View {
     accordions.init();
     dropdowns.init();
 
+    // Initialize pipeline switcher
     const dropdown = document.querySelector(".dv-dropdown");
     const trigger = document.querySelector(".dv-pipeline-switcher-trigger");
     trigger.addEventListener("click", () => {
@@ -22,6 +23,17 @@ export default class View {
         dropdown.classList.remove("show");
       }
     });
+
+    // Initialize corpus filter apply button
+    document.querySelector("#apply-button").addEventListener("click", () => {
+      corpusFilter.apply();
+
+      for (const chart of this.charts) {
+        chart.fetch().then((data) => chart.render(data));
+      }
+    });
+
+    this.charts = [];
   }
 
   initGrid(widgets) {
@@ -46,7 +58,10 @@ export default class View {
         const endpoint = "/api/data?id=" + id;
         const options = { ...config.options, ...this.getDimensions(node) };
 
-        new ChartClass(node, endpoint, options).render();
+        const chart = new ChartClass(node, endpoint, options);
+        chart.init();
+
+        this.charts.push(chart);
       } else {
         node.classList.remove("hide");
       }

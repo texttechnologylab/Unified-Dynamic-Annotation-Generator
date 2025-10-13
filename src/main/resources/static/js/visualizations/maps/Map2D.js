@@ -19,12 +19,13 @@ export default class Map2D extends D3Visualization {
     ]);
   }
 
-  async render(data) {
-    this.clear();
+  async init() {
+    const data = await this.fetch();
+    this.render(data);
+  }
 
-    if (!data) {
-      data = await this.fetch();
-    }
+  render(data) {
+    this.clear();
 
     // https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson
     d3.json("/js/maps/world.geojson").then((world) => {

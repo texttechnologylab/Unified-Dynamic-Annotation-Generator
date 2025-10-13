@@ -27,8 +27,11 @@ export default class HighlightText extends D3Visualization {
       .style("overflow-y", "auto");
   }
 
-  init(data) {
-    for (const item of data) {
+  async init() {
+    const data = await this.fetch();
+    this.render(data);
+
+    for (const item of data.datasets) {
       this.controls.appendSwitch(item.name, (value) => {
         console.log(value);
         this.fetch().then((data) => this.render(data));
@@ -36,13 +39,8 @@ export default class HighlightText extends D3Visualization {
     }
   }
 
-  async render(data) {
+  render(data) {
     this.clear();
-
-    if (!data) {
-      data = await this.fetch();
-      this.init(data.datasets);
-    }
 
     this.div
       .selectAll("span")

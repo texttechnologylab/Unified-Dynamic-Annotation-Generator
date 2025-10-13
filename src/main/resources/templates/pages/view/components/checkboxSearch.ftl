@@ -9,23 +9,7 @@
       <div class="dv-dropdown"></div>
     </div>
 
-    <div class="dv-filter-checkboxes">
-      <label class="dv-filter-checkbox-all">
-        <div>
-          <input
-            class="form-check-input"
-            type="checkbox"
-            checked
-          />
-          <span>All</span>
-        </div>
-      </label>
-    </div>
-
-    <div class="dv-divider"></div>
-    <div class="dv-selection-info">
-      ${total} of ${total} selected
-    </div>
+    <div class="dv-filter-checkboxes"></div>
   </div>
 </#macro>
 
@@ -38,13 +22,13 @@
 
 <template id="checkbox-template">
   <label class="dv-filter-checkbox">
-    <div>
+    <div class="dv-checkbox-container">
       <input
         class="dv-check-input form-check-input"
         type="checkbox"
         checked
       />
-      <span></span>
+      <span class="dv-text-truncate"></span>
     </div>
     <button class="dv-btn-delete" type="button">
       <i class="bi bi-x-lg"></i>

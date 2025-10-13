@@ -46,12 +46,10 @@ export default class CheckboxSearch {
   }
 
   autocomplete(value) {
-    fetch(`/data-${this.id}.json`)
+    fetch(`/api/${this.id}/documents?q=${value}`)
       .then((response) => response.json())
       .then((data) => {
-        const filtered = data.filter(
-          (d) => d.name.includes(value) && !this.addedIds.includes(d.id)
-        );
+        const filtered = data.filter((d) => !this.addedIds.includes(d));
 
         if (filtered.length > 0) {
           this.updateResults(filtered.slice(0, 5));
@@ -67,7 +65,7 @@ export default class CheckboxSearch {
     for (const item of items) {
       const result = this.createFromTemplate("result");
 
-      result.querySelector("span").textContent = item.name;
+      result.querySelector("span").textContent = item;
       result.addEventListener("click", () => this.addCheckbox(item));
 
       this.results.appendChild(result);
@@ -79,14 +77,14 @@ export default class CheckboxSearch {
 
     const checkbox = this.createFromTemplate("checkbox");
 
-    checkbox.querySelector("input").value = item.id;
-    checkbox.querySelector("span").textContent = item.name;
+    checkbox.querySelector("input").value = item;
+    checkbox.querySelector("span").textContent = item;
     checkbox.querySelector("button").addEventListener("click", () => {
       this.checkboxes.removeChild(checkbox);
-      this.addedIds = this.addedIds.filter((id) => id !== item.id);
+      this.addedIds = this.addedIds.filter((id) => id !== item);
     });
 
     this.checkboxes.appendChild(checkbox);
-    this.addedIds.push(item.id);
+    this.addedIds.push(item);
   }
 }

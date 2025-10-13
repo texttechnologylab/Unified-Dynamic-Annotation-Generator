@@ -29,7 +29,10 @@ export default class BarChart extends D3Visualization {
     this.horizontal = horizontal;
   }
 
-  init(data) {
+  async init() {
+    const data = await this.fetch();
+    this.render(data);
+
     const min = minOf(data.map((d) => d.value));
     const max = maxOf(data.map((d) => d.value));
 
@@ -62,13 +65,8 @@ export default class BarChart extends D3Visualization {
     });
   }
 
-  async render(data) {
+  render(data) {
     this.clear();
-
-    if (!data) {
-      data = await this.fetch();
-      this.init(data);
-    }
 
     // Add x axis
     const xAxis = this.horizontal ? this.linear(data) : this.band(data);
