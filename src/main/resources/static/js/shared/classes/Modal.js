@@ -1,5 +1,3 @@
-import { createElement } from "../modules/utils.js";
-
 export default class Modal {
   constructor(element) {
     this.element = element;
@@ -8,108 +6,63 @@ export default class Modal {
     this.buttons = element.querySelectorAll("button");
     this.listener;
 
-    this.buttons[0].addEventListener("click", () => this.close());
-    this.buttons[1].addEventListener("click", () => this.close());
+    this.buttons[0].addEventListener("click", () => this.hide());
+    this.buttons[1].addEventListener("click", () => this.hide());
   }
 
   confirm(title, message, onConfirm) {
-    this.close();
+    this.hide();
 
     this.title.textContent = title;
     this.body.textContent = message;
     this.listener = () => {
       onConfirm();
-      this.close();
+      this.hide();
     };
     this.buttons[2].addEventListener("click", this.listener);
 
-    this.element.classList.add("show");
+    this.show();
   }
 
   alert(title, message) {
-    this.close();
+    this.hide();
 
     this.title.textContent = title;
     this.body.textContent = message;
     this.buttons[1].classList.add("dv-hidden");
-    this.listener = () => this.close();
+    this.listener = () => this.hide();
     this.buttons[2].addEventListener("click", this.listener);
 
-    this.element.classList.add("show");
+    this.show();
   }
 
-  form(title, controls, onConfirm) {
-    this.close();
+  render(title, content, onConfirm) {
+    this.hide();
 
     this.title.textContent = title;
-
-    for (const item of controls) {
-      const input = this.createInput(item);
-      const label = createElement(
-        "label",
-        { className: "d-flex flex-column" },
-        [item.label, input]
-      );
-
-      this.body.append(label);
-    }
+    this.body.append(content);
 
     this.listener = () => {
-      const nodes = this.body.querySelectorAll("select, input");
-      const values = Array.from(nodes).map((element) => element.value);
-      onConfirm(...values);
-
-      this.close();
+      onConfirm();
+      this.hide();
     };
     this.buttons[2].addEventListener("click", this.listener);
 
-    this.element.classList.add("show");
+    this.show();
   }
 
-  prompt(title, value, onConfirm) {
-    this.close();
-
-    this.title.textContent = title;
-
-    const textarea = createElement("textarea", { rows: 10, value });
-    this.body.append(textarea);
-
-    this.listener = () => {
-      onConfirm(textarea.value);
-      this.close();
-    };
-    this.buttons[2].addEventListener("click", this.listener);
-
+  show() {
     this.element.classList.add("show");
+    document.body.classList.add("modal-open");
   }
 
-  close() {
+  hide() {
     this.title.innerHTML = "";
     this.body.innerHTML = "";
     this.buttons[1].classList.remove("dv-hidden");
     this.buttons[2].removeEventListener("click", this.listener);
 
     this.element.classList.remove("show");
-  }
-
-  createInput(item) {
-    if (item.type === "select") {
-      return createElement(
-        "select",
-        {
-          className: "dv-select",
-          value: item.value,
-        },
-        item.options.map((content) =>
-          createElement("option", { textContent: content })
-        )
-      );
-    } else {
-      return createElement("input", {
-        className: "dv-text-input",
-        type: item.type,
-        value: item.value,
-      });
-    }
+    document.body.classList.remove("modal-open");
   }
 }

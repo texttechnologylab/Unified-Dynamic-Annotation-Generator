@@ -51,3 +51,9 @@
 .grid-stack-item-content {
   cursor: grab;
 }
+
+.dv-form-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}

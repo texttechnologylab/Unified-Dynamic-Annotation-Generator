@@ -3,6 +3,7 @@ import Modal from "../../shared/classes/Modal.js";
 import { randomId } from "../../shared/modules/utils.js";
 import defaults from "./defaults.js";
 import accordions from "../../shared/modules/accordions.js";
+import getter from "./getter.js";
 
 export default class Editor {
   constructor() {
@@ -40,9 +41,8 @@ export default class Editor {
     if (config.widgets) {
       this.grid.load(config.widgets);
       this.grid.engine.nodes.forEach((item) => {
-        if (!["Text", "Image"].includes(item.type)) {
-          this.initChart(item.el, item);
-        }
+        const Handler = getter[item.type];
+        new Handler(item.el, item).init(this.modal, this.grid);
 
         // Show charts after gridstack animation is finished
         setTimeout(
@@ -59,7 +59,7 @@ export default class Editor {
 
     document
       .querySelector("#save-button")
-      .addEventListener("click", () => this.onSave());
+      .addEventListener("click", () => this.validate());
   }
 
   initGrid() {
@@ -80,12 +80,43 @@ export default class Editor {
         item.id = randomId(item.type);
 
         item.el.classList.remove("dv-widget-draggable");
-        item.el.querySelector("i").replaceWith(this.createNewGridItem(item));
+        item.el.querySelector("i").replaceWith(this.createGridItemWidget(item));
       });
     });
   }
 
-  async onSave() {
+  createAcceptedWidget(icon, title) {
+    const element = this.templates.newWidget.content.cloneNode(true);
+    const i = element.querySelector("i");
+    const span = element.querySelector("span");
+
+    i.className = icon;
+    span.textContent = title;
+    span.title = title;
+
+    return element;
+  }
+
+  createGridItemWidget(item) {
+    const element = this.cloneTemplate(item.type);
+    const Handler = getter[item.type];
+
+    new Handler(element, item).init(this.modal, this.grid);
+
+    return element;
+  }
+
+  cloneTemplate(type) {
+    if (type === "Text") {
+      return this.templates.textWidget.content.cloneNode(true);
+    } else if (type === "Image") {
+      return this.templates.imageWidget.content.cloneNode(true);
+    } else {
+      return this.templates.chartWidget.content.cloneNode(true);
+    }
+  }
+
+  async validate() {
     const pipelines = await fetch("/api/pipelines").then((response) =>
       response.json()
     );
@@ -99,14 +130,14 @@ export default class Editor {
       this.modal.confirm(
         `Overwrite "${this.input.value}"`,
         "This pipeline already exists. Do you want to overwrite it?",
-        () => this.sendConfig("PUT")
+        () => this.saveConfig("PUT")
       );
     } else {
-      this.sendConfig("POST");
+      this.saveConfig("POST");
     }
   }
 
-  sendConfig(method) {
+  saveConfig(method) {
     const config = {
       id: this.input.value,
       sources: this.sources,
@@ -123,46 +154,5 @@ export default class Editor {
     };
 
     fetch("/api/pipelines", options).then(() => window.open("/", "_self"));
-  }
-
-  createAcceptedWidget(icon, title) {
-    const element = this.templates.newWidget.content.cloneNode(true);
-    const i = element.querySelector("i");
-    const span = element.querySelector("span");
-
-    i.className = icon;
-    span.textContent = title;
-    span.title = title;
-
-    return element;
-  }
-
-  createNewGridItem(item) {
-    if (item.type === "Text") {
-      return this.templates.textWidget.content.cloneNode(true);
-    } else if (item.type === "Image") {
-      return this.templates.imageWidget.content.cloneNode(true);
-    } else {
-      const element = this.templates.chartWidget.content.cloneNode(true);
-      this.initChart(element, item);
-      return element;
-    }
-  }
-
-  initChart(element, item) {
-    const span = element.querySelector("span");
-    const buttons = element.querySelectorAll("button");
-    const i = element.querySelector(".dv-chart-area").querySelector("i");
-
-    i.className = item.icon;
-    buttons[0].addEventListener("click", () =>
-      this.modal.prompt(
-        "Options",
-        JSON.stringify(item.options),
-        (value) => (item.options = JSON.parse(value))
-      )
-    );
-    buttons[1].addEventListener("click", () => this.grid.removeWidget(item.el));
-    span.textContent = item.title;
   }
 }
