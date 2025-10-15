@@ -1,6 +1,6 @@
 export default [
   {
-    type: "Text",
+    type: "StaticText",
     title: "Text",
     options: {},
     icon: "bi bi-fonts",
@@ -8,7 +8,7 @@ export default [
     h: 1,
   },
   {
-    type: "Image",
+    type: "StaticImage",
     title: "Image",
     options: {},
     icon: "bi bi-image",

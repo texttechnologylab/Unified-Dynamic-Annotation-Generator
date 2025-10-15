@@ -13,7 +13,7 @@ export default {
   PieChart: PieChartHandler,
   Map2D: Map2DHandler,
   Network2D: Network2DHandler,
-  Image: StaticImageHandler,
-  Text: StaticTextHandler,
+  StaticImage: StaticImageHandler,
+  StaticText: StaticTextHandler,
   HighlightText: HighlightTextHandler,
 };

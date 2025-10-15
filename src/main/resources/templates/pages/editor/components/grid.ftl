@@ -3,14 +3,14 @@
     <#list widgets as widget>
       <div class="grid-stack-item" gs-id="${widget.id}">
         
-        <#if widget.type == "Text">
+        <#if widget.type == "StaticText">
           <div 
             class="grid-stack-item-content ${widget.options.style} hide" 
           >
             ${widget.options.text}
           </div>
 
-        <#elseif widget.type == "Image">
+        <#elseif widget.type == "StaticImage">
           <div 
             class="grid-stack-item-content hide" 
           >

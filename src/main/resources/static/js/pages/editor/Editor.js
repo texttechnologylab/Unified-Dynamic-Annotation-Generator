@@ -107,9 +107,9 @@ export default class Editor {
   }
 
   cloneTemplate(type) {
-    if (type === "Text") {
+    if (type === "StaticText") {
       return this.templates.textWidget.content.cloneNode(true);
-    } else if (type === "Image") {
+    } else if (type === "StaticImage") {
       return this.templates.imageWidget.content.cloneNode(true);
     } else {
       return this.templates.chartWidget.content.cloneNode(true);

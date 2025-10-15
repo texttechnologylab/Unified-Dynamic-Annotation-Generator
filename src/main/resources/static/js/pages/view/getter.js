@@ -1,9 +1,9 @@
-import BarChart from "../../visualizations/charts/BarChart.js";
-import LineChart from "../../visualizations/charts/LineChart.js";
-import PieChart from "../../visualizations/charts/PieChart.js";
-import HighlightText from "../../visualizations/text/HighlightText.js";
-import Map2D from "../../visualizations/maps/Map2D.js";
-import Network2D from "../../visualizations/networks/Network2D.js";
+import BarChart from "./widgets/charts/BarChart.js";
+import LineChart from "./widgets/charts/LineChart.js";
+import PieChart from "./widgets/charts/PieChart.js";
+import HighlightText from "./widgets/text/HighlightText.js";
+import Map2D from "./widgets/maps/Map2D.js";
+import Network2D from "./widgets/networks/Network2D.js";
 
 export default {
   BarChart,
