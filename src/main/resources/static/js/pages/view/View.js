@@ -6,7 +6,7 @@ import accordions from "../../shared/modules/accordions.js";
 import dropdowns from "../../shared/modules/dropdowns.js";
 
 export default class View {
-  constructor() {
+  constructor(pipeline) {
     corpusFilter.init();
     sidepanels.init();
     accordions.init();
@@ -33,6 +33,7 @@ export default class View {
       }
     });
 
+    this.pipeline = pipeline;
     this.charts = [];
   }
 
@@ -55,7 +56,7 @@ export default class View {
       const ChartClass = getter[config.type];
 
       if (ChartClass) {
-        const endpoint = "/api/data?id=" + id;
+        const endpoint = "/api/data?pipelineId=" + this.pipeline + "&id=" + id;
         const options = { ...config.options, ...this.getDimensions(node) };
 
         const chart = new ChartClass(node, endpoint, options);

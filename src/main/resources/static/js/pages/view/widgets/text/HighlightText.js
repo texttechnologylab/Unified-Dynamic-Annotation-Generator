@@ -1,6 +1,6 @@
 import D3Visualization from "../D3Visualization.js";
-import ControlsHandler from "../../handler/ControlsHandler.js";
-import ExportHandler from "../../handler/ExportHandler.js";
+import ControlsHandler from "../../toolbar/ControlsHandler.js";
+import ExportHandler from "../../toolbar/ExportHandler.js";
 
 export default class HighlightText extends D3Visualization {
   constructor(root, endpoint, { width = 800, height = 600 }) {

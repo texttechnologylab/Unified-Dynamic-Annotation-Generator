@@ -34,7 +34,7 @@
       import View from "/js/pages/view/View.js";
 
       const widgets = JSON.parse("${widgets?json_string}");
-      const view = new View();
+      const view = new View("${id}");
       
       view.initGrid(widgets);
       view.initWidgets(widgets);

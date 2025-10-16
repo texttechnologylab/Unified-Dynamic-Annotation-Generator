@@ -1,7 +1,7 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import D3Visualization from "../D3Visualization.js";
-import ControlsHandler from "../../handler/ControlsHandler.js";
-import ExportHandler from "../../handler/ExportHandler.js";
+import ControlsHandler from "../../toolbar/ControlsHandler.js";
+import ExportHandler from "../../toolbar/ExportHandler.js";
 import { flatData } from "../../../../shared/modules/utils.js";
 
 export default class LineChart extends D3Visualization {
