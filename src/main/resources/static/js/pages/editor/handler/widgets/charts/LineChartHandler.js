@@ -2,6 +2,19 @@ import { createElement } from "../../../../../shared/modules/utils.js";
 import FormHandler from "../../FormHandler.js";
 
 export default class LineChartHandler extends FormHandler {
+  static defaults = {
+    type: "LineChart",
+    title: "Line Chart",
+    generator: {},
+    options: {
+      line: true,
+      dots: true,
+    },
+    icon: "bi bi-graph-up",
+    w: 4,
+    h: 3,
+  };
+
   constructor(element, item) {
     super(element);
 

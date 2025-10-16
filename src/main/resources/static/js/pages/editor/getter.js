@@ -8,12 +8,12 @@ import StaticTextHandler from "./handler/widgets/static/StaticTextHandler.js";
 import HighlightTextHandler from "./handler/widgets/text/HighlightTextHandler.js";
 
 export default {
-  BarChart: BarChartHandler,
-  LineChart: LineChartHandler,
-  PieChart: PieChartHandler,
-  Map2D: Map2DHandler,
-  Network2D: Network2DHandler,
-  StaticImage: StaticImageHandler,
   StaticText: StaticTextHandler,
+  StaticImage: StaticImageHandler,
+  BarChart: BarChartHandler,
+  PieChart: PieChartHandler,
+  LineChart: LineChartHandler,
   HighlightText: HighlightTextHandler,
+  Network2D: Network2DHandler,
+  Map2D: Map2DHandler,
 };

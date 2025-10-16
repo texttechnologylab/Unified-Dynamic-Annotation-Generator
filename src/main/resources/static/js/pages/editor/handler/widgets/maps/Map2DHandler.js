@@ -2,6 +2,16 @@ import { createElement } from "../../../../../shared/modules/utils.js";
 import FormHandler from "../../FormHandler.js";
 
 export default class Map2DHandler extends FormHandler {
+  static defaults = {
+    type: "Map2D",
+    title: "Map 2D",
+    generator: {},
+    options: {},
+    icon: "bi bi-map",
+    w: 4,
+    h: 3,
+  };
+
   constructor(element, item) {
     super(element);
 

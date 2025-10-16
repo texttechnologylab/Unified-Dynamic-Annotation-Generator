@@ -2,6 +2,18 @@ import { createElement } from "../../../../../shared/modules/utils.js";
 import FormHandler from "../../FormHandler.js";
 
 export default class Network2DHandler extends FormHandler {
+  static defaults = {
+    type: "Network2D",
+    title: "Network 2D",
+    generator: {},
+    options: {
+      radius: 10,
+    },
+    icon: "bi bi-diagram-3",
+    w: 4,
+    h: 3,
+  };
+
   constructor(element, item) {
     super(element);
 

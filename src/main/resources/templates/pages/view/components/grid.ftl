@@ -8,11 +8,13 @@
 
         <#if widget.type == "StaticText">
           <div
-            class="grid-stack-item-content ${widget.options.style} hide"
+            class="grid-stack-item-content hide"
             title="${widget.title}"
             data-dv-widget="${widget.id}"
           >
-            ${widget.options.text}
+            <div class="${widget.options.style}">
+              ${widget.text}
+            </div>
           </div>
 
         <#elseif widget.type == "StaticImage">
@@ -22,7 +24,7 @@
             data-dv-widget="${widget.id}"
           >
             <img
-              src="${widget.options.src}"
+              src="${widget.src}"
               width="100%"
               height="100%"
             >

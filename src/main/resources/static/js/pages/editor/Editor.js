@@ -1,18 +1,19 @@
 import { GridStack } from "https://cdn.jsdelivr.net/npm/gridstack@12.3.3/+esm";
 import Modal from "../../shared/classes/Modal.js";
 import { randomId } from "../../shared/modules/utils.js";
-import defaults from "./defaults.js";
 import accordions from "../../shared/modules/accordions.js";
 import getter from "./getter.js";
+
+const defaults = Object.values(getter).map((Handler) => Handler.defaults);
 
 export default class Editor {
   constructor() {
     this.modal = new Modal(document.querySelector(".dv-modal").parentElement);
     this.templates = {
       newWidget: document.querySelector("#new-widget-template"),
-      textWidget: document.querySelector("#text-placeholder"),
-      imageWidget: document.querySelector("#image-placeholder"),
-      chartWidget: document.querySelector("#d3-chart-placeholder"),
+      textWidget: document.querySelector("#static-text-template"),
+      imageWidget: document.querySelector("#static-image-template"),
+      chartWidget: document.querySelector("#default-chart-template"),
     };
 
     this.input = document.querySelector("#identifier-input");

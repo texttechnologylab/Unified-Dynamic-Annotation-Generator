@@ -2,6 +2,18 @@ import { createElement } from "../../../../../shared/modules/utils.js";
 import FormHandler from "../../FormHandler.js";
 
 export default class PieChartHandler extends FormHandler {
+  static defaults = {
+    type: "PieChart",
+    title: "Pie Chart",
+    generator: {},
+    options: {
+      hole: 0,
+    },
+    icon: "bi bi-pie-chart",
+    w: 3,
+    h: 3,
+  };
+
   constructor(element, item) {
     super(element);
 

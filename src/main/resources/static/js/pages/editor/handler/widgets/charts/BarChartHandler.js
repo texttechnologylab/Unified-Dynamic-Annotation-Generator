@@ -2,6 +2,18 @@ import { createElement } from "../../../../../shared/modules/utils.js";
 import FormHandler from "../../FormHandler.js";
 
 export default class BarChartHandler extends FormHandler {
+  static defaults = {
+    type: "BarChart",
+    title: "Bar Chart",
+    generator: {},
+    options: {
+      horizontal: false,
+    },
+    icon: "bi bi-bar-chart",
+    w: 4,
+    h: 3,
+  };
+
   constructor(element, item) {
     super(element);
 

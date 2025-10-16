@@ -4,21 +4,46 @@
       <div class="grid-stack-item" gs-id="${widget.id}">
         
         <#if widget.type == "StaticText">
-          <div 
-            class="grid-stack-item-content ${widget.options.style} hide" 
-          >
-            ${widget.options.text}
+          <div class="grid-stack-item-content hide">
+            <button
+              class="dv-btn-autohide"
+              type="button"
+              title="Edit"
+            >
+              <i class="bi bi-pencil"></i>
+            </button>
+            <div id="static-text"></div>
+            <button
+              class="dv-btn-autohide"
+              type="button"
+              title="Remove"
+            >
+              <i class="bi bi-x-lg"></i>
+            </button>
           </div>
 
         <#elseif widget.type == "StaticImage">
           <div 
             class="grid-stack-item-content hide" 
           >
+            <button
+              class="dv-btn-autohide"
+              type="button"
+              title="Edit"
+            >
+              <i class="bi bi-pencil"></i>
+            </button>
             <img 
-              src="${widget.options.src}" 
               width="100%" 
               height="100%" 
             >
+            <button
+              class="dv-btn-autohide"
+              type="button"
+              title="Remove"
+            >
+              <i class="bi bi-x-lg"></i>
+            </button>
           </div>
 
         <#else>
@@ -33,7 +58,6 @@
               </button>
 
               <span class="dv-toolbar-title">
-                ${widget.title}
               </span>
 
               <button
@@ -54,23 +78,50 @@
     </#list>
   </div>
 
-  <template id="text-placeholder">
+  <template id="static-text-template">
     <div class="grid-stack-item-content">
-      The quick brown fox jumps over the lazy dog.
+      <button
+        class="dv-btn-autohide"
+        type="button"
+        title="Edit"
+      >
+        <i class="bi bi-pencil"></i>
+      </button>
+      <div id="static-text"></div>
+      <button
+        class="dv-btn-autohide"
+        type="button"
+        title="Remove"
+      >
+        <i class="bi bi-x-lg"></i>
+      </button>
     </div>
   </template>
 
-  <template id="image-placeholder">
+  <template id="static-image-template">
     <div class="grid-stack-item-content">
+      <button
+        class="dv-btn-autohide"
+        type="button"
+        title="Edit"
+      >
+        <i class="bi bi-pencil"></i>
+      </button>
       <img
-        src="https://placehold.co/600x400?text=My+Logo"
         width="100%"
         height="100%"
       />
+      <button
+        class="dv-btn-autohide"
+        type="button"
+        title="Remove"
+      >
+        <i class="bi bi-x-lg"></i>
+      </button>
     </div>
   </template>
 
-  <template id="d3-chart-placeholder">
+  <template id="default-chart-template">
     <div class="grid-stack-item-content dv-chart">
       <div class="dv-toolbar">
         <button

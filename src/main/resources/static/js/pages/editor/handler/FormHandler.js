@@ -1,6 +1,8 @@
 import { createElement } from "../../../shared/modules/utils.js";
 
 export default class FormHandler {
+  static defaults = {};
+
   constructor(element) {
     this.element = element;
   }
