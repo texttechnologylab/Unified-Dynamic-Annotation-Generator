@@ -121,31 +121,39 @@ export default class Editor {
     const pipelines = await fetch("/api/pipelines").then((response) =>
       response.json()
     );
-
-    if (this.input.value.trim() === "") {
-      this.modal.alert(
-        "Missing Identifier",
-        "Please provide an identifier for the pipeline."
-      );
-    } else if (pipelines.includes(this.input.value)) {
-      this.modal.confirm(
-        `Overwrite "${this.input.value}"`,
-        "This pipeline already exists. Do you want to overwrite it?",
-        () => this.saveConfig("PUT")
-      );
-    } else {
-      this.saveConfig("POST");
-    }
-  }
-
-  saveConfig(method) {
     const config = {
       id: this.input.value,
       sources: this.sources,
       derivedGenerators: this.derivedGenerators,
       widgets: this.grid.save(false),
     };
+    const missing = config.widgets.filter(
+      (widget) => widget?.generator?.id.trim() === ""
+    );
 
+    if (config.id.trim() === "") {
+      this.modal.alert(
+        "Missing Identifier",
+        "Please provide an identifier for the pipeline."
+      );
+    } else if (missing.length > 0) {
+      this.modal.alert(
+        "Missing Generators",
+        "The following widgets have no generator assigned: " +
+          missing.map((w) => w.title).join(", ")
+      );
+    } else if (pipelines.includes(this.input.value)) {
+      this.modal.confirm(
+        `Overwrite "${this.input.value}"`,
+        "This pipeline already exists. Do you want to overwrite it?",
+        () => this.saveConfig("PUT", config)
+      );
+    } else {
+      this.saveConfig("POST", config);
+    }
+  }
+
+  saveConfig(method, config) {
     const options = {
       method,
       headers: {

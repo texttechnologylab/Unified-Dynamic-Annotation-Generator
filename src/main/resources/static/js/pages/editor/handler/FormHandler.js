@@ -65,6 +65,21 @@ export default class FormHandler {
     return label;
   }
 
+  createTextArea(key, title, value) {
+    const area = createElement("textarea", {
+      name: key,
+      value,
+      rows: 3,
+      className: "dv-text-input dv-resize-none",
+    });
+    const label = createElement("label", { className: "d-flex flex-column" }, [
+      createElement("span", { textContent: title }),
+      area,
+    ]);
+
+    return label;
+  }
+
   createSelect(key, title, options, selected) {
     const select = createElement(
       "select",

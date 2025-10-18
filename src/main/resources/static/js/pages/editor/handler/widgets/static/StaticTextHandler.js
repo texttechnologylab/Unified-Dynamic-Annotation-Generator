@@ -31,7 +31,7 @@ export default class StaticTextHandler extends FormHandler {
   createForm() {
     const styles = this.item.options.style.split(" ");
 
-    const textInput = this.createTextInput("text", "Text", this.item.text);
+    const textInput = this.createTextArea("text", "Text", this.item.text);
     const alignInput = this.createSelect(
       "align",
       "Text alignment",

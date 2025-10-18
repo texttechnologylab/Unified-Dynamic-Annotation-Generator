@@ -82,3 +82,7 @@
 .dv-btn-autohide:nth-of-type(2) {
   right: 0;
 }
+
+.dv-resize-none {
+  resize: none;
+}

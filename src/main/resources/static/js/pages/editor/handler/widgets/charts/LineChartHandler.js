@@ -5,7 +5,7 @@ export default class LineChartHandler extends FormHandler {
   static defaults = {
     type: "LineChart",
     title: "Line Chart",
-    generator: {},
+    generator: { id: "" },
     options: {
       line: true,
       dots: true,

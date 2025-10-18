@@ -5,7 +5,7 @@ export default class BarChartHandler extends FormHandler {
   static defaults = {
     type: "BarChart",
     title: "Bar Chart",
-    generator: {},
+    generator: { id: "" },
     options: {
       horizontal: false,
     },

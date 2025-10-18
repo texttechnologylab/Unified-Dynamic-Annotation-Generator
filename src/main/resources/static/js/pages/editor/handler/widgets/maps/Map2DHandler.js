@@ -5,7 +5,7 @@ export default class Map2DHandler extends FormHandler {
   static defaults = {
     type: "Map2D",
     title: "Map 2D",
-    generator: {},
+    generator: { id: "" },
     options: {},
     icon: "bi bi-map",
     w: 4,

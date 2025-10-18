@@ -5,7 +5,7 @@ export default class HighlightTextHandler extends FormHandler {
   static defaults = {
     type: "HighlightText",
     title: "Highlight Text",
-    generator: {},
+    generator: { id: "" },
     options: {},
     icon: "bi bi-card-text",
     w: 3,

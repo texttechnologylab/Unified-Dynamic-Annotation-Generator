@@ -5,7 +5,7 @@ export default class PieChartHandler extends FormHandler {
   static defaults = {
     type: "PieChart",
     title: "Pie Chart",
-    generator: {},
+    generator: { id: "" },
     options: {
       hole: 0,
     },

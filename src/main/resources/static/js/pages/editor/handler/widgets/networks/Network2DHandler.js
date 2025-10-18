@@ -5,7 +5,7 @@ export default class Network2DHandler extends FormHandler {
   static defaults = {
     type: "Network2D",
     title: "Network 2D",
-    generator: {},
+    generator: { id: "" },
     options: {
       radius: 10,
     },
